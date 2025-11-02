@@ -1,63 +1,63 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_base.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\src\ec_base.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_coe.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\src\ec_coe.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_config.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\src\ec_config.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_dc.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\src\ec_dc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_eoe.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\src\ec_eoe.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_foe.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\src\ec_foe.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_main.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\src\ec_main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_print.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\src\ec_print.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_soe.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\src\ec_soe.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\osal\win32\osal.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32\osal.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\oshw.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\oshw.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\nicdrv.c">
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\nicdrv.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C:\Users\ursae\Desktop\Git\SOEM\osal\win32\osal_defs.h">
+    <ClInclude Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32\osal_defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\oshw.h">
+    <ClInclude Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\oshw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\nicdrv.h">
+    <ClInclude Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\nicdrv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\ursae\Desktop\Git\SOEM\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{46D81657-16D9-3FF3-A064-A23899D5904E}</UniqueIdentifier>
+      <UniqueIdentifier>{05D5C80C-8C9E-3071-B600-2B27EB5236FC}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{07548903-7AF6-3B57-99F4-487B9FF6D880}</UniqueIdentifier>
+      <UniqueIdentifier>{A402271D-9A3D-3918-A333-D3A22B1FC920}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -98,17 +98,19 @@ public partial class MainViewModel : ViewModelBase
 
         // SOEM 열 때 그대로 사용:
         //string ifnameToUse = @"\\Device\\NPF_{YOUR_GUID}"; // 위 출력 중 하나 선택
-        // SoemNative.soem_open(ifnameToUse);
+        //SOEMNative.soem_open(ifnameToUse);
 
         //if (string.IsNullOrEmpty(NICSelect))
         //{
         //    return;
         //}
 
-        //string ifname = NICSelect.Substring(NICSelect.LastIndexOf(" - ") + (" - ".Length));
+        string ifname = NICSelect.Substring(NICSelect.LastIndexOf(" - ") + (" - ".Length));
+
+        SOEMNative.soem_open(ifname);
 
         //EcClient test = new EcClient();
-        //test.Open(ifname);
+
 
         ESICatalog _esi = ESICatalog.LoadFolder("ESI");
         //_esi.TryGetDevice()

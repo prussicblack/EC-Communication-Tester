@@ -61,7 +61,7 @@ events:
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
       
       The C compiler identification is MSVC, found in:
-        C:/Users/ursae/Desktop/Git/SOEM/build/CMakeFiles/3.31.6-msvc6/CompilerIdC/CompilerIdC.exe
+        ../build/CMakeFiles/3.31.6-msvc6/CompilerIdC/CompilerIdC.exe
       
   -
     kind: "try_compile-v1"
@@ -72,18 +72,18 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "C:/Users/ursae/Desktop/Git/SOEM/build/CMakeFiles/CMakeScratch/TryCompile-f76h3w"
-      binary: "C:/Users/ursae/Desktop/Git/SOEM/build/CMakeFiles/CMakeScratch/TryCompile-f76h3w"
+      source: "../build/CMakeFiles/CMakeScratch/TryCompile-f76h3w"
+      binary: "../build/CMakeFiles/CMakeScratch/TryCompile-f76h3w"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
       CMAKE_C_FLAGS_DEBUG: "/Ob0 /Od /RTC1"
       CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MODULE_PATH: "C:/Users/ursae/Desktop/Git/SOEM/cmake"
+      CMAKE_MODULE_PATH: "../cmake"
     buildResult:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/ursae/Desktop/Git/SOEM/build/CMakeFiles/CMakeScratch/TryCompile-f76h3w'
+        Change Dir: '../build/CMakeFiles/CMakeScratch/TryCompile-f76h3w'
         
         Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_b8c2c.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         msbuild 踰꾩쟾 17.14.23+b0019275e(.NET Framework??
@@ -105,7 +105,7 @@ events:
           cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_b8c2c.dir\\Debug\\\\" /Fd"cmTC_b8c2c.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
           CMakeCCompilerABI.c
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\CMakeFiles\\CMakeScratch\\TryCompile-f76h3w\\Debug\\cmTC_b8c2c.exe" /INCREMENTAL /ILK:"cmTC_b8c2c.dir\\Debug\\cmTC_b8c2c.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/ursae/Desktop/Git/SOEM/build/CMakeFiles/CMakeScratch/TryCompile-f76h3w/Debug/cmTC_b8c2c.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/ursae/Desktop/Git/SOEM/build/CMakeFiles/CMakeScratch/TryCompile-f76h3w/Debug/cmTC_b8c2c.lib" /MACHINE:X64  /machine:x64 cmTC_b8c2c.dir\\Debug\\CMakeCCompilerABI.obj
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\CMakeFiles\\CMakeScratch\\TryCompile-f76h3w\\Debug\\cmTC_b8c2c.exe" /INCREMENTAL /ILK:"cmTC_b8c2c.dir\\Debug\\cmTC_b8c2c.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"../build/CMakeFiles/CMakeScratch/TryCompile-f76h3w/Debug/cmTC_b8c2c.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"../build/CMakeFiles/CMakeScratch/TryCompile-f76h3w/Debug/cmTC_b8c2c.lib" /MACHINE:X64  /machine:x64 cmTC_b8c2c.dir\\Debug\\CMakeCCompilerABI.obj
           cmTC_b8c2c.vcxproj -> C:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\CMakeFiles\\CMakeScratch\\TryCompile-f76h3w\\Debug\\cmTC_b8c2c.exe
         FinalizeBuildStatus:
           "cmTC_b8c2c.dir\\Debug\\cmTC_b8c2c.tlog\\unsuccessfulbuild" ?뚯씪????젣?섍퀬 ?덉뒿?덈떎.

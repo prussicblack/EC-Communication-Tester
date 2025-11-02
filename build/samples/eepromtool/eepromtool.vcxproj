@@ -22,7 +22,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{803DEBBE-D49F-3BF7-9640-10D95E718A8A}</ProjectGuid>
+    <ProjectGuid>{94DE7AE2-4305-32A2-A1D9-962C8477FD80}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
     <Platform>x64</Platform>
@@ -59,25 +59,25 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\ursae\Desktop\Git\SOEM\build\samples\eepromtool\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\samples\eepromtool\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">eepromtool.dir\Debug\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">eepromtool</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\ursae\Desktop\Git\SOEM\build\samples\eepromtool\Release\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\samples\eepromtool\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">eepromtool.dir\Release\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">eepromtool</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\ursae\Desktop\Git\SOEM\build\samples\eepromtool\MinSizeRel\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\samples\eepromtool\MinSizeRel\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">eepromtool.dir\MinSizeRel\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">eepromtool</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\ursae\Desktop\Git\SOEM\build\samples\eepromtool\RelWithDebInfo\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\samples\eepromtool\RelWithDebInfo\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">eepromtool.dir\RelWithDebInfo\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">eepromtool</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.exe</TargetExt>
@@ -86,7 +86,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -106,10 +106,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -117,13 +117,13 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>..\..\Debug\soem.lib;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Lib\x64\wpcap.lib;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Lib\x64\Packet.lib;ws2_32.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\..\Debug\soem.lib;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Lib\x64\wpcap.lib;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Lib\x64\Packet.lib;ws2_32.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/Debug/eepromtool.lib</ImportLibrary>
-      <ProgramDataBaseFile>C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/Debug/eepromtool.pdb</ProgramDataBaseFile>
+      <ImportLibrary>C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/Debug/eepromtool.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/Debug/eepromtool.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
     </Link>
     <ProjectReference>
@@ -132,7 +132,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <ExceptionHandling>
@@ -153,10 +153,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -164,13 +164,13 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>..\..\Release\soem.lib;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Lib\x64\wpcap.lib;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Lib\x64\Packet.lib;ws2_32.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\..\Release\soem.lib;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Lib\x64\wpcap.lib;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Lib\x64\Packet.lib;ws2_32.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/Release/eepromtool.lib</ImportLibrary>
-      <ProgramDataBaseFile>C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/Release/eepromtool.pdb</ProgramDataBaseFile>
+      <ImportLibrary>C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/Release/eepromtool.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/Release/eepromtool.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
     </Link>
     <ProjectReference>
@@ -179,7 +179,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <ExceptionHandling>
@@ -200,10 +200,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -211,13 +211,13 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>..\..\MinSizeRel\soem.lib;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Lib\x64\wpcap.lib;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Lib\x64\Packet.lib;ws2_32.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\..\MinSizeRel\soem.lib;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Lib\x64\wpcap.lib;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Lib\x64\Packet.lib;ws2_32.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/MinSizeRel/eepromtool.lib</ImportLibrary>
-      <ProgramDataBaseFile>C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/MinSizeRel/eepromtool.pdb</ProgramDataBaseFile>
+      <ImportLibrary>C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/MinSizeRel/eepromtool.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/MinSizeRel/eepromtool.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
     </Link>
     <ProjectReference>
@@ -226,7 +226,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -246,10 +246,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM\include;C:\Users\ursae\Desktop\Git\SOEM\build\include;C:\Users\ursae\Desktop\Git\SOEM\osal;C:\Users\ursae\Desktop\Git\SOEM\osal\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\include;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\osal\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -257,13 +257,13 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>..\..\RelWithDebInfo\soem.lib;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Lib\x64\wpcap.lib;C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\wpcap\Lib\x64\Packet.lib;ws2_32.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\..\RelWithDebInfo\soem.lib;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Lib\x64\wpcap.lib;C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\oshw\win32\wpcap\Lib\x64\Packet.lib;ws2_32.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/RelWithDebInfo/eepromtool.lib</ImportLibrary>
-      <ProgramDataBaseFile>C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/RelWithDebInfo/eepromtool.pdb</ProgramDataBaseFile>
+      <ImportLibrary>C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/RelWithDebInfo/eepromtool.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/RelWithDebInfo/eepromtool.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
     </Link>
     <ProjectReference>
@@ -271,11 +271,11 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\ursae\Desktop\Git\SOEM\samples\eepromtool\CMakeLists.txt">
+    <CustomBuild Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\samples\eepromtool\CMakeLists.txt">
       <UseUtf8Encoding>Always</UseUtf8Encoding>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/ursae/Desktop/Git/SOEM/samples/eepromtool/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/samples/eepromtool/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/ursae/Desktop/Git/SOEM -BC:/Users/ursae/Desktop/Git/SOEM/build --check-stamp-file C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/ursae/Desktop/Git/SOEM_FrontEnd -BC:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build --check-stamp-file C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -284,11 +284,11 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\ursae\Desktop\Git\SOEM\build\samples\eepromtool\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\samples\eepromtool\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/ursae/Desktop/Git/SOEM/samples/eepromtool/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/samples/eepromtool/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/ursae/Desktop/Git/SOEM -BC:/Users/ursae/Desktop/Git/SOEM/build --check-stamp-file C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/ursae/Desktop/Git/SOEM_FrontEnd -BC:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build --check-stamp-file C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -297,11 +297,11 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\ursae\Desktop\Git\SOEM\build\samples\eepromtool\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\samples\eepromtool\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/ursae/Desktop/Git/SOEM/samples/eepromtool/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/samples/eepromtool/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/ursae/Desktop/Git/SOEM -BC:/Users/ursae/Desktop/Git/SOEM/build --check-stamp-file C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/ursae/Desktop/Git/SOEM_FrontEnd -BC:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build --check-stamp-file C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -310,11 +310,11 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\ursae\Desktop\Git\SOEM\build\samples\eepromtool\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\samples\eepromtool\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/ursae/Desktop/Git/SOEM/samples/eepromtool/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/samples/eepromtool/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/ursae/Desktop/Git/SOEM -BC:/Users/ursae/Desktop/Git/SOEM/build --check-stamp-file C:/Users/ursae/Desktop/Git/SOEM/build/samples/eepromtool/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/ursae/Desktop/Git/SOEM_FrontEnd -BC:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build --check-stamp-file C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/samples/eepromtool/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -323,23 +323,23 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\ursae\Desktop\Git\SOEM\build\samples\eepromtool\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\samples\eepromtool\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\samples\eepromtool\eepromtool.c" />
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\samples\eepromtool\eepromtool.c" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="C:\Users\ursae\Desktop\Git\SOEM\build\ZERO_CHECK.vcxproj">
-      <Project>{63502507-0050-392C-B99A-83ACE8D5D8F1}</Project>
+    <ProjectReference Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\ZERO_CHECK.vcxproj">
+      <Project>{EDF319C7-1BE4-306C-B055-CB39BF5428FA}</Project>
       <Name>ZERO_CHECK</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\ursae\Desktop\Git\SOEM\build\soem.vcxproj">
-      <Project>{658EB33A-7AAF-363D-BB39-7CDA2C0A8DFA}</Project>
+    <ProjectReference Include="C:\Users\ursae\Desktop\Git\SOEM_FrontEnd\build\soem.vcxproj">
+      <Project>{0928257D-2E86-3AE8-9468-FD19B0552926}</Project>
       <Name>soem</Name>
     </ProjectReference>
   </ItemGroup>

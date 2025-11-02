@@ -60,7 +60,7 @@ set_target_properties(soem PROPERTIES
   INTERFACE_COMPILE_DEFINITIONS "\$<\$<C_COMPILER_ID:GNU>:_UCRT>"
   INTERFACE_COMPILE_OPTIONS "\$<\$<C_COMPILER_ID:GNU>:-std=c11>"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include;${_IMPORT_PREFIX}/include;${_IMPORT_PREFIX}/include/soem"
-  INTERFACE_LINK_LIBRARIES "\$<\$<C_COMPILER_ID:GNU>:ucrt>;C:/Users/ursae/Desktop/Git/SOEM/oshw/win32/wpcap/Lib/x64/wpcap.lib;C:/Users/ursae/Desktop/Git/SOEM/oshw/win32/wpcap/Lib/x64/Packet.lib;ws2_32.lib;winmm.lib"
+  INTERFACE_LINK_LIBRARIES "\$<\$<C_COMPILER_ID:GNU>:ucrt>;C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/oshw/win32/wpcap/Lib/x64/wpcap.lib;C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/oshw/win32/wpcap/Lib/x64/Packet.lib;ws2_32.lib;winmm.lib"
 )
 
 # Load information for each installed configuration.

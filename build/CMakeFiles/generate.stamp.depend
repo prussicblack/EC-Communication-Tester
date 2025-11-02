@@ -27,9 +27,9 @@ C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtens
 C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.31/Modules/Platform/Windows.cmake
 C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.31/Modules/Platform/WindowsPaths.cmake
 C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.31/Templates/CPackConfig.cmake.in
-C:/Users/ursae/Desktop/Git/SOEM/CMakeLists.txt
-C:/Users/ursae/Desktop/Git/SOEM/build/CMakeFiles/3.31.6-msvc6/CMakeCCompiler.cmake
-C:/Users/ursae/Desktop/Git/SOEM/build/CMakeFiles/3.31.6-msvc6/CMakeRCCompiler.cmake
-C:/Users/ursae/Desktop/Git/SOEM/build/CMakeFiles/3.31.6-msvc6/CMakeSystem.cmake
-C:/Users/ursae/Desktop/Git/SOEM/cmake/Windows.cmake
-C:/Users/ursae/Desktop/Git/SOEM/include/soem/ec_options.h.in
+C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/CMakeLists.txt
+C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/CMakeFiles/3.31.6-msvc6/CMakeCCompiler.cmake
+C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/CMakeFiles/3.31.6-msvc6/CMakeRCCompiler.cmake
+C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/build/CMakeFiles/3.31.6-msvc6/CMakeSystem.cmake
+C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/cmake/Windows.cmake
+C:/Users/ursae/Desktop/Git/SOEM_FrontEnd/include/soem/ec_options.h.in
