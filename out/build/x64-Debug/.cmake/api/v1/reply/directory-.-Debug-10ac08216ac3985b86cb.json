@@ -1,0 +1,112 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 111,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 113,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 115,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"soem.lib"
+			],
+			"targetId" : "soem::@6890427a1f51a3e7e1df",
+			"targetIndex" : 4,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"cxxModuleBmiTarget" : 
+			{
+				"id" : "soem::@6890427a1f51a3e7e1df",
+				"index" : 4
+			},
+			"destination" : "lib",
+			"type" : "cxxModuleBmi"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "share/soem/cmake",
+			"exportName" : "soemConfig",
+			"exportTargets" : 
+			[
+				{
+					"id" : "soem::@6890427a1f51a3e7e1df",
+					"index" : 4
+				}
+			],
+			"paths" : 
+			[
+				"CMakeFiles/Export/39806c66e6e7fd9076eb39407f12ee6f/soemConfig.cmake"
+			],
+			"type" : "export"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "include/soem",
+			"paths" : 
+			[
+				"soem/ethercat.h",
+				"soem/ethercatbase.h",
+				"soem/ethercatcoe.h",
+				"soem/ethercatconfig.h",
+				"soem/ethercatconfiglist.h",
+				"soem/ethercatdc.h",
+				"soem/ethercateoe.h",
+				"soem/ethercatfoe.h",
+				"soem/ethercatmain.h",
+				"soem/ethercatprint.h",
+				"soem/ethercatsoe.h",
+				"soem/ethercattype.h",
+				"osal/osal.h",
+				"osal/win32/osal_defs.h",
+				"osal/win32/osal_win32.h",
+				"oshw/win32/nicdrv.h",
+				"oshw/win32/oshw.h"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	}
+}

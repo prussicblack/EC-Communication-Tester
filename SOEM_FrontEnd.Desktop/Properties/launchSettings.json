@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SOEM_FrontEnd.Desktop": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

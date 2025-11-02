@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_base.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_coe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_config.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_dc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_eoe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_foe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_main.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_print.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\src\ec_soe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\osal\win32\osal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\oshw.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\nicdrv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\ursae\Desktop\Git\SOEM\osal\win32\osal_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\oshw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\ursae\Desktop\Git\SOEM\oshw\win32\nicdrv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\ursae\Desktop\Git\SOEM\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{46D81657-16D9-3FF3-A064-A23899D5904E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{07548903-7AF6-3B57-99F4-487B9FF6D880}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,104 @@
+[
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\src\\ec_base.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_base.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_base.c",
+  "output": "CMakeFiles\\soem.dir\\src\\ec_base.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\src\\ec_coe.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_coe.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_coe.c",
+  "output": "CMakeFiles\\soem.dir\\src\\ec_coe.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\src\\ec_config.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_config.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_config.c",
+  "output": "CMakeFiles\\soem.dir\\src\\ec_config.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\src\\ec_dc.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_dc.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_dc.c",
+  "output": "CMakeFiles\\soem.dir\\src\\ec_dc.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\src\\ec_eoe.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_eoe.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_eoe.c",
+  "output": "CMakeFiles\\soem.dir\\src\\ec_eoe.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\src\\ec_foe.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_foe.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_foe.c",
+  "output": "CMakeFiles\\soem.dir\\src\\ec_foe.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\src\\ec_main.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_main.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_main.c",
+  "output": "CMakeFiles\\soem.dir\\src\\ec_main.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\src\\ec_print.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_print.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_print.c",
+  "output": "CMakeFiles\\soem.dir\\src\\ec_print.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\src\\ec_soe.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_soe.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\src\\ec_soe.c",
+  "output": "CMakeFiles\\soem.dir\\src\\ec_soe.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\osal\\win32\\osal.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32\\osal.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32\\osal.c",
+  "output": "CMakeFiles\\soem.dir\\osal\\win32\\osal.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\oshw\\win32\\oshw.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\oshw.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\oshw.c",
+  "output": "CMakeFiles\\soem.dir\\oshw\\win32\\oshw.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /FoCMakeFiles\\soem.dir\\oshw\\win32\\nicdrv.obj /FdCMakeFiles\\soem.dir\\soem.pdb /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\nicdrv.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\nicdrv.c",
+  "output": "CMakeFiles\\soem.dir\\oshw\\win32\\nicdrv.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /Fosamples\\ec_sample\\CMakeFiles\\ec_sample.dir\\ec_sample.obj /Fdsamples\\ec_sample\\CMakeFiles\\ec_sample.dir\\ /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\samples\\ec_sample\\ec_sample.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\samples\\ec_sample\\ec_sample.c",
+  "output": "samples\\ec_sample\\CMakeFiles\\ec_sample.dir\\ec_sample.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /Fosamples\\eepromtool\\CMakeFiles\\eepromtool.dir\\eepromtool.obj /Fdsamples\\eepromtool\\CMakeFiles\\eepromtool.dir\\ /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\samples\\eepromtool\\eepromtool.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\samples\\eepromtool\\eepromtool.c",
+  "output": "samples\\eepromtool\\CMakeFiles\\eepromtool.dir\\eepromtool.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /Fosamples\\firm_update\\CMakeFiles\\firm_update.dir\\firm_update.obj /Fdsamples\\firm_update\\CMakeFiles\\firm_update.dir\\ /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\samples\\firm_update\\firm_update.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\samples\\firm_update\\firm_update.c",
+  "output": "samples\\firm_update\\CMakeFiles\\firm_update.dir\\firm_update.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /Fosamples\\simple_ng\\CMakeFiles\\simple_ng.dir\\simple_ng.obj /Fdsamples\\simple_ng\\CMakeFiles\\simple_ng.dir\\ /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\samples\\simple_ng\\simple_ng.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\samples\\simple_ng\\simple_ng.c",
+  "output": "samples\\simple_ng\\CMakeFiles\\simple_ng.dir\\simple_ng.obj"
+},
+{
+  "directory": "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+  "command": "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1443~1.348\\bin\\Hostx64\\x64\\cl.exe  /nologo -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\build\\default\\include -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\osal\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32 -IC:\\Users\\ursae\\Desktop\\Git\\SOEM\\oshw\\win32\\wpcap\\Include /DWIN32 /D_WINDOWS /Ob0 /Od /RTC1 -MDd -Zi /D _CRT_SECURE_NO_WARNINGS /W3 -WX /Fosamples\\slaveinfo\\CMakeFiles\\slaveinfo.dir\\slaveinfo.obj /Fdsamples\\slaveinfo\\CMakeFiles\\slaveinfo.dir\\ /FS -c C:\\Users\\ursae\\Desktop\\Git\\SOEM\\samples\\slaveinfo\\slaveinfo.c",
+  "file": "C:\\Users\\ursae\\Desktop\\Git\\SOEM\\samples\\slaveinfo\\slaveinfo.c",
+  "output": "samples\\slaveinfo\\CMakeFiles\\slaveinfo.dir\\slaveinfo.obj"
+}
+]

@@ -1,0 +1,168 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-10ac08216ac3985b86cb.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"build" : "test/simple_ng",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-test.simple_ng-Debug-7d701a49c76e85ff854d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test/simple_ng",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "test/linux/slaveinfo",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-test.linux.slaveinfo-Debug-2a174b65d82632f40012.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test/linux/slaveinfo",
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"build" : "test/linux/eepromtool",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-test.linux.eepromtool-Debug-094149b8e69359516225.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test/linux/eepromtool",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "test/linux/simple_test",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-test.linux.simple_test-Debug-b50108f0500469ea3cc0.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test/linux/simple_test",
+					"targetIndexes" : 
+					[
+						2
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					],
+					"name" : "SOEM",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 3,
+					"id" : "eepromtool::@1a405a2744c8a4f494c9",
+					"jsonFile" : "target-eepromtool-Debug-8c91591a42b984778a06.json",
+					"name" : "eepromtool",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "simple_ng::@c85193c515561b6ed8b7",
+					"jsonFile" : "target-simple_ng-Debug-7458de940fde64ece50a.json",
+					"name" : "simple_ng",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "simple_test::@191e0dc8f4df75f9d790",
+					"jsonFile" : "target-simple_test-Debug-1754c827dc467286fce6.json",
+					"name" : "simple_test",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "slaveinfo::@3451288a7b55caeda638",
+					"jsonFile" : "target-slaveinfo-Debug-d53c5fc0ab6704320d08.json",
+					"name" : "slaveinfo",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "soem::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-soem-Debug-5f4515a82b91c684daa1.json",
+					"name" : "soem",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/ursae/Desktop/Git/SOEM/out/build/x64-Debug",
+		"source" : "C:/Users/ursae/Desktop/Git/SOEM"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 8
+	}
+}

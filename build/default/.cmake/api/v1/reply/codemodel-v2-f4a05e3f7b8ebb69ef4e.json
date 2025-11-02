@@ -1,0 +1,194 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-fd98c9ffc6e7f01772b8.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.28"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						5
+					]
+				},
+				{
+					"build" : "samples/ec_sample",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-samples.ec_sample-Debug-4de5ad9484c28634321e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.28"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "samples/ec_sample",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "samples/eepromtool",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-samples.eepromtool-Debug-6fbd0662976555051b87.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.28"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "samples/eepromtool",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "samples/firm_update",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-samples.firm_update-Debug-b31f16518c3e47d41c2b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.28"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "samples/firm_update",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "samples/simple_ng",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-samples.simple_ng-Debug-c654cae8c66243aba5d0.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.28"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "samples/simple_ng",
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"build" : "samples/slaveinfo",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-samples.slaveinfo-Debug-6cd35a106a6a8d2210b3.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.28"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "samples/slaveinfo",
+					"targetIndexes" : 
+					[
+						4
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					],
+					"name" : "SOEM",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "ec_sample::@d57f29884088aa3c6d29",
+					"jsonFile" : "target-ec_sample-Debug-85b9144d7c332e3c9c5b.json",
+					"name" : "ec_sample",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "eepromtool::@c5a813eb1e8fd1dca5d2",
+					"jsonFile" : "target-eepromtool-Debug-3bb00d8b63ac577584a4.json",
+					"name" : "eepromtool",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "firm_update::@3f85dc2c2e7c40fe5d87",
+					"jsonFile" : "target-firm_update-Debug-2e2fb6b55355bc384e52.json",
+					"name" : "firm_update",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "simple_ng::@35477404edc5fb88e4d2",
+					"jsonFile" : "target-simple_ng-Debug-fef0770a5a49464602f5.json",
+					"name" : "simple_ng",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "slaveinfo::@ab5ef091317293b204c0",
+					"jsonFile" : "target-slaveinfo-Debug-e5d413d95cd4f4d2b38d.json",
+					"name" : "slaveinfo",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "soem::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-soem-Debug-969ea5a259807e42688f.json",
+					"name" : "soem",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/ursae/Desktop/Git/SOEM/build/default",
+		"source" : "C:/Users/ursae/Desktop/Git/SOEM"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 8
+	}
+}

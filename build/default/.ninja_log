@@ -1,0 +1,24 @@
+# ninja log v6
+91	431	7831699071166613	CMakeFiles/soem.dir/osal/win32/osal.obj	63561f9d6eb08a0c
+82	448	7831699071085602	CMakeFiles/soem.dir/src/ec_soe.obj	bdf8d535e133371a
+13	453	7831699070396262	CMakeFiles/soem.dir/src/ec_base.obj	af27b022c7a51bd0
+56	457	7831699070826204	CMakeFiles/soem.dir/src/ec_foe.obj	ac33fe9e8332e176
+24	461	7831699070500033	CMakeFiles/soem.dir/src/ec_coe.obj	c4bb16a87c505812
+99	466	7831699071250170	CMakeFiles/soem.dir/oshw/win32/oshw.obj	e662e07d657ef12c
+73	472	7831699071004471	CMakeFiles/soem.dir/src/ec_print.obj	9a2ead6e9a0e3ff2
+49	476	7831699070748059	CMakeFiles/soem.dir/src/ec_eoe.obj	b7dd0b90b9ab1412
+33	480	7831699070593836	CMakeFiles/soem.dir/src/ec_config.obj	f3cfc75b0ce3ed40
+115	482	7831699071416339	samples/ec_sample/CMakeFiles/ec_sample.dir/ec_sample.obj	d19c8638c80827a0
+40	485	7831699070664093	CMakeFiles/soem.dir/src/ec_dc.obj	f3cbef10d45fe232
+140	487	7831699071663774	samples/simple_ng/CMakeFiles/simple_ng.dir/simple_ng.obj	df610cc55e215dc6
+65	489	7831699070903867	CMakeFiles/soem.dir/src/ec_main.obj	248e6e26b949b87a
+122	491	7831699071487641	samples/eepromtool/CMakeFiles/eepromtool.dir/eepromtool.obj	64d0580a12511a28
+131	494	7831699071572516	samples/firm_update/CMakeFiles/firm_update.dir/firm_update.obj	1ca71f331b99b278
+148	548	7831699071743820	samples/slaveinfo/CMakeFiles/slaveinfo.dir/slaveinfo.obj	c8b3bc2c453e78ff
+106	605	7831699071330244	CMakeFiles/soem.dir/oshw/win32/nicdrv.obj	6f7e22b02be241e6
+605	659	7831699076311810	soem.lib	2e2718a3a3f37203
+660	1060	7831699076861646	bin/ec_sample.exe	a4befc3baa600586
+675	1065	7831699077008468	bin/firm_update.exe	21507db329bb6a2a
+666	1065	7831699076924606	bin/eepromtool.exe	72343b6094fefa72
+682	1073	7831699077080453	bin/simple_ng.exe	814af61a4e1a85e8
+691	1080	7831699077166122	bin/slaveinfo.exe	92cff21e7ac41dc8
