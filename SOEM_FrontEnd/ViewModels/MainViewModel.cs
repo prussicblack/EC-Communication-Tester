@@ -108,6 +108,7 @@ public partial class MainViewModel : ViewModelBase
         string ifname = NICSelect.Substring(NICSelect.LastIndexOf(" - ") + (" - ".Length));
 
         SOEMNative.soem_open(ifname);
+        SOEMNative.soem_config_init(1);
 
         //EcClient test = new EcClient();
 
