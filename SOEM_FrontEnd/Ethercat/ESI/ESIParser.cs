@@ -8,243 +8,202 @@ using static SOEM_FrontEnd.Ethercat.ESI.ESIXMLData;
 
 namespace SOEM_FrontEnd.Ethercat.ESI
 {
-    public static class ESIParser
+    public static class EsiParser
     {
-        public static EsiDevice ParseDevice(string esiPath, uint vendorId, uint productCode, uint revisionNo)
+        public static EsiFile Parse(string path)
         {
-            var doc = XDocument.Load(esiPath);
-            var xDesc = doc.Root.Element("Descriptions");
-            if (xDesc == null) 
-                throw new InvalidDataException("Descriptions not found");
+            var doc = XDocument.Load(path);
+            var root = doc.Root;
+            if (root == null)
+                throw new Exception("Invalid ESI: no root element");
 
-            var xDevices = xDesc.Element("Devices");
-            if (xDevices == null) 
-                throw new InvalidDataException("Devices not found");
+            XNamespace ns = root.Name.Namespace;
 
-            var xDevice = xDevices.Elements("Device")
-                .FirstOrDefault(d =>
-                    ReadUInt(d.Element("Type")?.Element("VendorId")) == vendorId &&
-                    ReadUInt(d.Element("Type")?.Element("ProductCode")) == productCode &&
-                    MatchRevision(d, revisionNo));
+            // Vendor
+            var vendorElem = root.Element(ns + "Vendor");
+            if (vendorElem == null)
+                throw new Exception("No <Vendor> element");
 
-            if (xDevice == null) 
-                throw new KeyNotFoundException("Device not found for given IDs");
+            var vendorIdAttr = vendorElem.Attribute("Id");
+            if (vendorIdAttr == null)
+                throw new Exception("Vendor Id attribute missing");
 
-            var dev = new EsiDevice();
-            dev.VendorId = vendorId;
-            dev.ProductCode = productCode;
-            dev.RevisionNo = revisionNo;
-            dev.Name = (string)xDevice.Element("Name") ?? "";
+            uint vendorId = ParseUint(vendorIdAttr.Value);
+            string vendorName = (string)vendorElem.Attribute("Name") ?? "";
 
-            // CoE
-            var xCoe = xDevice.Element("Profile")?.Element("CoE");
-            dev.Coe.Enabled = xCoe != null;
-            if (xCoe != null)
+            var esi = new EsiFile
             {
-                dev.Coe.SdoInfo = ReadBool(xCoe.Element("SdoInfo"));
-                dev.Coe.PdoAssign = ReadBool(xCoe.Element("PdoAssign"));
-                dev.Coe.PdoConfig = ReadBool(xCoe.Element("PdoConfig"));
-                dev.Coe.PdoUpload = ReadBool(xCoe.Element("PdoUpload"));
+                VendorId = vendorId,
+                VendorName = vendorName
+            };
+
+            // Devices
+            var descriptions = root.Element(ns + "Descriptions");
+            if (descriptions == null)
+                throw new Exception("No <Descriptions>");
+
+            var devicesElem = descriptions.Element(ns + "Devices");
+            if (devicesElem == null)
+                throw new Exception("No <Devices>");
+
+            foreach (var devElem in devicesElem.Elements(ns + "Device"))
+            {
+                esi.Devices.Add(ParseDevice(devElem, ns, vendorId));
             }
 
-            // DC
-            var xDc = xDevice.Element("Dc");
-            if (xDc != null)
+            return esi;
+        }
+
+        private static EsiDevice ParseDevice(XElement dev, XNamespace ns, uint vendorId)
+        {
+            var type = dev.Element(ns + "Type");
+            if (type == null)
+                throw new Exception("No <Type> in <Device>");
+
+            var productAttr = type.Attribute("ProductCode");
+            var revisionAttr = type.Attribute("RevisionNo");
+            if (productAttr == null || revisionAttr == null)
+                throw new Exception("Type missing ProductCode or RevisionNo");
+
+            uint product = ParseUint(productAttr.Value);
+            uint revision = ParseUint(revisionAttr.Value);
+
+            var device = new EsiDevice
             {
-                dev.Dc.Supported = true;
-                dev.Dc.CycleTime0Ns = ReadLong(xDc.Element("CycleTime0"));
-                dev.Dc.CycleTime1Ns = ReadLong(xDc.Element("CycleTime1"));
-                dev.Dc.ShiftNs = ReadLong(xDc.Element("Shift"));
-                dev.Dc.AssignActivate = ReadUShort(xDc.Element("AssignActivate"));
+                VendorId = vendorId,
+                ProductCode = product,
+                Revision = revision,
+                Name = (string)dev.Element(ns + "Name") ?? "",
+                GroupType = (string)dev.Element(ns + "GroupType") ?? "",
+                Profile = (string)dev.Element(ns + "Profile") ?? "",
+            };
+
+            // RxPDO
+            var rxRoot = dev.Element(ns + "RxPdo");
+            if (rxRoot != null)
+            {
+                foreach (var pdoElem in rxRoot.Elements(ns + "Pdo"))
+                    device.RxPdos.Add(ParsePdo(pdoElem, ns));
             }
 
-            // RxPDO / TxPDO
-            var xRx = xDevice.Descendants("RxPdo");
-            foreach (var xp in xRx)
+            // TxPDO
+            var txRoot = dev.Element(ns + "TxPdo");
+            if (txRoot != null)
             {
-                dev.RxPdos.Add(ParsePdo(xp));
+                foreach (var pdoElem in txRoot.Elements(ns + "Pdo"))
+                    device.TxPdos.Add(ParsePdo(pdoElem, ns));
             }
 
-            var xTx = xDevice.Descendants("TxPdo");
-            foreach (var xp in xTx)
+            // CoE (SDO 메타)
+            var coeRoot = dev.Element(ns + "Coe");
+            if (coeRoot != null)
             {
-                dev.TxPdos.Add(ParsePdo(xp));
+                foreach (var objElem in coeRoot.Elements(ns + "Object"))
+                    device.CoeObjects.Add(ParseCoeObject(objElem, ns));
             }
 
-            // Dictionary Objects
-            var xDict = xDevice.Element("Dictionary") ?? xDevice.Element("Device")?.Element("Dictionary");
-            if (xDict != null)
+            return device;
+        }
+
+        private static EsiPdo ParsePdo(XElement pdoElem, XNamespace ns)
+        {
+            var indexAttr = pdoElem.Attribute("Index");
+            if (indexAttr == null)
+                throw new Exception("Pdo missing Index attribute");
+
+            ushort index = (ushort)ParseUint(indexAttr.Value);
+            string name = (string)pdoElem.Element(ns + "Name") ?? "";
+
+            var pdo = new EsiPdo
             {
-                var xObjs = xDict.Descendants("Object");
-                foreach (var xo in xObjs)
+                Index = index,
+                Name = name
+            };
+
+            var smAttr = pdoElem.Attribute("Sm");
+            if (smAttr != null)
+            {
+                int sm;
+                if (int.TryParse(smAttr.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out sm))
+                    pdo.Sm = sm;
+            }
+
+            foreach (var e in pdoElem.Elements(ns + "Entry"))
+            {
+                var eIdx = e.Attribute("Index");
+                var eSub = e.Attribute("SubIndex");
+                var eBits = e.Attribute("BitLen");
+                if (eIdx == null || eSub == null || eBits == null)
+                    continue;
+
+                pdo.Entries.Add(new EsiPdoEntry
                 {
-                    dev.Objects.Add(ParseObject(xo));
-                }
+                    Index = (ushort)ParseUint(eIdx.Value),
+                    SubIndex = (byte)ParseUint(eSub.Value),
+                    BitLength = (int)ParseUint(eBits.Value),
+                    Name = (string)e.Element(ns + "Name") ?? ""
+                });
             }
 
-            return dev;
+            return pdo;
         }
 
-        private static Pdo ParsePdo(XElement xPdo)
+        private static CoeObject ParseCoeObject(XElement objElem, XNamespace ns)
         {
-            var p = new Pdo();
-            p.Index = ReadUShort(xPdo.Element("Index")) ?? (ushort)0;
-            p.Name = (string)xPdo.Element("Name") ?? "";
-            p.Default = ReadBool(xPdo.Element("Default"));
+            var idxAttr = objElem.Attribute("Index");
+            if (idxAttr == null)
+                throw new Exception("CoE Object missing Index attribute");
 
-            foreach (var xe in xPdo.Elements("Entry"))
+            var obj = new CoeObject
             {
-                var e = new PdoEntry();
-                e.Index = ReadUShort(xe.Element("Index")) ?? (ushort)0;
-                e.SubIndex = (byte)(ReadByte(xe.Element("SubIndex")) ?? 0);
-                e.BitLen = (int)(ReadInt(xe.Element("BitLen")) ?? 0);
-                e.Name = (string)xe.Element("Name") ?? "";
-                p.Entries.Add(e);
-            }
-            return p;
-        }
+                Index = (ushort)ParseUint(idxAttr.Value),
+                ObjectType = (string)objElem.Attribute("ObjectType") ?? "",
+                DataType = (string)objElem.Attribute("DataType") ?? "",
+                Access = (string)objElem.Attribute("Access") ?? "",
+                Name = (string)objElem.Element(ns + "Name") ?? ""
+            };
 
-        private static EcatObject ParseObject(XElement xo)
-        {
-            var o = new EcatObject();
-            o.Index = ReadUShort(xo.Element("Index")) ?? (ushort)0;
-            o.Name = (string)xo.Element("Name") ?? "";
-            o.DataType = (string)xo.Element("DataType") ?? "";
-            o.Access = (string)xo.Element("Access") ?? "";
-            o.Default = (string)xo.Element("Default");
-            var xm = xo.Element("PdoMapping");
-            if (xm != null) o.PdoMapping = ReadBool(xm);
-
-            foreach (var xs in xo.Elements("SubItem"))
+            foreach (var sub in objElem.Elements(ns + "SubItem"))
             {
-                var s = new EcatSubItem();
-                s.SubIndex = (byte)(ReadByte(xs.Element("SubIndex")) ?? 0);
-                s.Name = (string)xs.Element("Name") ?? "";
-                s.DataType = (string)xs.Element("DataType") ?? "";
-                s.Access = (string)xs.Element("Access") ?? "";
-                s.Default = (string)xs.Element("Default");
-                var sm = xs.Element("PdoMapping");
-                if (sm != null) s.PdoMapping = ReadBool(sm);
-                o.Subs.Add(s);
+                var subIdxAttr = sub.Attribute("SubIndex");
+                if (subIdxAttr == null)
+                    continue;
+
+                var coeSub = new CoeSubObject
+                {
+                    SubIndex = (byte)ParseUint(subIdxAttr.Value),
+                    Name = (string)sub.Element(ns + "Name") ?? "",
+                    DataType = (string)sub.Attribute("DataType") ?? "",
+                    Access = (string)sub.Attribute("Access") ?? ""
+                };
+
+                var bitLenAttr = sub.Attribute("BitLen");
+                if (bitLenAttr != null)
+                    coeSub.BitLength = (int)ParseUint(bitLenAttr.Value);
+
+                obj.SubObjects.Add(coeSub);
             }
-            return o;
+
+            return obj;
         }
 
-        // ---------- helpers ----------
-        private static bool MatchRevision(XElement xDevice, uint rev)
+        private static uint ParseUint(string s)
         {
-            var xType = xDevice.Element("Type");
-            if (xType == null) 
-                return true;
-            var xRev = xType.Element("RevisionNo");
-            if (xRev == null) 
-                return true;
-            var val = ReadUInt(xRev);
-            if (val.HasValue) 
-                return val.Value == rev;
+            if (string.IsNullOrEmpty(s))
+                return 0;
 
-            // 일부 ESI는 범위/마스크 표현을 씀 (간단 매칭만)
-            var attrMin = (string)xRev.Attribute("Min");
-            var attrMax = (string)xRev.Attribute("Max");
-            if (!string.IsNullOrEmpty(attrMin) && !string.IsNullOrEmpty(attrMax))
-            {
-                uint min = ParseUInt(attrMin);
-                uint max = ParseUInt(attrMax);
-                return rev >= min && rev <= max;
-            }
-            return true;
-        }
+            s = s.Trim();
 
-        private static uint? ReadUInt(XElement x)
-        {
-            if (x == null) 
-                return null;
-            uint v;
-            if (TryParseUInt(x.Value, out v)) 
-                return v;
-            return null;
-        }
-        private static ushort? ReadUShort(XElement x)
-        {
-            if (x == null) 
-                return null;
-            ushort v;
-            if (TryParseUShort(x.Value, out v)) 
-                return v;
-            return null;
-        }
-        private static long? ReadLong(XElement x)
-        {
-            if (x == null) 
-                return null;
-            long v;
-            if (long.TryParse(x.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out v)) 
-                return v;
-            return null;
-        }
-        private static int? ReadInt(XElement x)
-        {
-            if (x == null) 
-                return null;
-            int v;
-            if (int.TryParse(x.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out v)) 
-                return v;
-            return null;
-        }
-        private static byte? ReadByte(XElement x)
-        {
-            if (x == null) 
-                return null;
-            byte v;
-            if (byte.TryParse(x.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out v)) 
-                return v;
-            return null;
-        }
-        private static bool ReadBool(XElement x)
-        {
-            if (x == null) 
-                return false;
-
-            // "1/0", "true/false", "True/False" 모두 허용
-            var s = x.Value.Trim();
-            if (string.Equals(s, "1")) 
-                return true;
-            if (string.Equals(s, "0")) 
-                return false;
-
-            bool v;
-            if (bool.TryParse(s, out v)) 
-                return v;
-
-            return false;
-        }
-        private static uint ParseUInt(string s)
-        {
-            uint v;
+            if (s.StartsWith("#x", StringComparison.OrdinalIgnoreCase))
+                s = s.Substring(2);
             if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-            {
-                v = uint.Parse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-                return v;
-            }
-            v = uint.Parse(s, NumberStyles.Integer, CultureInfo.InvariantCulture);
+                s = s.Substring(2);
 
-            return v;
+            // 헥스 문자 포함되면 16진수로 처리
+            if (s.IndexOfAny("ABCDEFabcdef".ToCharArray()) >= 0)
+                return uint.Parse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+
+            return uint.Parse(s, NumberStyles.Integer, CultureInfo.InvariantCulture);
         }
-        private static bool TryParseUInt(string s, out uint v)
-        {
-            if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-                return uint.TryParse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out v);
-
-            return uint.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out v);
-        }
-        private static bool TryParseUShort(string s, out ushort v)
-        {
-            if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-                return ushort.TryParse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out v);
-
-            return ushort.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out v);
-        }
-
-
     }
 }

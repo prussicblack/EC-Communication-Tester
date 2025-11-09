@@ -9,6 +9,19 @@ using System.Threading;
 
 namespace SOEM_FrontEnd.Model
 {
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    public struct SoemSlaveInfo
+    {
+        public ushort alias;       // Station Alias
+        public ushort configadr;   // Station Address
+        public uint vendor;        // eep_man
+        public uint product;       // eep_id
+        public uint revision;   // 리비전
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]  // EC_MAXNAME 기본값 64
+        public string name;
+    }
+
     internal static class SOEMNative
     {
         private const string Dll = "soem_wrap"; // soem_wrap.dll
@@ -51,6 +64,10 @@ namespace SOEM_FrontEnd.Model
         internal static extern int soem_read_u16(ushort slv, int off, out ushort v);
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int soem_read_s32(ushort slv, int off, out int v);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int soem_get_slave_info(int idx, out SoemSlaveInfo info);
+
     }
 
     /// <summary>

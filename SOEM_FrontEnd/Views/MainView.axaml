@@ -25,6 +25,8 @@
         <RowDefinition Height="Auto" />
         <RowDefinition Height="Auto" />
         <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+
 	  </Grid.RowDefinitions>
 
       <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"  VerticalAlignment="Center" HorizontalAlignment="Stretch">
@@ -34,10 +36,11 @@
 
       <Button Grid.Row ="1" Grid.Column="0" Command="{Binding CMD_Test}" Content="TestButton"/>
 
+	  <ListBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" 
+               ItemsSource="{Binding Slaves}"
+               SelectedIndex="{Binding SelectedSlave, Mode=TwoWay}">
 
-
+      </ListBox>
   </Grid>
-
-
 
 </UserControl>

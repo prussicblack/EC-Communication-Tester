@@ -77,6 +77,39 @@ EXP int CALL soem_slave_count(void)
    return g_ctx.slavecount;
 }
 
+
+typedef struct soem_slave_info_t
+{
+   uint16 alias;              // Station Alias
+   uint16 configadr;          // Station Address (논리 주소)
+   uint32 vendor;             // eep_man
+   uint32 product;            // eep_id
+   uint32 revision;            // revision
+   char name[EC_MAXNAME + 1]; // 슬레이브 이름(ESI)
+} soem_slave_info_t;
+
+EXP int CALL soem_get_slave_info(int idx, soem_slave_info_t *outInfo)
+{
+   if (!outInfo) return 0;
+   if (idx < 1 || idx > g_ctx.slavecount) return 0;
+
+   ec_slavet *s = &g_ctx.slavelist[idx];
+
+   outInfo->alias = s->aliasadr;
+   outInfo->configadr = s->configadr;
+   outInfo->vendor = s->eep_man;
+   outInfo->product = s->eep_id;
+   outInfo->revision = s->eep_rev; // ★ 여기
+
+   // 이름 복사
+   //strncpy(outInfo->name, s->name, EC_MAXNAME);
+   strncpy_s(outInfo->name, EC_MAXNAME + 1, s->name, _TRUNCATE);
+   outInfo->name[EC_MAXNAME] = '\0';
+
+   return 1;
+}
+
+
 // --------- CoE SDO ----------
 EXP int CALL soem_sdo_read(uint16_t slave, uint16_t index, uint8_t subindex, void *buf, uint32_t *inout_len)
 {
