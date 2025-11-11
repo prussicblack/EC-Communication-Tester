@@ -26,6 +26,8 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             public uint ProductCode { get; set; }
             public uint Revision { get; set; }
 
+            public uint VendorId { get; set; }
+
             public string Name { get; set; } = "";
             public List<string> ProfileNo { get; set; } = new();
 
@@ -38,6 +40,11 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             public List<ESIPDO> RxPdos { get; set; } = new List<ESIPDO>();
             public List<ESIPDO> TxPdos { get; set; } = new List<ESIPDO>();
             public List<ESIDC> DC { get; set; } = new List<ESIDC>();
+        }
+
+        public sealed class Profile
+        {
+
         }
 
         public sealed class ESIPDO

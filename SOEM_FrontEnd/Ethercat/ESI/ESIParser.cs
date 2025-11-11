@@ -28,14 +28,24 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             if (vendorIdAttr == null)
                 throw new Exception("Vendor Id attribute missing");
 
+            var vendorImageData = vendorElem.Attribute("ImageData16x14");
+            if (vendorImageData == null)
+            {
+                //굳이 없어도 됨.
+            }
+
+
             uint vendorId = ParseUint(vendorIdAttr.Value);
             string vendorName = (string)vendorElem.Attribute("Name") ?? "";
+            string ImageData = (string)vendorElem.Attribute("ImageData16x14") ?? "";
 
             var esi = new EsiFile
             {
                 VendorId = vendorId,
-                VendorName = vendorName
+                VendorName = vendorName,
+                ImageData = ImageData
             };
+
 
             // Devices
             var descriptions = root.Element(ns + "Descriptions");
@@ -54,7 +64,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             return esi;
         }
 
-        private static EsiDevice ParseDevice(XElement dev, XNamespace ns, uint vendorId)
+        private static ESIDevice ParseDevice(XElement dev, XNamespace ns, uint vendorId)
         {
             var type = dev.Element(ns + "Type");
             if (type == null)
@@ -68,15 +78,48 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             uint product = ParseUint(productAttr.Value);
             uint revision = ParseUint(revisionAttr.Value);
 
-            var device = new EsiDevice
+            var profile = dev.Element(ns + "Profile");
+            if(profile == null)
+                throw new Exception("Missing Profile");
+
+            var device = new ESIDevice
             {
-                VendorId = vendorId,
+                VendorId = vendorId, //나중에 사용을 용이하게 하기 위해 추가.
                 ProductCode = product,
                 Revision = revision,
                 Name = (string)dev.Element(ns + "Name") ?? "",
-                GroupType = (string)dev.Element(ns + "GroupType") ?? "",
-                Profile = (string)dev.Element(ns + "Profile") ?? "",
+                //GroupType = (string)dev.Element(ns + "GroupType") ?? "",
             };
+
+            //profile - profileNo
+            var profileNo = profile.Elements(ns + "ProfileNo");
+            if( profileNo != null)
+            {
+                foreach (var profileNoitem in profileNo)
+                    device.ProfileNo.Add(ParseProfileNo(profileNoitem, ns));
+            }
+
+
+
+            //Profile - DiagMessages
+            var diagmessages = profile.Elements(ns + "DiagMessages");
+            if(diagmessages != null)
+            {
+                foreach (var diagmsg in diagmessages)
+                    device.DiagMessages.Add(ParseDiagMessage(diagmsg, ns));
+            }
+
+            //Profile - Dictionary
+            var dictionary = profile.Element(ns + "Dictionary");
+            //Profile - Dictionary - DataTypes
+            if(dictionary != null)
+            {
+                foreach (var datatype in dictionary.Elements(ns + "DataTypes"))
+                    device.Datatypes.Add(ParseDataTypes(datatype, ns));
+
+                foreach (var SDOs in dictionary.Elements(ns + "Objects"))
+                    device.SDOObjects.Add(ParseSDOObjects(SDOs, ns));
+            }
 
             // RxPDO
             var rxRoot = dev.Element(ns + "RxPdo");
@@ -94,12 +137,12 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                     device.TxPdos.Add(ParsePdo(pdoElem, ns));
             }
 
-            // CoE (SDO 메타)
-            var coeRoot = dev.Element(ns + "Coe");
-            if (coeRoot != null)
+            // DC
+            var DCRoot = dev.Element(ns + "DC");
+            if (DCRoot != null)
             {
-                foreach (var objElem in coeRoot.Elements(ns + "Object"))
-                    device.CoeObjects.Add(ParseCoeObject(objElem, ns));
+                foreach (var objElem in DCRoot.Elements(ns + "DC"))
+                    device.DC.Add(ParseCoeObject(objElem, ns));
             }
 
             return device;
