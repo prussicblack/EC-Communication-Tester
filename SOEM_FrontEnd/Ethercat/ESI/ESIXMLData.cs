@@ -51,6 +51,9 @@ namespace SOEM_FrontEnd.Ethercat.ESI
         {
             public ushort Index { get; set; }
             public string Name { get; set; } = "";
+
+            public int Sm { get; set; }
+            public int Fixed { get; set; }
             public List<ESIPDOEntry> Entries { get; set; } = new();
         }
 

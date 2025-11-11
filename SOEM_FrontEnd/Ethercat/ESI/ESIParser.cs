@@ -99,8 +99,6 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                     device.ProfileNo.Add(ParseProfileNo(profileNoitem, ns));
             }
 
-
-
             //Profile - DiagMessages
             var diagmessages = profile.Elements(ns + "DiagMessages");
             if(diagmessages != null)
@@ -142,13 +140,19 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             if (DCRoot != null)
             {
                 foreach (var objElem in DCRoot.Elements(ns + "DC"))
-                    device.DC.Add(ParseCoeObject(objElem, ns));
+                    device.DC.Add(ParseDCObject(objElem, ns));
             }
 
             return device;
         }
 
-        private static EsiPdo ParsePdo(XElement pdoElem, XNamespace ns)
+        //여기부터?
+        private static string ParseProfileNo(XElement profileNoitem, XNamespace ns)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static ESIPDO ParsePdo(XElement pdoElem, XNamespace ns)
         {
             var indexAttr = pdoElem.Attribute("Index");
             if (indexAttr == null)
@@ -157,7 +161,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             ushort index = (ushort)ParseUint(indexAttr.Value);
             string name = (string)pdoElem.Element(ns + "Name") ?? "";
 
-            var pdo = new EsiPdo
+            var pdo = new ESIPDO
             {
                 Index = index,
                 Name = name
@@ -171,63 +175,33 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                     pdo.Sm = sm;
             }
 
+            var fixedAttr = pdoElem.Attribute("Fixed");
+            if (fixedAttr != null)
+            {
+                int fixedval;
+                if (int.TryParse(fixedAttr.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out fixedval))
+                    pdo.Fixed = fixedval;
+            }
+
             foreach (var e in pdoElem.Elements(ns + "Entry"))
             {
-                var eIdx = e.Attribute("Index");
-                var eSub = e.Attribute("SubIndex");
-                var eBits = e.Attribute("BitLen");
-                if (eIdx == null || eSub == null || eBits == null)
-                    continue;
+                var eIdx = e.Element(ns + "Index");
+                var eSub = e.Element(ns + "SubIndex");
+                var eBits = e.Element(ns + "BitLen");
+                //if (eIdx == null || eSub == null || eBits == null)
+                //    continue;
 
-                pdo.Entries.Add(new EsiPdoEntry
+                pdo.Entries.Add(new ESIPDOEntry
                 {
                     Index = (ushort)ParseUint(eIdx.Value),
                     SubIndex = (byte)ParseUint(eSub.Value),
                     BitLength = (int)ParseUint(eBits.Value),
-                    Name = (string)e.Element(ns + "Name") ?? ""
+                    Name = (string)e.Element(ns + "Name") ?? "",
+                    DataType = (string)e.Element(ns + "DataType") ?? ""
                 });
             }
 
             return pdo;
-        }
-
-        private static CoeObject ParseCoeObject(XElement objElem, XNamespace ns)
-        {
-            var idxAttr = objElem.Attribute("Index");
-            if (idxAttr == null)
-                throw new Exception("CoE Object missing Index attribute");
-
-            var obj = new CoeObject
-            {
-                Index = (ushort)ParseUint(idxAttr.Value),
-                ObjectType = (string)objElem.Attribute("ObjectType") ?? "",
-                DataType = (string)objElem.Attribute("DataType") ?? "",
-                Access = (string)objElem.Attribute("Access") ?? "",
-                Name = (string)objElem.Element(ns + "Name") ?? ""
-            };
-
-            foreach (var sub in objElem.Elements(ns + "SubItem"))
-            {
-                var subIdxAttr = sub.Attribute("SubIndex");
-                if (subIdxAttr == null)
-                    continue;
-
-                var coeSub = new CoeSubObject
-                {
-                    SubIndex = (byte)ParseUint(subIdxAttr.Value),
-                    Name = (string)sub.Element(ns + "Name") ?? "",
-                    DataType = (string)sub.Attribute("DataType") ?? "",
-                    Access = (string)sub.Attribute("Access") ?? ""
-                };
-
-                var bitLenAttr = sub.Attribute("BitLen");
-                if (bitLenAttr != null)
-                    coeSub.BitLength = (int)ParseUint(bitLenAttr.Value);
-
-                obj.SubObjects.Add(coeSub);
-            }
-
-            return obj;
         }
 
         private static uint ParseUint(string s)
