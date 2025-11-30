@@ -24,18 +24,18 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             if (vendorElem == null)
                 throw new Exception("No <Vendor> element");
 
-            var vendorIdAttr = vendorElem.Attribute("Id");
-            if (vendorIdAttr == null)
+            var vendorIdElem = vendorElem.Element("Id");
+            if (vendorIdElem == null)
                 throw new Exception("Vendor Id attribute missing");
 
-            var vendorImageData = vendorElem.Attribute("ImageData16x14");
+            var vendorImageData = vendorElem.Element("ImageData16x14");
             if (vendorImageData == null)
             {
                 //굳이 없어도 됨.
             }
 
 
-            uint vendorId = ParseUint(vendorIdAttr.Value);
+            uint vendorId = ParseUint(vendorIdElem.Value);
             string vendorName = (string)vendorElem.Attribute("Name") ?? "";
             string ImageData = (string)vendorElem.Attribute("ImageData16x14") ?? "";
 
@@ -79,8 +79,10 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             uint revision = ParseUint(revisionAttr.Value);
 
             var profile = dev.Element(ns + "Profile");
-            if(profile == null)
-                throw new Exception("Missing Profile");
+            if (profile == null)
+            {
+                //Servo가 아닌경우는 프로파일이 없을 수 있음.
+            }
 
             var device = new ESIDevice
             {
@@ -92,31 +94,34 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             };
 
             //profile - profileNo
-            var profileNo = profile.Elements(ns + "ProfileNo");
-            if( profileNo != null)
+            if (profile != null)
             {
-                foreach (var profileNoitem in profileNo)
-                    device.ProfileNo.Add(ParseProfileNo(profileNoitem, ns));
-            }
+                var profileNo = profile.Elements(ns + "ProfileNo");
+                if (profileNo != null)
+                {
+                    foreach (var profileNoitem in profileNo)
+                        device.ProfileNo.Add(ParseProfileNo(profileNoitem, ns));
+                }
 
-            //Profile - DiagMessages
-            var diagmessages = profile.Elements(ns + "DiagMessages");
-            if(diagmessages != null)
-            {
-                foreach (var diagmsg in diagmessages)
-                    device.DiagMessages.Add(ParseDiagMessage(diagmsg, ns));
-            }
+                //Profile - DiagMessages
+                var diagmessages = profile.Elements(ns + "DiagMessages");
+                if (diagmessages != null)
+                {
+                    //foreach (var diagmsg in diagmessages)
+                    //device.DiagMessages.Add(ParseDiagMessage(diagmsg, ns));
+                }
 
-            //Profile - Dictionary
-            var dictionary = profile.Element(ns + "Dictionary");
-            //Profile - Dictionary - DataTypes
-            if(dictionary != null)
-            {
-                foreach (var datatype in dictionary.Elements(ns + "DataTypes"))
-                    device.Datatypes.Add(ParseDataTypes(datatype, ns));
+                //Profile - Dictionary
+                var dictionary = profile.Element(ns + "Dictionary");
+                //Profile - Dictionary - DataTypes
+                if (dictionary != null)
+                {
+                    //foreach (var datatype in dictionary.Elements(ns + "DataTypes"))
+                    //device.Datatypes.Add(ParseDataTypes(datatype, ns));
 
-                foreach (var SDOs in dictionary.Elements(ns + "Objects"))
-                    device.SDOObjects.Add(ParseSDOObjects(SDOs, ns));
+                    //foreach (var SDOs in dictionary.Elements(ns + "Objects"))
+                    //device.SDOObjects.Add(ParseSDOObjects(SDOs, ns));
+                }
             }
 
             // RxPDO
@@ -139,8 +144,8 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             var DCRoot = dev.Element(ns + "DC");
             if (DCRoot != null)
             {
-                foreach (var objElem in DCRoot.Elements(ns + "DC"))
-                    device.DC.Add(ParseDCObject(objElem, ns));
+                //foreach (var objElem in DCRoot.Elements(ns + "DC"))
+                //    device.DC.Add(ParseDCObject(objElem, ns));
             }
 
             return device;

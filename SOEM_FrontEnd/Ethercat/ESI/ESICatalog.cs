@@ -39,10 +39,10 @@ namespace SOEM_FrontEnd.Ethercat.ESI
         }
 
         // 모든 파일의 Device를 한 리스트로 평탄화해서 얻고 싶으면
-        public static List<EsiDevice> LoadAllDevices(string directoryPath)
+        public static List<ESIDevice> LoadAllDevices(string directoryPath)
         {
             var files = LoadAllFromDirectory(directoryPath);
-            var devices = new List<EsiDevice>();
+            var devices = new List<ESIDevice>();
 
             foreach (var f in files)
             {

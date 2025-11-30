@@ -180,14 +180,15 @@ public partial class MainViewModel : ViewModelBase
 
         //ESIXMLData.EsiDevice testDevice = new ESIXMLData.EsiDevice();
         //_esi.TryGetDevice(slaves[0].vendor, slaves[0].product, slaves[0].revision, out ESIXMLData.EsiDevice testDevice);
+        
         string path = AppDomain.CurrentDomain.BaseDirectory + "ESI";
 
         var devices = ESICatalog.LoadAllDevices(path);
 
-        foreach (var dev in devices)
-        {
-            Console.WriteLine($"Vendor=0x{dev.VendorId:X8}, Product=0x{dev.ProductCode:X8}, Rev=0x{dev.Revision:X8}, Name={dev.Name}");
-        }
+        //foreach (var dev in devices)
+        //{
+        //    Console.WriteLine($"Vendor=0x{dev.VendorId:X8}, Product=0x{dev.ProductCode:X8}, Rev=0x{dev.Revision:X8}, Name={dev.Name}");
+        //}
 
     }
 
