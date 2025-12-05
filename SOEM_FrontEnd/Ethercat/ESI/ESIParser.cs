@@ -251,12 +251,12 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                 }
                 sm.Name = nameText.Trim();
 
-                sm.MinSize = (ushort)ParseUint(minSizeAttr.Value);
-                sm.MaxSize = (ushort)ParseUint(maxSizeAttr.Value);
-                sm.DefaultSize = (ushort)ParseUint(defaultSizeAttr.Value);
-                sm.ControlByte = (ushort)ParseUint(startAddrAttr.Value);
-                sm.Enable = (ushort)ParseUint(controlAttr.Value);
-                sm.StartAddress = (ushort)ParseUint(enableAttr.Value);
+                sm.MinSize = (ushort)ParseUint(minSizeAttr?.Value ?? "0");
+                sm.MaxSize = (ushort)ParseUint(maxSizeAttr?.Value ?? "0");
+                sm.DefaultSize = (ushort)ParseUint(defaultSizeAttr?.Value ?? "0");
+                sm.StartAddress = (ushort)ParseUint(startAddrAttr.Value);
+                sm.ControlByte = (ushort)ParseUint(controlAttr?.Value ?? "0");
+                sm.Enable = (ushort)ParseUint(enableAttr?.Value ?? "0");
 
                 ret.Add(sm);
             }

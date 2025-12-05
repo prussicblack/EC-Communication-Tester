@@ -181,10 +181,13 @@ public partial class MainViewModel : ViewModelBase
         //ESIXMLData.EsiDevice testDevice = new ESIXMLData.EsiDevice();
         //_esi.TryGetDevice(slaves[0].vendor, slaves[0].product, slaves[0].revision, out ESIXMLData.EsiDevice testDevice);
         
-        string path = AppDomain.CurrentDomain.BaseDirectory + "ESI";
+        {
+            //프로그램 로딩시 Splash Screen 과 함께 로딩.
+            //의외로 시간이 좀 걸릴 수 있음.
+            string path = AppDomain.CurrentDomain.BaseDirectory + "ESI";
 
-        var devices = ESICatalog.LoadAllDevices(path);
-
+            var devices = ESICatalog.LoadAllDevices(path);
+        }
         //foreach (var dev in devices)
         //{
         //    Console.WriteLine($"Vendor=0x{dev.VendorId:X8}, Product=0x{dev.ProductCode:X8}, Rev=0x{dev.Revision:X8}, Name={dev.Name}");
