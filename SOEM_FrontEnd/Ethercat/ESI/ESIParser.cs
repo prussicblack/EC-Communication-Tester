@@ -113,14 +113,17 @@ namespace SOEM_FrontEnd.Ethercat.ESI
 
                 //Profile - Dictionary
                 var dictionary = profile.Element(ns + "Dictionary");
-                //Profile - Dictionary - DataTypes
                 if (dictionary != null)
                 {
                     //foreach (var datatype in dictionary.Elements(ns + "DataTypes"))
-                    //device.Datatypes.Add(ParseDataTypes(datatype, ns));
+                    //    device.Datatypes.Add(ParseDataTypes(datatype, ns));
 
-                    //foreach (var SDOs in dictionary.Elements(ns + "Objects"))
-                    //device.SDOObjects.Add(ParseSDOObjects(SDOs, ns));
+                    var Objects = dictionary.Element(ns + "Objects");
+                    List<ESISDOObject> sdoObjects = ParseSDOObjects(Objects, ns);
+                    foreach (var item in sdoObjects)
+                    {
+                        device.SDOObjects.Add(item.Index.ToString(), item);
+                    }
                 }
             }
             
@@ -157,9 +160,50 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             return device;
         }
 
-        private static string ParseProfileNo(XElement profileNoitem, XNamespace ns)
+        private static List<ESISDOObject> ParseSDOObjects(XElement ObjectsElement, XNamespace ns)
         {
-            throw new NotImplementedException();
+            List<ESISDOObject> ret = new ();
+
+            foreach (var objectElement in ObjectsElement.Elements(ns+"Object"))
+            {
+
+                var index = objectElement.Element("Index");
+                var Name = objectElement.Element("Name");
+
+                var Type = objectElement.Element("Type");
+                var BitSize = objectElement.Element("BitSize");
+                var Flags = objectElement.Element("Flags");
+
+                Flags flags = new Flags();
+
+                if (Flags != null)
+                {
+                    var FlagsAccess = Flags.Element("Access");
+                    var FlagsCategory = Flags.Element("Category");
+                    var FlagsPdoMapping = Flags.Element("PdoMapping");
+
+                    flags = new Flags
+                    {
+                        Access = (string)FlagsAccess ?? "",
+                        Category = (string)FlagsCategory ?? "",
+                        PdoMapping = (string)FlagsPdoMapping ?? ""
+                    };
+                }
+
+
+
+                ESISDOObject sdoobject = new ESISDOObject();
+
+                sdoobject.Index = (ushort)ParseUint(index.Value);
+                sdoobject.Name = Name.Value ?? "";
+                sdoobject.DataType = Type.Value ?? "";
+                sdoobject.BitSize = (ushort)ParseUint(BitSize.Value);
+
+                sdoobject.Flags = flags;
+
+            }
+
+            return ret;
         }
 
         private static ESIDcObject ParseDCObject(XElement OPMode, XNamespace ns)

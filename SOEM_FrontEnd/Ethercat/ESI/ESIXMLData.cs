@@ -135,9 +135,9 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             public ushort Index { get; set; }
             public string Name { get; set; } = "";
             public string DataType { get; set; } = "";
-            public string BitSize { get; set; } = "";
+            public ushort BitSize { get; set; } = 0;
             public Flags Flags { get; set; } = new();
-            public List<ESISDOSubObject> SubObjects { get; set; } = new();
+            //public List<ESISDOSubObject> SubObjects { get; set; } = new(); //없는거 같은데..?
         }
 
         public sealed class Flags
@@ -145,6 +145,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             public string Access { get; set; } = "";
             public string Category { get; set; } = "";
             public string PdoMapping { get; set; } = "";
+
         }
 
         public sealed class ESISDOSubObject

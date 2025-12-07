@@ -36,6 +36,9 @@ namespace SOEM_FrontEnd.Model
         internal static extern int soem_config_init(int useMap);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int soem_config_map_only();
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int soem_set_state(ushort state, int timeoutMs);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
@@ -92,7 +95,8 @@ namespace SOEM_FrontEnd.Model
             if (rc != 0)
             {
                 SOEMNative.soem_close(); 
-                throw new InvalidOperationException("config_init failed.");
+                //throw new InvalidOperationException("config_init failed.");
+                Console.WriteLine("config_init failed.");
             }
 
             // SAFE_OP → (옵션) OP
@@ -105,6 +109,28 @@ namespace SOEM_FrontEnd.Model
             //}
 
             IsOpen = true;
+        }
+
+        public int SlaveInfo(int index, out SoemSlaveInfo info)
+        {
+            int rc = SOEMNative.soem_get_slave_info(index, out info);
+            if (rc != 0)
+                throw new InvalidOperationException($"Failed to get slave info for index {index}.");
+
+            return rc;
+        }
+
+        public uint MakeMapWord(ushort index, byte subIndex, byte bitLen)
+        {
+            // CoE PDO mapword: (Index << 16) | (SubIndex << 8) | BitLen
+            return (uint)((index << 16) | (subIndex << 8) | bitLen);
+        }
+
+        public void RebuildPdoMap()
+        {
+            int rc = SOEMNative.soem_config_map_only();
+            if (rc < 0)
+                throw new InvalidOperationException("PDO map rebuild failed.");
         }
 
         public void EnsureState(ushort state, int timeoutMs)

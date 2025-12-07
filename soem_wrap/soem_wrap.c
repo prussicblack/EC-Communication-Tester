@@ -64,6 +64,19 @@ EXP int CALL soem_config_init(int use_map)
    return 0;
 }
 
+EXP int CALL soem_config_map_only(void)
+{
+   if (!g_inited)
+      return -2;
+
+   int iomap = ecx_config_map_group(&g_ctx, IOmap, 0);
+   if (iomap <= 0)
+      return -1;
+
+   return iomap; // 맵 크기 바이트 수 리턴 (원하면 그냥 0/에러로 해도 됨)
+}
+
+
 EXP int CALL soem_set_state(uint16_t state, int timeout_ms)
 {
    if (!g_inited) return -2;
