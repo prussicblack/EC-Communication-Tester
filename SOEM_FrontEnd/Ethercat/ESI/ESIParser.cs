@@ -99,8 +99,11 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                 var profileNo = profile.Elements(ns + "ProfileNo");
                 if (profileNo != null)
                 {
-                    //foreach (var profileNoitem in profileNo)
-                    //    device.ProfileNo.Add(ParseProfileNo(profileNoitem, ns));
+                    foreach (var profileNoitem in profileNo)
+                    {
+                        device.ProfileNo.Add(ParseUint(profileNoitem.Value));
+                    }
+                        
                 }
 
                 //Profile - DiagMessages
@@ -138,23 +141,24 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             var rxRoot = dev.Element(ns + "RxPdo");
             if (rxRoot != null)
             {
-                //우선 해야될것.
-                device.RxPdos.Add(ParsePdo(rxRoot, ns));
+                foreach(var rxpdoelem in dev.Elements(ns + "RxPdo"))
+                    device.RxPdos.Add(ParsePdo(rxpdoelem, ns));
             }
 
             // TxPDO
             var txRoot = dev.Element(ns + "TxPdo");
             if (txRoot != null)
             {
-                device.TxPdos.Add(ParsePdo(txRoot, ns));
+                foreach(var txpdoelem in dev.Elements(ns + "TxPdo"))
+                    device.TxPdos.Add(ParsePdo(txpdoelem, ns));
             }
 
             // DC
-            var DCRoot = dev.Element(ns + "DC");
+            var DCRoot = dev.Element(ns + "Dc");
             if (DCRoot != null)
             {
                 foreach (var objElem in DCRoot.Elements(ns + "OpMode"))
-                    device.DC.Add(ParseDCObject(DCRoot, ns));
+                    device.Dc.Add(ParseDCObject(objElem, ns));
             }
 
             return device;
@@ -201,10 +205,21 @@ namespace SOEM_FrontEnd.Ethercat.ESI
 
                 sdoobject.Flags = flags;
 
+                ret.Add(sdoobject);
             }
 
             return ret;
         }
+
+        private static int ParseProfileNo(XElement profileNoElem, XNamespace ns)
+        {
+            var ProfilenoElement = profileNoElem.Element(ns + "ProfileNo");
+
+            if (ProfilenoElement != null)
+                throw new Exception("ProfileNo missing Number attribute");
+            return (int)ParseUint(ProfilenoElement.Value);
+        }
+
 
         private static ESIDcObject ParseDCObject(XElement OPMode, XNamespace ns)
         {
@@ -365,7 +380,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                 {
                     Index = (ushort)ParseUint(eIdx.Value),
                     SubIndex = subIndex,
-                    BitLength = (int)ParseUint(eBits.Value),
+                    BitLength = (byte)ParseUint(eBits.Value),
                     Name = (string)e.Element(ns + "Name") ?? "",
                     DataType = (string)e.Element(ns + "DataType") ?? ""
                 });
@@ -382,9 +397,16 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             s = s.Trim();
 
             if (s.StartsWith("#x", StringComparison.OrdinalIgnoreCase))
+            {
                 s = s.Substring(2);
+                return uint.Parse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+            }
+
             if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
                 s = s.Substring(2);
+                return uint.Parse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+            }
 
             // 헥스 문자 포함되면 16진수로 처리
             if (s.IndexOfAny("ABCDEFabcdef".ToCharArray()) >= 0)

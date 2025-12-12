@@ -29,7 +29,8 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             public uint VendorId { get; set; }
 
             public string Name { get; set; } = "";
-            public List<string> ProfileNo { get; set; } = new();
+
+            public List<uint> ProfileNo { get; set; } = new();
 
             public Dictionary<string, ESIDataType> Datatypes = new Dictionary<string, ESIDataType>();
 
@@ -41,7 +42,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
 
             public List<ESIPDO> RxPdos { get; set; } = new List<ESIPDO>();
             public List<ESIPDO> TxPdos { get; set; } = new List<ESIPDO>();
-            public List<ESIDcObject> DC { get; set; } = new List<ESIDcObject>();
+            public List<ESIDcObject> Dc { get; set; } = new List<ESIDcObject>();
         }
 
         public sealed class Profile
@@ -119,7 +120,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
         {
             public ushort Index { get; set; }
             public byte SubIndex { get; set; }
-            public int BitLength { get; set; }
+            public byte BitLength { get; set; }
             public string Name { get; set; } = "";
             public string DataType { get; set; } = "";
         }

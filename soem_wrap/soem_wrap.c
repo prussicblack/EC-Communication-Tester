@@ -90,6 +90,12 @@ EXP int CALL soem_slave_count(void)
    return g_ctx.slavecount;
 }
 
+EXP unsigned short CALL soem_slave_al_status(int i)
+{
+   if (i < 1 || i > g_ctx.slavecount)
+      return 0;
+   return g_ctx.slavelist[i].ALstatuscode;
+}
 
 typedef struct soem_slave_info_t
 {

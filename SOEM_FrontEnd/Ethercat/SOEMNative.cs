@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 
 namespace SOEM_FrontEnd.Model
@@ -71,6 +72,15 @@ namespace SOEM_FrontEnd.Model
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int soem_get_slave_info(int idx, out SoemSlaveInfo info);
 
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ushort soem_slave_state(int idx);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ushort soem_slave_al_status(int idx);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void soem_readstate();
+
     }
 
     /// <summary>
@@ -91,7 +101,7 @@ namespace SOEM_FrontEnd.Model
             if (rc != 0) 
                 throw new InvalidOperationException("SOEM init failed (ecx_init).");
 
-            rc = SOEMNative.soem_config_init(0);
+            rc = SOEMNative.soem_config_init(1);
             if (rc != 0)
             {
                 SOEMNative.soem_close(); 
@@ -114,7 +124,7 @@ namespace SOEM_FrontEnd.Model
         public int SlaveInfo(int index, out SoemSlaveInfo info)
         {
             int rc = SOEMNative.soem_get_slave_info(index, out info);
-            if (rc != 0)
+            if (rc != 1)
                 throw new InvalidOperationException($"Failed to get slave info for index {index}.");
 
             return rc;
@@ -225,9 +235,7 @@ namespace SOEM_FrontEnd.Model
         }
     }
 
-    /// <summary>
-    /// (선택) 10ms 주기 루프 헬퍼 — CPU 점유 낮추는 하이브리드 대기
-    /// </summary>
+
     public static class HiResLoop
     {
         // 필요 시: MMCSS 등록/우선순위 상승은 앞서 얘기한 방식 적용
@@ -266,5 +274,63 @@ namespace SOEM_FrontEnd.Model
             }
         }
 
+    }
+    public static class EthercatRtLoop
+    {
+        /// <summary>
+        /// Sleep을 최소화하고 Spin 위주로 도는 1kHz 근접 루프.
+        /// period는 보통 1ms 기준으로 사용.
+        /// </summary>
+        public static void Run(TimeSpan period, Func<bool> body)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+            double ticksPerMs = (double)Stopwatch.Frequency / 1000.0;
+            long periodTicks = (long)(period.TotalMilliseconds * ticksPerMs);
+            long next = sw.ElapsedTicks + periodTicks;
+
+            while (true)
+            {
+                // 남은 시간 계산
+                long now = sw.ElapsedTicks;
+                double msLeft = (next - now) / ticksPerMs;
+
+                // 아주 많이 남았으면 짧게만 Sleep (양자 문제 있지만, 여기선 거의 안 걸리게 할 거라 영향 적음)
+                if (msLeft > 2.0)
+                {
+                    int sleepMs = (int)(msLeft - 1.0);
+                    if (sleepMs > 0)
+                        Thread.Sleep(sleepMs);
+                }
+
+                // 나머지는 SpinWait 위주
+                while (true)
+                {
+                    long t = sw.ElapsedTicks;
+                    if (t >= next)
+                        break;
+
+                    // 남은 시간에 따라 Spin 강도 조절
+                    double leftUs = (next - t) * 1000.0 / ticksPerMs;
+                    if (leftUs > 200.0)
+                        Thread.SpinWait(200);
+                    else if (leftUs > 50.0)
+                        Thread.SpinWait(50);
+                    else
+                        Thread.SpinWait(10);
+                }
+
+                if (!body())
+                    break;
+
+                next += periodTicks;
+
+                long lag = sw.ElapsedTicks - next;
+                if (lag > 0)
+                {
+                    long skip = (lag / periodTicks + 1) * periodTicks;
+                    next += skip;
+                }
+            }
+        }
     }
 }

@@ -99,7 +99,9 @@ extern "C" {
 #define EC_TIMEOUTTXM (20000)
 
 /** timeout value in us for rx mailbox cycle */
-#define EC_TIMEOUTRXM (700000)
+//#define EC_TIMEOUTRXM (700000)
+
+#define EC_TIMEOUTRXM (7000000)
 
 /** timeout value in us for check statechange */
 #define EC_TIMEOUTSTATE (2000000)
