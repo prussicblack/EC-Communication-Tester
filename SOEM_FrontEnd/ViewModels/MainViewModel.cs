@@ -277,10 +277,10 @@ public partial class MainViewModel : ViewModelBase
 
 
 
-        ECClient.SetModePP(1);                  // 6060 = 1
-        ECClient.SetProfile(1, 100000, 500, 500); // 예: vel/acc/dec
+        ECClient.SetModePP(2);                  // 6060 = 1
+        ECClient.SetProfile(2, 100000, 500, 500); // 예: vel/acc/dec
 
-        var worker = new PDORTWorker(ECClient, 1);
+        var worker = new PDORTWorker(ECClient, 2);
         worker.Start();
 
         //// 우리가 리맵한 PDO 기준 오프셋 (테스트용 하드코딩)

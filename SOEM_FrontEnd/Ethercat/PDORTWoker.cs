@@ -108,7 +108,7 @@ namespace SOEM_FrontEnd.Ethercat
                     if (targetReached && (loop % 2000 == 0))
                     {
                         goingPositive = !goingPositive;
-                        currentTarget = goingPositive ? 100000 : 0;
+                        currentTarget = goingPositive ? -500000 : 0;
                         newSetPointBitHigh = true;
                     }
                 }
