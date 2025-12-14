@@ -217,8 +217,7 @@ public partial class MainViewModel : ViewModelBase
         Log($"Test message - 1234567890");
 
         return;
-
-
+        
 
         //uint productcode = 0x1002;
         //uint vendorcode = 0xFA00000;
