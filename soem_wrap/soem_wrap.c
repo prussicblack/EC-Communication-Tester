@@ -219,3 +219,35 @@ EXP unsigned int CALL soem_slave_revision(int i)
    return g_ctx.slavelist[i].eep_rev;
 }
 
+// --------- 알람관련 조회기능 ----------
+// ---- SOEM error info wrapper (for C#) ----
+
+typedef struct soem_error_info_t
+{
+   int32_t error_code; // ec_errort.ErrorCode (SDO abort, AL status 등)
+   uint16_t slave;     // 에러 슬레이브 번호
+   uint16_t index;     // CoE Index
+   uint8_t subindex;   // CoE SubIndex
+} soem_error_info_t;
+
+// 에러 스택에서 하나 pop (있으면 1, 없으면 0, 실패 -1)
+EXP int CALL soem_get_last_error_info(soem_error_info_t *info)
+{
+   if (!g_inited || !info)
+      return -1;
+
+   if (!ecx_iserror(&g_ctx))
+      return 0; // 에러 없음
+
+   ec_errort err;
+   if (ecx_poperror(&g_ctx, &err) <= 0)
+      return 0; // 더 이상 에러 없음
+
+   info->error_code = err.ErrorCode;
+   info->slave = (uint16_t)err.Slave;
+   info->index = (uint16_t)err.Index;
+   info->subindex = (uint8_t)err.SubIdx;
+   return 1;
+}
+
+

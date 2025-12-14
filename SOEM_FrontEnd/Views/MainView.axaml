@@ -20,8 +20,9 @@
         <RowDefinition Height="Auto" />
         <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
         <!-- <RowDefinition Height="Auto" /> -->
-
 	  </Grid.RowDefinitions>
 
       <Grid  Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Left">
@@ -46,22 +47,58 @@
       </Grid>
 
 
-
-      <Grid Grid.Row="2" Grid.Column="0">
+      <Grid Grid.Row="2" Grid.Column="0" >
           <Grid.ColumnDefinitions>
               <ColumnDefinition Width="2*" />
+              <ColumnDefinition Width="Auto" />
               <ColumnDefinition Width="3*" />
           </Grid.ColumnDefinitions>
 
           <ListBox Grid.Column="0" 
                    ScrollViewer.VerticalScrollBarVisibility="Auto"
                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                   VerticalAlignment="Stretch"
+                   HorizontalAlignment="Stretch"
                    ItemsSource="{Binding Slaves}"
                    SelectedIndex="{Binding SelectedSlave, Mode=TwoWay}">
           </ListBox>
-
-
+          
+          <GridSplitter Grid.Column="1"
+                        ResizeDirection="Columns"
+                        VerticalAlignment="Stretch"
+                        Width="5"
+                        Background="#404040" />
+          
+          
       </Grid>
+      
+      
+
+      <GridSplitter Grid.Row="3"
+                    ResizeDirection="Rows"
+                    HorizontalAlignment="Stretch"
+                    Height="5"
+                    Background="#404040" />
+      
+      <ListBox Grid.Row="4" Grid.Column="0" 
+               x:Name ="LogListBox"
+               ItemsSource="{Binding LogLines}"
+               FontFamily="Consolas"
+               FontSize="12"
+               HorizontalAlignment="Stretch"
+               VerticalAlignment="Stretch"
+               ScrollViewer.VerticalScrollBarVisibility="Auto"
+               ScrollViewer.HorizontalScrollBarVisibility="Auto">
+          <ListBox.Styles>
+              <Style Selector="ListBoxItem">
+                  <Setter Property="BorderThickness" Value="0" />
+                  <Setter Property="Padding" Value="0" />
+                  <Setter Property="Margin" Value="0" />
+                  <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+              </Style>
+          </ListBox.Styles>
+      </ListBox>
+
 
 
   </Grid>

@@ -41,7 +41,6 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -103,15 +102,16 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\include;..\oshw;..\osal;..\build\include;..\osal\win32;..\oshw\win32;..\oshw\win32\wpcap\Include;..\build\;..\build\include\soem;c:\npcap-sdk\Lib\x64;c:\npcap-sdk\Include\pcap;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
       <ShowIncludes>true</ShowIncludes>
       <UseDynamicDebugging>true</UseDynamicDebugging>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>winmm.lib;wpcap.lib;Packet.lib;Ws2_32.lib;soem.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>c:\npcap-sdk\Include;c:\npcap-sdk\Lib\x64;..\build\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>c:\npcap-sdk\Include;c:\npcap-sdk\Lib\x64;..\build\Release;..\oshw\win32\wpcap\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>set OUTDIR=$(SolutionDir)..\SOEM_FrontEnd.Desktop\bin\x64\$(Configuration)\net8.0\

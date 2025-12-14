@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -21,6 +22,15 @@ namespace SOEM_FrontEnd.Model
 
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]  // EC_MAXNAME 기본값 64
         public string name;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SoemErrorInfo
+    {
+        public int ErrorCode;
+        public ushort Slave;
+        public ushort Index;
+        public byte SubIndex;
     }
 
     internal static class SOEMNative
@@ -81,6 +91,10 @@ namespace SOEM_FrontEnd.Model
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void soem_readstate();
 
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int soem_get_last_error_info(out SoemErrorInfo info);
+
+
     }
 
     /// <summary>
@@ -98,8 +112,11 @@ namespace SOEM_FrontEnd.Model
         public void Open(string ifname, int opTimeoutMs = 2000)
         {
             int rc = SOEMNative.soem_open(ifname);
-            if (rc != 0) 
-                throw new InvalidOperationException("SOEM init failed (ecx_init).");
+            if (rc != 0)
+            {
+                Console.WriteLine("SOEM init failed (ecx_init).");
+                //throw new InvalidOperationException("SOEM init failed (ecx_init).");
+            }
 
             rc = SOEMNative.soem_config_init(1);
             if (rc != 0)
@@ -125,7 +142,11 @@ namespace SOEM_FrontEnd.Model
         {
             int rc = SOEMNative.soem_get_slave_info(index, out info);
             if (rc != 1)
-                throw new InvalidOperationException($"Failed to get slave info for index {index}.");
+            {
+                Console.WriteLine($"Failed to get slave info for index {index}.");
+
+                //throw new InvalidOperationException($"Failed to get slave info for index {index}.");
+            }
 
             return rc;
         }
@@ -140,14 +161,21 @@ namespace SOEM_FrontEnd.Model
         {
             int rc = SOEMNative.soem_config_map_only();
             if (rc < 0)
-                throw new InvalidOperationException("PDO map rebuild failed.");
+            {
+                Console.WriteLine($"PDO map rebuild failed.");
+
+                //throw new InvalidOperationException("PDO map rebuild failed.");
+            }
         }
 
         public void EnsureState(ushort state, int timeoutMs)
         {
             int rc = SOEMNative.soem_set_state(state, timeoutMs);
-            if (rc != 0) 
-                throw new InvalidOperationException($"State transition failed -> 0x{state:X}.");
+            if (rc != 0)
+            {
+                Console.WriteLine($"State transition failed -> 0x{state:X}.");
+                //throw new InvalidOperationException($"State transition failed -> 0x{state:X}.");
+            }
         }
 
         public int SlaveCount => SOEMNative.soem_slave_count();
@@ -158,8 +186,27 @@ namespace SOEM_FrontEnd.Model
             var buf = new byte[maxLen];
             uint len = (uint)maxLen;
             int rc = SOEMNative.soem_sdo_read(slave, index, subIndex, buf, ref len);
-            if (rc != 0) throw new InvalidOperationException($"SDO read 0x{index:X4}:{subIndex} failed.");
-            if (len < buf.Length) Array.Resize(ref buf, (int)len);
+            if (rc != 0)
+            {
+                Console.WriteLine($"SDO read 0x{index:X4}:{subIndex} failed.");
+
+                var info = GetLastErrorInfo();
+                var sb = new StringBuilder();
+                sb.AppendFormat("SDO read 0x{0:X4}:{1} failed.", index, subIndex);
+
+                if (info.HasValue)
+                {
+                    sb.AppendFormat(" [Err=0x{0:X8}, Slave={1}, Idx=0x{2:X4}, Sub={3}]",
+                        info.Value.ErrorCode,
+                        info.Value.Slave,
+                        info.Value.Index,
+                        info.Value.SubIndex);
+                }
+
+                //throw new InvalidOperationException($"SDO read 0x{index:X4}:{subIndex} failed.");
+            }
+            if (len < buf.Length) 
+                Array.Resize(ref buf, (int)len);
             return buf;
         }
 
@@ -167,7 +214,25 @@ namespace SOEM_FrontEnd.Model
         {
             var arr = data.ToArray();
             int rc = SOEMNative.soem_sdo_write(slave, index, subIndex, arr, (uint)arr.Length);
-            if (rc != 0) throw new InvalidOperationException($"SDO write 0x{index:X4}:{subIndex} failed.");
+            if (rc != 0)
+            {
+                Console.WriteLine($"SDO write 0x{index:X4}:{subIndex} failed.");
+
+                var info = GetLastErrorInfo();
+                var sb = new StringBuilder();
+                sb.AppendFormat("SDO write 0x{0:X4}:{1} failed.", index, subIndex);
+
+                if (info.HasValue)
+                {
+                    sb.AppendFormat(" [Err=0x{0:X8}, Slave={1}, Idx=0x{2:X4}, Sub={3}]",
+                        info.Value.ErrorCode,
+                        info.Value.Slave,
+                        info.Value.Index,
+                        info.Value.SubIndex);
+                }
+
+                //throw new InvalidOperationException($"SDO write 0x{index:X4}:{subIndex} failed.");
+            }
         }
 
         // Typed (리틀엔디안 가정)
@@ -233,6 +298,24 @@ namespace SOEM_FrontEnd.Model
                 IsOpen = false;
             }
         }
+
+        public SoemErrorInfo? GetLastErrorInfo()
+        {
+            try
+            {
+                SoemErrorInfo err;
+                int rc = SOEMNative.soem_get_last_error_info(out err);
+                if (rc > 0)
+                    return (err);
+            }
+            catch
+            {
+                // 래퍼 에러는 무시
+            }
+            return (null);
+        }
+
+
     }
 
 

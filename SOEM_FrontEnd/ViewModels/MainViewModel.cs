@@ -17,6 +17,7 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Input;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -89,6 +90,7 @@ public partial class MainViewModel : ViewModelBase
     public List<ESIXMLData.ESIDevice> DevicesData = new List<ESIXMLData.ESIDevice>();
 
 
+    public ObservableCollection<string> LogLines { get; } = new ObservableCollection<string>();
     public MainViewModel()
     {
 
@@ -150,6 +152,11 @@ public partial class MainViewModel : ViewModelBase
 
     private void HandleNIC()
     {
+        Slaves.Add($" test - Name = testname-01234567890, Alias = 0, StationAddress = 0x0000000, VendorCode = 0x0000000, ProductCode = 0x0000000, Revision=0x0000000");
+
+        return;
+
+
         string ifname = NICSelect.Substring(NICSelect.LastIndexOf(" - ") + (" - ".Length));
 
         ECClient.Open(ifname);
@@ -207,6 +214,12 @@ public partial class MainViewModel : ViewModelBase
 
     private void HandleTest()
     {
+        Log($"Test message - 1234567890");
+
+        return;
+
+
+
         //uint productcode = 0x1002;
         //uint vendorcode = 0xFA00000;
         //uint revision = 0x10001;
@@ -582,5 +595,13 @@ public partial class MainViewModel : ViewModelBase
 
     }
 
+    public void Log(string message)
+    {
+        var line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
+        LogLines.Add(line);
 
+        // 너무 많아지면 앞에서 잘라내기 (예: 2000줄 유지)
+        if (LogLines.Count > 2000)
+            LogLines.RemoveAt(0);
+    }
 }
