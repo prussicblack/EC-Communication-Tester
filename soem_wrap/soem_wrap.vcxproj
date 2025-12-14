@@ -110,8 +110,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;wpcap.lib;Packet.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>c:\npcap-sdk\Include;c:\npcap-sdk\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib;wpcap.lib;Packet.lib;Ws2_32.lib;soem.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>c:\npcap-sdk\Include;c:\npcap-sdk\Lib\x64;..\build\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>set OUTDIR=$(SolutionDir)..\SOEM_FrontEnd.Desktop\bin\x64\$(Configuration)\net8.0\
@@ -145,11 +145,6 @@ xcopy /Y /D /I /R "$(TargetDir)$(TargetName).pdb" "%OUTDIR%"
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="soem_wrap.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\build\soem.vcxproj">
-      <Project>{658eb33a-7aaf-363d-bb39-7cda2c0a8dfa}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
