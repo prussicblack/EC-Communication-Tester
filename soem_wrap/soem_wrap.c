@@ -52,17 +52,33 @@ EXP int CALL soem_config_init(int use_map)
 {
    if (!g_inited) return -2;
 
+   int ret = ecx_config_init(&g_ctx);
+
    // v2.0: ecx_config_init(context) ← 인자 1개
-   if (ecx_config_init(&g_ctx) <= 0) 
+   if (ret <= 0) 
        return -1;
 
    if (use_map)
    {
       int iomap = ecx_config_map_group(&g_ctx, IOmap, 0);
-      if (iomap <= 0) return -3;
+      if (iomap <= 0) 
+          return -3;
    }
-   return 0;
+   return ret;
 }
+
+EXP int CALL soem_config_init_only()
+{
+   if (!g_inited) return -2;
+
+   int ret = ecx_config_init(&g_ctx);
+   // v2.0: ecx_config_init(context) ← 인자 1개
+   if (ret <= 0)
+      return -1;
+
+   return ret;
+}
+
 
 EXP int CALL soem_config_map_only(void)
 {

@@ -50,6 +50,9 @@ namespace SOEM_FrontEnd.Model
         internal static extern int soem_config_map_only();
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int soem_config_init_only();
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int soem_set_state(ushort state, int timeoutMs);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
