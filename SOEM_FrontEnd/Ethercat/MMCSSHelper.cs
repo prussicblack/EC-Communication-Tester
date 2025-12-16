@@ -14,18 +14,13 @@ namespace SOEM_FrontEnd.Ethercat
         }
 
         [DllImport("avrt.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern IntPtr AvSetMmThreadCharacteristicsW(
-            string taskName,
-            out uint taskIndex);
+        private static extern IntPtr AvSetMmThreadCharacteristicsW(string taskName, out uint taskIndex);
 
         [DllImport("avrt.dll", SetLastError = true)]
-        private static extern bool AvSetMmThreadPriority(
-            IntPtr avrtHandle,
-            AvrtPriority priority);
+        private static extern bool AvSetMmThreadPriority(IntPtr avrtHandle, AvrtPriority priority);
 
         [DllImport("avrt.dll", SetLastError = true)]
-        private static extern bool AvRevertMmThreadCharacteristics(
-            IntPtr avrtHandle);
+        private static extern bool AvRevertMmThreadCharacteristics(IntPtr avrtHandle);
 
         /// <summary>
         /// 현재 스레드를 MMCSS "Pro Audio" 태스크로 올리고 CRITICAL 우선순위로 설정.
