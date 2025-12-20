@@ -90,7 +90,33 @@ public partial class MainViewModel : ViewModelBase
     public List<ESIXMLData.ESIDevice> DevicesData = new List<ESIXMLData.ESIDevice>();
 
 
+
     public ObservableCollection<string> LogLines { get; } = new ObservableCollection<string>();
+
+    private ObservableCollection<ESIXMLData.ESISDOObject> _SDOObjects;
+
+    public ObservableCollection<ESIXMLData.ESISDOObject> SDOObjects
+    {
+        get
+        {
+            return _SDOObjects;
+        }
+
+        private set
+        {
+            if (!object.ReferenceEquals(_SDOObjects, value))
+            {
+                _SDOObjects = value;
+                OnPropertyChanged(nameof(SDOObjects));
+            }
+        }
+
+    }
+
+    public ESIXMLData.ESISDOObject? SelectedSDO { get; set; }
+
+
+
     public MainViewModel()
     {
 
@@ -152,9 +178,9 @@ public partial class MainViewModel : ViewModelBase
 
     private void HandleNIC()
     {
-        Slaves.Add($" test - Name = testname-01234567890, Alias = 0, StationAddress = 0x0000000, VendorCode = 0x0000000, ProductCode = 0x0000000, Revision=0x0000000");
+        //Slaves.Add($" test - Name = testname-01234567890, Alias = 0, StationAddress = 0x0000000, VendorCode = 0x0000000, ProductCode = 0x0000000, Revision=0x0000000");
 
-        return;
+        //return;
 
 
         string ifname = NICSelect.Substring(NICSelect.LastIndexOf(" - ") + (" - ".Length));
@@ -214,38 +240,40 @@ public partial class MainViewModel : ViewModelBase
 
     private void HandleTest()
     {
-        Log($"Test message - 1234567890");
+        //Log($"Test message - 1234567890");
 
-        return;
+        //return;
         
 
-        //uint productcode = 0x1002;
-        //uint vendorcode = 0xFA00000;
-        //uint revision = 0x10001;
-        uint productcode = 0x8100;
-        uint vendorcode = 0x4321;
-        uint revision = 0x1;
+        uint productcode = 0x1002;
+        uint vendorcode = 0xFA00000;
+        uint revision = 0x10001;
+        //uint productcode = 0x8100;
+        //uint vendorcode = 0x4321;
+        //uint revision = 0x1;
 
 
         ESIXMLData.ESIDevice dev = DevicesData.FirstOrDefault(d => d.ProductCode == productcode && d.VendorId == vendorcode && d.Revision == revision);
 
         if (dev == null)
             return;
+                
+        SDOObjects = new ObservableCollection<ESIXMLData.ESISDOObject>(dev.SDOObjects.Values);
 
-        //ESIXMLData.ESIPDO ppmodeRX = dev.RxPdos.FirstOrDefault(d => d.Name.Contains("PP"));
 
-        
+        return;
 
         ECClient.EnsureState(EcClient.EC_STATE_PRE_OP, 2000);
 
 
         //var test = ECClient.SdoReadU16(1, 0x2000, 0);
 
+        ESIXMLData.ESIPDO ppmodeRX = dev.RxPdos.FirstOrDefault(d => d.Name.Contains("PP"));
 
         //RemapRxPdo(1, ppmodeRX);
         //RemapRxPdo(1);
 
-        //ESIXMLData.ESIPDO ppmodeTX = dev.TxPdos.FirstOrDefault(d => d.Name.Contains("PP"));
+        ESIXMLData.ESIPDO ppmodeTX = dev.TxPdos.FirstOrDefault(d => d.Name.Contains("PP"));
 
         //RemapTxPdo(1, ppmodeTX);
 
@@ -289,10 +317,13 @@ public partial class MainViewModel : ViewModelBase
 
 
 
-        ECClient.SetModePP(2);                  // 6060 = 1
-        ECClient.SetProfile(2, 100000, 500, 500); // 예: vel/acc/dec
+        ECClient.SetModePP(1);                  // 6060 = 1
+        ECClient.SetProfile(1, 10000, 500, 500); // 예: vel/acc/dec
 
-        var worker = new PDORTWorker(ECClient, 2);
+        uint supportmode = ECClient.SdoReadU32(1, 0x6502, 0);
+
+
+        var worker = new PDORTWorker(ECClient, 1);
         worker.Start();
 
         //// 우리가 리맵한 PDO 기준 오프셋 (테스트용 하드코딩)

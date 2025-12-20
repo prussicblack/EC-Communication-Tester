@@ -68,11 +68,51 @@
                         VerticalAlignment="Stretch"
                         Width="5"
                         Background="#404040" />
-          
-          
+
+          <DataGrid Grid.Column="2"
+                    ItemsSource="{Binding SDOObjects}"
+                    SelectedItem ="{Binding SelectedSDO, Mode=TwoWay}"
+                    AutoGenerateColumns="False"
+                    IsReadOnly="True"
+                    GridLinesVisibility="All"
+                    HeadersVisibility="All"
+                    >
+
+              <DataGrid.Columns>
+                  <DataGridTextColumn Header="Index"
+                                      Binding="{Binding Index, StringFormat=0x{0:X4}}" />
+
+                  <DataGridTextColumn Header="Name"
+                                      Binding="{Binding Name}" />
+
+                  <DataGridTextColumn Header="Type"
+                                      Binding="{Binding DataType}" />
+
+                  <DataGridTextColumn Header="BitSize"
+                                      Binding="{Binding BitSize}" />
+
+                  <DataGridTextColumn Header="Flags"
+                                      Binding="{Binding Name}" />
+
+				  <!-- Flags. -->
+				  <DataGridTextColumn Header="Access"
+                                      Binding="{Binding Flags.Access}"
+                                       />
+
+                  <DataGridTextColumn Header="Category"
+                                      Binding="{Binding Flags.Category}"
+                                       />
+
+                  <DataGridTextColumn Header="PDO"
+                                      Binding="{Binding Flags.PdoMapping}"
+                                       />
+
+              </DataGrid.Columns>
+            
+
+          </DataGrid>
+
       </Grid>
-      
-      
 
       <GridSplitter Grid.Row="3"
                     ResizeDirection="Rows"
