@@ -52,10 +52,21 @@ public partial class App : Application
                 DataContext = loadingVm
             };
 
-            splash.Show();
+            //splash.Show();
             desktop.MainWindow = splash; // 포커스/종료 처리 안정화를 위해
 
-            _ = RunStartupAsync(desktop, splash, loadingVm);
+            splash.Opened += async (_, __) =>
+            {
+                // “한 번 그려질 기회”를 강제로 줌
+                await Avalonia.Threading.Dispatcher.UIThread
+                    .InvokeAsync(() => { }, Avalonia.Threading.DispatcherPriority.Render);
+
+                _ = RunStartupAsync(desktop, splash, loadingVm);
+            };
+
+            splash.Show();
+
+            //_ = RunStartupAsync(desktop, splash, loadingVm);
         }
 
         base.OnFrameworkInitializationCompleted();
