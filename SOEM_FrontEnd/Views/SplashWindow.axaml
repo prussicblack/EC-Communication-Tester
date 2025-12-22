@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:vm="clr-namespace:SOEM_FrontEnd.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="220"
+		Width="520" Height="220"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        SystemDecorations="None"
+        x:Class="SOEM_FrontEnd.SplashWindow"
+		x:DataType="vm:LoadingViewModel"
+        Title="SplashWindow">
+	
+	
+	<StackPanel Margin="20" Spacing="12">
+		<TextBlock Text="Loading..." FontSize="20"/>
+		<TextBlock Text="{Binding StatusText}" FontSize="14" TextWrapping="Wrap"/>
+		<ProgressBar Minimum="0" Maximum="1"
+					 Value="{Binding Progress}"
+					 IsIndeterminate="{Binding IsIndeterminate}"
+					 Height="14"/>
+	</StackPanel>
+</Window>
