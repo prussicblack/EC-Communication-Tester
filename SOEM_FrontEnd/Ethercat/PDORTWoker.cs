@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace SOEM_FrontEnd.Ethercat
 {
+    //엎긴 해야되네..
     public sealed class PDORTWorker : IDisposable
     {
         private readonly EcClient _ec;
@@ -50,7 +51,12 @@ namespace SOEM_FrontEnd.Ethercat
             try
             {
                 // MMCSS Pro Audio 등록
-                mmcssHandle = MMCSSHelper.EnterProAudio();
+                mmcssHandle = MMCSSHelper.EnterProAudio(out int errorcode);
+
+                if(errorcode != 0)
+                {
+                    throw new Exception("MMCSS Failed");
+                }
 
                 RunPdoLoop();
             }

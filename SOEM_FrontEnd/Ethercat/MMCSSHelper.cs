@@ -26,15 +26,28 @@ namespace SOEM_FrontEnd.Ethercat
         /// 현재 스레드를 MMCSS "Pro Audio" 태스크로 올리고 CRITICAL 우선순위로 설정.
         /// 실패하면 IntPtr.Zero 반환.
         /// </summary>
-        public static IntPtr EnterProAudio()
+        public static IntPtr EnterProAudio(out int lastError)
         {
+            lastError = 0;
+
             uint idx;
+
             IntPtr handle = AvSetMmThreadCharacteristicsW("Pro Audio", out idx);
-            if (handle != IntPtr.Zero)
+            if (handle == IntPtr.Zero)
             {
-                // 실패해도 크게 문제는 아니니, 에러는 굳이 throw 하지 않음
-                AvSetMmThreadPriority(handle, AvrtPriority.AVRT_PRIORITY_CRITICAL);
+                lastError = Marshal.GetLastWin32Error();
+                return IntPtr.Zero;
             }
+
+            if (!AvSetMmThreadPriority(handle, AvrtPriority.AVRT_PRIORITY_CRITICAL))
+            {
+                lastError = Marshal.GetLastWin32Error();
+                // 여기서 revert 하고 0을 리턴할지, handle은 유지할지 정책 선택
+                // 보수적으로는 revert 후 실패 처리 권장
+                AvRevertMmThreadCharacteristics(handle);
+                return IntPtr.Zero;
+            }
+
             return handle;
         }
 
