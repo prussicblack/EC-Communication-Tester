@@ -244,6 +244,8 @@ typedef struct soem_error_info_t
    uint16_t slave;     // 에러 슬레이브 번호
    uint16_t index;     // CoE Index
    uint8_t subindex;   // CoE SubIndex
+   uint8_t _pad;       // 1바이트 패딩을 명시(정렬 안정)
+   uint16_t etype;     // 아래 3)에서 설명 (있으면 훨씬 좋음)
 } soem_error_info_t;
 
 // 에러 스택에서 하나 pop (있으면 1, 없으면 0, 실패 -1)
@@ -263,7 +265,32 @@ EXP int CALL soem_get_last_error_info(soem_error_info_t *info)
    info->slave = (uint16_t)err.Slave;
    info->index = (uint16_t)err.Index;
    info->subindex = (uint8_t)err.SubIdx;
+   info->_pad = 0;
+   info->etype = (uint16_t)err.Etype; // ★ 추가
    return 1;
+}
+
+// ---- Error list to string ----
+EXP int CALL soem_elist2string(char *outBuf, int outBufLen)
+{
+   if (!g_inited || !outBuf || outBufLen <= 0)
+      return -1;
+
+   // 충분히 크게. 필요하면 더 늘리세요.
+   char tmp[16384];
+   tmp[0] = '\0';
+
+   ecx_elist2string(&g_ctx, tmp);
+
+#ifdef _WIN32
+   strncpy_s(outBuf, (size_t)outBufLen, tmp, _TRUNCATE);
+#else
+   // POSIX 환경이면 안전 복사 구현 필요(여기서는 단순 예시)
+   strncpy(outBuf, tmp, (size_t)outBufLen - 1);
+   outBuf[outBufLen - 1] = '\0';
+#endif
+
+   return (int)strlen(outBuf);
 }
 
 

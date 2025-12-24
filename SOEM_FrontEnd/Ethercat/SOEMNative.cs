@@ -97,6 +97,8 @@ namespace SOEM_FrontEnd.Model
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int soem_get_last_error_info(out SoemErrorInfo info);
 
+        [DllImport("soem_wrap.dll", CallingConvention = CallingConvention.Cdecl,CharSet = CharSet.Ansi)]
+        internal static extern int soem_elist2string(StringBuilder outBuf, int outBufLen);
 
     }
 
@@ -318,6 +320,18 @@ namespace SOEM_FrontEnd.Model
             return (null);
         }
 
+        //SDO 실패/상태전이 실패 직후에 호출할것.
+        public static string GetSoemErrorString()
+        {
+            const int cap = 16384; // C쪽 tmp와 맞추거나 C#만 더 크게 잡아도 됨
+            var sb = new StringBuilder(cap);
+
+            int n = SOEMNative.soem_elist2string(sb, sb.Capacity);
+            if (n <= 0)
+                return string.Empty;
+
+            return sb.ToString();
+        }
 
     }
 
