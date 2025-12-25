@@ -31,7 +31,7 @@ namespace SOEM_FrontEnd.ViewModels
             set { if (_isIndeterminate == value) return; _isIndeterminate = value; OnPropertyChanged(); }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string name = null)
         {
             var h = PropertyChanged;

@@ -2,6 +2,7 @@
 using Avalonia.Controls.Shapes;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.VisualBasic;
+using SOEM_FrontEnd.DataMap;
 using SOEM_FrontEnd.Ethercat;
 using SOEM_FrontEnd.Ethercat.ESI;
 using SOEM_FrontEnd.Model;
@@ -93,7 +94,7 @@ public partial class MainViewModel : ViewModelBase
 
     public ObservableCollection<string> LogLines { get; } = new ObservableCollection<string>();
 
-    private ObservableCollection<ESIXMLData.ESISDOObject> _SDOObjects;
+    private ObservableCollection<ESIXMLData.ESISDOObject> _SDOObjects; 
 
     public ObservableCollection<ESIXMLData.ESISDOObject> SDOObjects
     {
@@ -260,6 +261,28 @@ public partial class MainViewModel : ViewModelBase
             return;
                 
         SDOObjects = new ObservableCollection<ESIXMLData.ESISDOObject>(dev.SDOObjects.Values);
+
+        int testslavecount = 5;
+        List<SoemSlaveInfo> test = new List<SoemSlaveInfo>();
+        ushort index = 1;
+        while (testslavecount --> 0)
+        {
+            SoemSlaveInfo testinfo = new SoemSlaveInfo();
+            testinfo.alias = 0;
+            testinfo.configadr = index;
+            testinfo.vendor = vendorcode;
+            testinfo.product = productcode;
+            testinfo.revision = revision;
+            testinfo.name = "Test Slave Device";
+
+            test.Add(testinfo);
+            index++;
+        }
+
+
+
+
+        Datamap.Instance.Init(test);
 
 
         return;

@@ -1,4 +1,5 @@
-﻿using SOEM_FrontEnd.Util;
+﻿using SOEM_FrontEnd.Model;
+using SOEM_FrontEnd.Util;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -143,7 +144,6 @@ namespace SOEM_FrontEnd.DataMap
         private byte[] _lastPdoInputImage; // 최신 프레임
 
 
-
         public SlaveStore(int slaveNo)
         {
             SlaveNo = slaveNo;
@@ -215,7 +215,7 @@ namespace SOEM_FrontEnd.DataMap
             }
         }
 
-        public void Init(int slaveCount)
+        public void Init(List<SoemSlaveInfo> slavwInfos)
         {
             lock (_lock)
             {
@@ -224,11 +224,17 @@ namespace SOEM_FrontEnd.DataMap
                     throw new InvalidOperationException("Already initialized.");
                 }
 
-                _slaves = new SlaveStore[slaveCount];
+                _slaves = new SlaveStore[slavwInfos.Count];
 
-                for (int i = 0; i < slaveCount; i++)
+                for (int i = 0; i < slavwInfos.Count; i++)
                 {
                     _slaves[i] = new SlaveStore(i);
+
+                    //ESI에서 긁어와야됨.
+                    //데이터 구조 정리해서 메모해놓을것.
+
+
+
                 }
 
                 _initialized = true;

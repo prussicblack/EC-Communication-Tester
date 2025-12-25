@@ -276,17 +276,13 @@ EXP int CALL soem_elist2string(char *outBuf, int outBufLen)
    if (!g_inited || !outBuf || outBufLen <= 0)
       return -1;
 
-   // 충분히 크게. 필요하면 더 늘리세요.
-   char tmp[16384];
-   tmp[0] = '\0';
-
-   ecx_elist2string(&g_ctx, tmp);
+    const char *s = ecx_elist2string(&g_ctx); // SOEM 2.0: returns char*
+   if (!s) s = "";
 
 #ifdef _WIN32
-   strncpy_s(outBuf, (size_t)outBufLen, tmp, _TRUNCATE);
+   strncpy_s(outBuf, (size_t)outBufLen, s, _TRUNCATE);
 #else
-   // POSIX 환경이면 안전 복사 구현 필요(여기서는 단순 예시)
-   strncpy(outBuf, tmp, (size_t)outBufLen - 1);
+   strncpy(outBuf, s, (size_t)outBufLen - 1);
    outBuf[outBufLen - 1] = '\0';
 #endif
 
