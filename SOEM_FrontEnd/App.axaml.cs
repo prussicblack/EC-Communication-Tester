@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using SOEM_FrontEnd.Ethercat.ESI;
 using SOEM_FrontEnd.ViewModels;
 using SOEM_FrontEnd.Views;
 using System;
@@ -54,17 +55,13 @@ public partial class App : Application
 
             //splash.Show();
             desktop.MainWindow = splash; // 포커스/종료 처리 안정화를 위해
-
-            splash.Opened += async (_, __) =>
-            {
-                // “한 번 그려질 기회”를 강제로 줌
-                await Avalonia.Threading.Dispatcher.UIThread
-                    .InvokeAsync(() => { }, Avalonia.Threading.DispatcherPriority.Render);
-
-                _ = RunStartupAsync(desktop, splash, loadingVm);
-            };
-
             splash.Show();
+
+            // “첫 렌더 이후” 실행되게 UI 큐에 던짐 (핵심)
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                _ = RunStartupAsync(desktop, splash, loadingVm);
+            }, Avalonia.Threading.DispatcherPriority.Background);
 
             //_ = RunStartupAsync(desktop, splash, loadingVm);
         }
@@ -81,6 +78,8 @@ public partial class App : Application
                 // 초기화 단계들
                 Report(vm, 0.05, "Loading ESI...");
                 // ESI 로드/파싱
+                string path = AppDomain.CurrentDomain.BaseDirectory + "ESI";
+                ESICatalog.Initialize(path);
 
                 Report(vm, 0.30, "Initializing map...");
                 // EthercatMapStore.Instance.Init(...)
@@ -94,17 +93,17 @@ public partial class App : Application
                 Report(vm, 1.00, "Done.");
             });
 
-            await Dispatcher.UIThread.InvokeAsync(() =>
+            //await Dispatcher.UIThread.InvokeAsync(() =>
+            //{
+            var main = new MainWindow
             {
-                var main = new MainWindow
-                {
-                    DataContext = new MainViewModel()
-                };
+                DataContext = new MainViewModel()
+            };
 
-                desktop.MainWindow = main;
-                main.Show();
-                splash.Close();
-            });
+            desktop.MainWindow = main;
+            main.Show();
+            splash.Close();
+            //});
         }
         catch (Exception ex)
         {

@@ -144,8 +144,11 @@ namespace SOEM_FrontEnd.Ethercat.ESI
         public sealed class Flags
         {
             public string Access { get; set; } = "";
+
+            public string WriteRestrictions { get; set; } = "";
+
             public string Category { get; set; } = "";
-            public string PdoMapping { get; set; } = "";
+            public string PDOMapping { get; set; } = "";
 
         }
 
@@ -172,7 +175,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
 
         public sealed class ESISubDataType
         {
-            public int SubIdx { get; set; }
+            public byte SubIndex { get; set; }
             public string Name { get; set; } = "";
             public ushort BitSize { get; set; }
             public ushort BitOffs { get; set; }

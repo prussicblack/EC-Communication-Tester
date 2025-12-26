@@ -183,18 +183,20 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                 if (Flags != null)
                 {
                     var FlagsAccess = Flags.Element("Access");
+
+                    var WriteRestrictions = FlagsAccess.Attribute("WriteRestrictions");
+
                     var FlagsCategory = Flags.Element("Category");
                     var FlagsPdoMapping = Flags.Element("PdoMapping");
 
                     flags = new Flags
                     {
                         Access = (string)FlagsAccess ?? "",
+                        WriteRestrictions = (string)WriteRestrictions ?? "",
                         Category = (string)FlagsCategory ?? "",
-                        PdoMapping = (string)FlagsPdoMapping ?? ""
+                        PDOMapping = (string)FlagsPdoMapping ?? ""
                     };
                 }
-
-
 
                 ESISDOObject sdoobject = new ESISDOObject();
 

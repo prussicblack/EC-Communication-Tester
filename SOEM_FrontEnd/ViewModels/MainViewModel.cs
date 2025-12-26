@@ -165,10 +165,10 @@ public partial class MainViewModel : ViewModelBase
 
         //나중에 프로그램 로딩시 Splash Screen 과 함께 로딩.
         //의외로 시간이 좀 걸릴 수 있음.
-        string path = AppDomain.CurrentDomain.BaseDirectory + "ESI";
+        //string path = AppDomain.CurrentDomain.BaseDirectory + "ESI";
 
-        var devices = ESICatalog.LoadAllDevices(path);
-        DevicesData = devices;
+        //var devices = ESICatalog.LoadAllDevices(path);
+        //DevicesData = devices;
 
     }
 
@@ -255,7 +255,9 @@ public partial class MainViewModel : ViewModelBase
         //uint revision = 0x1;
 
 
-        ESIXMLData.ESIDevice dev = DevicesData.FirstOrDefault(d => d.ProductCode == productcode && d.VendorId == vendorcode && d.Revision == revision);
+        //ESIXMLData.ESIDevice dev = DevicesData.FirstOrDefault(d => d.ProductCode == productcode && d.VendorId == vendorcode && d.Revision == revision);
+
+        ESIXMLData.ESIDevice dev = ESICatalog.GetDeviceData(productcode, vendorcode, revision);
 
         if (dev == null)
             return;

@@ -11,9 +11,32 @@ using static SOEM_FrontEnd.Ethercat.ESI.ESIXMLData;
 
 namespace SOEM_FrontEnd.Ethercat.ESI
 {
-    public sealed class ESICatalog
+
+    public static class ESICatalog
     {
         // 폴더 아래 모든 .xml 파일을 EsiFile로 읽기
+
+
+        private static readonly object _lock = new object();
+
+        private static bool _initialized;
+
+        private static List<ESIDevice> _ESIDevice = new List<ESIDevice>();
+
+        public static void Initialize(string Path)
+        {
+            _ESIDevice = LoadAllDevices(Path);
+        }
+
+        public static ESIDevice? GetDeviceData(uint Productcode, uint Vendorcode, uint Revision)
+        {
+            ESIDevice? ret = _ESIDevice.FirstOrDefault(d => d.ProductCode == Productcode && d.VendorId == Vendorcode && d.Revision == Revision);
+
+            return ret;
+        }
+
+
+
         public static List<EsiFile> LoadAllFromDirectory(string directoryPath)
         {
             var result = new List<EsiFile>();

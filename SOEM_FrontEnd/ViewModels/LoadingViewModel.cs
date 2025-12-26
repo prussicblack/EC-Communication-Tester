@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 
 namespace SOEM_FrontEnd.ViewModels
 {
-    public sealed class LoadingViewModel : INotifyPropertyChanged
+    public sealed class LoadingViewModel : ViewModelBase
     {
         private string _statusText;
         public string StatusText
@@ -31,11 +31,11 @@ namespace SOEM_FrontEnd.ViewModels
             set { if (_isIndeterminate == value) return; _isIndeterminate = value; OnPropertyChanged(); }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string name = null)
-        {
-            var h = PropertyChanged;
-            if (h != null) h(this, new PropertyChangedEventArgs(name));
-        }
+        //public event PropertyChangedEventHandler? PropertyChanged;
+        //private void OnPropertyChanged([CallerMemberName] string name = null)
+        //{
+        //    var h = PropertyChanged;
+        //    if (h != null) h(this, new PropertyChangedEventArgs(name));
+        //}
     }
 }

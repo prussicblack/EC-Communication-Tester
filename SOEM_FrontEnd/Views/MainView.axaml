@@ -68,8 +68,19 @@
                         VerticalAlignment="Stretch"
                         Width="5"
                         Background="#404040" />
+		  <TabControl Grid.Column="2">
 
-          <DataGrid Grid.Column="2"
+			  <TabItem Header="Slave Status">
+              <!--  슬레이브 Status 표시. Text로 걍 질러버리지?  -->
+
+
+			  </TabItem>
+
+
+
+
+			  <TabItem Header="SDO List">
+            <DataGrid 
                     ItemsSource="{Binding SDOObjects}"
                     SelectedItem ="{Binding SelectedSDO, Mode=TwoWay}"
                     AutoGenerateColumns="False"
@@ -104,15 +115,18 @@
                                        />
 
                   <DataGridTextColumn Header="PDO"
-                                      Binding="{Binding Flags.PdoMapping}"
+                                      Binding="{Binding Flags.PDOMapping}"
                                        />
 
               </DataGrid.Columns>
-            
 
-          </DataGrid>
 
-      </Grid>
+        	  </DataGrid>
+		  </TabItem>
+
+		  </TabControl>
+
+	  </Grid>
 
       <GridSplitter Grid.Row="3"
                     ResizeDirection="Rows"
