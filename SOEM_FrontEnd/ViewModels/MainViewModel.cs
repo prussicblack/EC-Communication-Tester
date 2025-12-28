@@ -281,9 +281,6 @@ public partial class MainViewModel : ViewModelBase
             index++;
         }
 
-
-
-
         Datamap.Instance.Init(test);
 
 

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Xml.Linq;
 using static SOEM_FrontEnd.Ethercat.ESI.ESIXMLData;
 
@@ -106,6 +108,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                         
                 }
 
+
                 //Profile - DiagMessages
                 var diagmessages = profile.Elements(ns + "DiagMessages");
                 if (diagmessages != null)
@@ -118,9 +121,15 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                 var dictionary = profile.Element(ns + "Dictionary");
                 if (dictionary != null)
                 {
-                    //foreach (var datatype in dictionary.Elements(ns + "DataTypes"))
-                    //    device.Datatypes.Add(ParseDataTypes(datatype, ns));
+                    //DataType
+                    var DataTypes = dictionary.Element(ns + "DataTypes");
+                    List<ESIDataType> sdoDataTypes = ParseDataTypes(DataTypes, ns);
+                    foreach (var datatype in sdoDataTypes)
+                    {
+                        device.Datatypes.Add(datatype.Name, datatype);
+                    }
 
+                    //SDO Object.
                     var Objects = dictionary.Element(ns + "Objects");
                     List<ESISDOObject> sdoObjects = ParseSDOObjects(Objects, ns);
                     foreach (var item in sdoObjects)
@@ -182,20 +191,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
 
                 if (Flags != null)
                 {
-                    var FlagsAccess = Flags.Element("Access");
-
-                    var WriteRestrictions = FlagsAccess.Attribute("WriteRestrictions");
-
-                    var FlagsCategory = Flags.Element("Category");
-                    var FlagsPdoMapping = Flags.Element("PdoMapping");
-
-                    flags = new Flags
-                    {
-                        Access = (string)FlagsAccess ?? "",
-                        WriteRestrictions = (string)WriteRestrictions ?? "",
-                        Category = (string)FlagsCategory ?? "",
-                        PDOMapping = (string)FlagsPdoMapping ?? ""
-                    };
+                    flags = ParseFlags(Flags, ns);
                 }
 
                 ESISDOObject sdoobject = new ESISDOObject();
@@ -212,6 +208,91 @@ namespace SOEM_FrontEnd.Ethercat.ESI
 
             return ret;
         }
+
+        private static List<ESIDataType> ParseDataTypes(XElement DataTypesElements, XNamespace ns)
+        {
+            List<ESIDataType> ret = new List<ESIDataType>();
+
+
+            foreach (var DataTypesElement in DataTypesElements.Elements(ns + "DataType"))
+            {
+
+                var Name = DataTypesElement.Element("Name");
+                var BitSize = DataTypesElement.Element("BitSize");
+                var BaseType = DataTypesElement.Element("BaseType");
+                var SubItems = DataTypesElements.Elements("SubItem");
+
+                List<ESISubDataType> SubItemTypes = new List<ESISubDataType>();
+
+
+                if (SubItems != null)
+                {
+
+                    foreach (var subItem in SubItems)
+                    {
+                        ESISubDataType SubItemType = new ESISubDataType();
+
+                        Flags Subflags = new Flags();
+
+                        var SubIndex = subItem.Element("SubIdx");
+                        var SubIndexName = subItem.Element("Name");
+                        var SubBitSize = subItem.Element("BitSize");
+                        var SubBitOffSet = subItem.Element("BitOffs");
+                        var SubType = subItem.Element("Type");
+
+                        var SubFlagsElem = subItem.Element("Flags");
+
+                        if (SubFlagsElem != null)
+                        {
+                            Subflags = ParseFlags(SubFlagsElem, ns);
+                        }
+
+                        SubItemType.SubIndex = (byte)ParseUint(SubIndex.Value);
+                        SubItemType.Name = SubIndexName.Value ?? "";
+                        SubItemType.BitSize = (ushort)ParseUint(SubBitSize.Value);
+                        SubItemType.BitOffs = (ushort)ParseUint(SubBitOffSet.Value);
+                        SubItemType.Type = SubType.Value ?? "";
+                        SubItemType.Flag = Subflags;
+                        SubItemTypes.Add(SubItemType);
+                    }
+                }
+
+                ESIDataType DeviceDataType = new ESIDataType();
+
+                DeviceDataType.Name = Name.Value ?? "";
+                DeviceDataType.BitSize = (ushort)ParseUint(BitSize.Value);
+
+                DeviceDataType.BaseType = (string)BaseType ?? "";
+
+                DeviceDataType.SubType = SubItemTypes;
+                ret.Add(DeviceDataType);
+            }
+
+            return ret;
+        }
+
+
+        private static Flags ParseFlags(XElement FlagsElement, XNamespace ns)
+        {
+            var FlagsAccess = FlagsElement.Element("Access");
+
+            var WriteRestrictions = FlagsAccess.Attribute("WriteRestrictions");
+
+            var FlagsCategory = FlagsElement.Element("Category");
+            var FlagsPdoMapping = FlagsElement.Element("PdoMapping");
+
+            Flags flags = new Flags
+            {
+                Access = (string)FlagsAccess ?? "",
+                WriteRestrictions = (string)WriteRestrictions ?? "",
+                Category = (string)FlagsCategory ?? "",
+                PDOMapping = (string)FlagsPdoMapping ?? ""
+            };
+
+            return flags;
+        }
+
+
 
         private static int ParseProfileNo(XElement profileNoElem, XNamespace ns)
         {

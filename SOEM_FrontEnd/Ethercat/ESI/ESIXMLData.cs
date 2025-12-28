@@ -32,7 +32,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
 
             public List<uint> ProfileNo { get; set; } = new();
 
-            public Dictionary<string, ESIDataType> Datatypes = new Dictionary<string, ESIDataType>();
+            public Dictionary<string, ESIDataType> Datatypes = new Dictionary<string, ESIDataType>(); 
 
             public Dictionary<string, ESISDOObject> SDOObjects = new();
             //Key는 TextID, Value는 Message.
