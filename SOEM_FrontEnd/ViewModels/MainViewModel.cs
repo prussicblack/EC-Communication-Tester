@@ -117,6 +117,19 @@ public partial class MainViewModel : ViewModelBase
     public ESIXMLData.ESISDOObject? SelectedSDO { get; set; }
 
 
+    //Slave데이터를 보여주기 위한 프로퍼티들.
+    //SlaveStore 에 대한 프로퍼티 노출.
+    //참조 변경으로 갈아끼우틑 방식임.
+    public SlaveStore SelectedSlaveData
+    {
+        get
+        {
+            return Datamap.Instance.GetSlave(_SelectedSlave);
+        }
+    }
+
+
+
 
     public MainViewModel()
     {
