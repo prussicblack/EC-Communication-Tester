@@ -124,7 +124,7 @@ namespace SOEM_FrontEnd.Model
             }
 
             rc = SOEMNative.soem_config_init(1);
-            if (rc != 0)
+            if (rc < 0)
             {
                 SOEMNative.soem_close(); 
                 //throw new InvalidOperationException("config_init failed.");

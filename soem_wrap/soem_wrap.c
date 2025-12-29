@@ -50,7 +50,8 @@ EXP void CALL soem_close(void)
 
 EXP int CALL soem_config_init(int use_map)
 {
-   if (!g_inited) return -2;
+   if (!g_inited) 
+       return -2;
 
    int ret = ecx_config_init(&g_ctx);
 
@@ -61,15 +62,18 @@ EXP int CALL soem_config_init(int use_map)
    if (use_map)
    {
       int iomap = ecx_config_map_group(&g_ctx, IOmap, 0);
-      if (iomap <= 0) 
-          return -3;
+      if (iomap <= 0)
+      {
+         return -3;
+      }
    }
    return ret;
 }
 
 EXP int CALL soem_config_init_only()
 {
-   if (!g_inited) return -2;
+   if (!g_inited) 
+       return -2;
 
    int ret = ecx_config_init(&g_ctx);
    // v2.0: ecx_config_init(context) ¡ç ÀÎÀÚ 1°³

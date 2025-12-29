@@ -106,6 +106,7 @@
       <ShowIncludes>true</ShowIncludes>
       <UseDynamicDebugging>true</UseDynamicDebugging>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
