@@ -74,19 +74,7 @@ public partial class MainViewModel : ViewModelBase
 
     public ObservableCollection<string> Slaves { get;} = new();
 
-    private int _SelectedSlave = 0;
-    public int SelectedSlave
-    {
-        get => _SelectedSlave;
-        set
-        {
-            if (_SelectedSlave != value)
-            {
-                _SelectedSlave = value;
-                OnPropertyChanged();
-            }
-        }
-    }
+
 
     public List<ESIXMLData.ESIDevice> DevicesData = new List<ESIXMLData.ESIDevice>();
 
@@ -127,6 +115,27 @@ public partial class MainViewModel : ViewModelBase
             return Datamap.Instance.GetSlave(_SelectedSlave);
         }
     }
+
+    private int _SelectedSlave;
+
+    public int SelectedSlave
+    {
+        get
+        {
+            return _SelectedSlave;
+        }
+        set
+        {
+            if (_SelectedSlave == value) 
+                return;
+            _SelectedSlave = value;
+            OnPropertyChanged(nameof(SelectedSlave));
+            OnPropertyChanged(nameof(SelectedSlaveData));           // 중요
+            //OnPropertyChanged(nameof(SdoRows));                     // (선택) 별도 프로퍼티 쓰면
+        }
+    }
+
+
 
 
 
@@ -270,12 +279,12 @@ public partial class MainViewModel : ViewModelBase
 
         //ESIXMLData.ESIDevice dev = DevicesData.FirstOrDefault(d => d.ProductCode == productcode && d.VendorId == vendorcode && d.Revision == revision);
 
-        ESIXMLData.ESIDevice dev = ESICatalog.GetDeviceData(productcode, vendorcode, revision);
+        //ESIXMLData.ESIDevice dev = ESICatalog.GetDeviceData(productcode, vendorcode, revision);
 
-        if (dev == null)
-            return;
+        //if (dev == null)
+        //    return;
                 
-        SDOObjects = new ObservableCollection<ESIXMLData.ESISDOObject>(dev.SDOObjects.Values);
+        //SDOObjects = new ObservableCollection<ESIXMLData.ESISDOObject>(dev.SDOObjects.Values);
 
         int testslavecount = 5;
         List<SoemSlaveInfo> test = new List<SoemSlaveInfo>();
@@ -296,6 +305,7 @@ public partial class MainViewModel : ViewModelBase
 
         Datamap.Instance.Init(test);
 
+        SelectedSlave = 1;
 
         return;
 
@@ -310,12 +320,12 @@ public partial class MainViewModel : ViewModelBase
 
         //var test = ECClient.SdoReadU16(1, 0x2000, 0);
 
-        ESIXMLData.ESIPDO ppmodeRX = dev.RxPdos.FirstOrDefault(d => d.Name.Contains("PP"));
+        //ESIXMLData.ESIPDO ppmodeRX = dev.RxPdos.FirstOrDefault(d => d.Name.Contains("PP"));
 
         //RemapRxPdo(1, ppmodeRX);
         //RemapRxPdo(1);
 
-        ESIXMLData.ESIPDO ppmodeTX = dev.TxPdos.FirstOrDefault(d => d.Name.Contains("PP"));
+        //ESIXMLData.ESIPDO ppmodeTX = dev.TxPdos.FirstOrDefault(d => d.Name.Contains("PP"));
 
         //RemapTxPdo(1, ppmodeTX);
 

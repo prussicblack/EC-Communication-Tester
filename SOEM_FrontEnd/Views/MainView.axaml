@@ -79,9 +79,16 @@
 
 
 
-			  <TabItem Header="SDO List">
-            <DataGrid 
-                    ItemsSource="{Binding SDOObjects}"
+			  <TabItem Header="SDO">
+                <Grid>
+					<Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+
+                  <DataGrid Grid.Row="0"
+                    ItemsSource="{Binding SelectedSlaveData.SdoStore.Rows}"
                     SelectedItem ="{Binding SelectedSDO, Mode=TwoWay}"
                     AutoGenerateColumns="False"
                     IsReadOnly="True"
@@ -89,12 +96,15 @@
                     HeadersVisibility="All"
                     >
 
-              <DataGrid.Columns>
+                <DataGrid.Columns>
                   <DataGridTextColumn Header="Index"
                                       Binding="{Binding Index, StringFormat=0x{0:X4}}" />
 
-                  <DataGridTextColumn Header="Name"
-                                      Binding="{Binding Name}" />
+					<DataGridTextColumn Header="SubIndex"
+                                        Binding="{Binding SubIndex, StringFormat={}{0:D2}}" />
+
+					<DataGridTextColumn Header="Name"
+                                      Binding="{Binding DisplayName}" /> 
 
                   <DataGridTextColumn Header="Type"
                                       Binding="{Binding DataType}" />
@@ -102,26 +112,75 @@
                   <DataGridTextColumn Header="BitSize"
                                       Binding="{Binding BitSize}" />
 
-                  <DataGridTextColumn Header="Flags"
-                                      Binding="{Binding Name}" />
-
 				  <!-- Flags. -->
 				  <DataGridTextColumn Header="Access"
-                                      Binding="{Binding Flags.Access}"
-                                       />
+                                      Binding="{Binding Flags.Access}"/>
 
                   <DataGridTextColumn Header="Category"
-                                      Binding="{Binding Flags.Category}"
-                                       />
+                                      Binding="{Binding Flags.Category}"/>
+                  
+                  <DataGridTextColumn Header="WriteRestrictions"
+                                      Binding="{Binding Flags.WriteRestrictions}"/>
 
                   <DataGridTextColumn Header="PDO"
-                                      Binding="{Binding Flags.PDOMapping}"
-                                       />
+                                      Binding="{Binding Flags.PDOMapping}"/>
+
+					<!-- Status -->
+                  <DataGridTextColumn Header="ReadStatus"
+                                      Binding="{Binding Status}"/>
+
+                  <DataGridTextColumn Header="Error"
+                                      Binding="{Binding LastErrorText}"/>
+
+					<!--Current Value-->
+                  <DataGridTextColumn Header="Value"
+                                      Binding="{Binding CurrentValueText}"/>
+
 
               </DataGrid.Columns>
 
 
         	  </DataGrid>
+
+					<Border Grid.Row="1" Margin="0,8,0,0" Padding="8" CornerRadius="6" BorderThickness="1">
+						<Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto"
+							  RowDefinitions="Auto,Auto"
+							  >
+
+							<!-- 선택된 주소 표시 --><!--
+							<TextBlock Grid.Row="0" Grid.Column="0" Text="Selected:" VerticalAlignment="Center"/>
+							<TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedSdoAddrText}" VerticalAlignment="Center"/>
+
+							--><!-- Read 버튼 --><!--
+							<Button Grid.Row="0" Grid.Column="2" Content="Read"
+									IsEnabled="{Binding CanReadSelectedSdo}"
+									Command="{Binding ReadSelectedSdoCommand}"/>
+
+							--><!-- Write 입력 --><!--
+							<TextBox Grid.Row="0" Grid.Column="3"
+									 Watermark="Write value (hex/dec...)"
+									 Text="{Binding WriteValueText}"/>
+
+							--><!-- Write 버튼 --><!--
+							<Button Grid.Row="0" Grid.Column="4" Content="Write"
+									IsEnabled="{Binding CanWriteSelectedSdo}"
+									Command="{Binding WriteSelectedSdoCommand}"/>
+
+							--><!-- (옵션) Write 타입/포맷 표시 --><!--
+							<TextBlock Grid.Row="0" Grid.Column="5"
+									   Text="{Binding SelectedSdoTypeText}"
+									   VerticalAlignment="Center"/>
+
+							--><!-- 로그/상태줄(옵션) --><!--
+							<TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="6"
+									   Text="{Binding SdoActionStatusText}"
+									   Opacity="0.8"/>-->
+						</Grid>
+					</Border>
+
+
+
+                </Grid>
 		  </TabItem>
 
 		  </TabControl>
@@ -158,3 +217,4 @@
   </Grid>
 
 </UserControl>
+

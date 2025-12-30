@@ -220,7 +220,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                 var Name = DataTypesElement.Element("Name");
                 var BitSize = DataTypesElement.Element("BitSize");
                 var BaseType = DataTypesElement.Element("BaseType");
-                var SubItems = DataTypesElements.Elements("SubItem");
+                var SubItems = DataTypesElement.Elements("SubItem");
 
                 List<ESISubDataType> SubItemTypes = new List<ESISubDataType>();
 
@@ -247,7 +247,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                             Subflags = ParseFlags(SubFlagsElem, ns);
                         }
 
-                        SubItemType.SubIndex = (byte)ParseUint(SubIndex.Value);
+                        SubItemType.SubIndex = (byte)(SubIndex != null ? ParseUint(SubIndex.Value) : 0);
                         SubItemType.Name = SubIndexName.Value ?? "";
                         SubItemType.BitSize = (ushort)ParseUint(SubBitSize.Value);
                         SubItemType.BitOffs = (ushort)ParseUint(SubBitOffSet.Value);

@@ -555,6 +555,26 @@ namespace SOEM_FrontEnd.DataMap
         private readonly object _pdoLock = new object();
         private byte[] _lastPdoInputImage; // 최신 프레임
 
+        private readonly SDOStore _sdo;
+
+        private readonly DeviceInfo _deviceInfo;
+
+        public SDOStore SdoStore
+        {
+            get
+            {
+                return _sdo;
+            }
+        }
+
+        // (권장) UI가 바로 쓰기 쉬운 Rows도 한 번 더 노출
+        public ObservableCollection<SDOFlatObject> SdoRows
+        {
+            get
+            {
+                return _sdo.Rows;
+            }
+        }
 
         public SlaveStore(int slaveNo, SoemSlaveInfo SlaveInfo)
         {
@@ -574,10 +594,6 @@ namespace SOEM_FrontEnd.DataMap
 
             _sdo = new SDOStore(dev, SlaveNo);
         }
-
-        private readonly SDOStore _sdo;
-
-        private readonly DeviceInfo _deviceInfo;
 
         public void UpdateSdo(ushort index, byte sub, byte[] raw)
         {
@@ -656,12 +672,14 @@ namespace SOEM_FrontEnd.DataMap
 
                 for (int i = 0; i < slaveInfos.Count; i++)
                 {
+                    if (i == 0)
+                    {
+                        _slaves[i] = null;
+                        
+                    }
+
                     _slaves[i] = new SlaveStore(i, slaveInfos[i]);
-
-                    //ESI에서 긁어와야됨.
-                    //데이터 구조 정리해서 메모해놓을것.
-
-
+                    //Slave는 1부터. 0은 전체라서 일단 없는걸로 처리.
 
                 }
 
