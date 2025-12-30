@@ -248,7 +248,6 @@ public partial class MainViewModel : ViewModelBase
         //    }
         //}
 
-        2w34rfqweargfaes
     }
 
 
@@ -266,6 +265,7 @@ public partial class MainViewModel : ViewModelBase
         //uint productcode = 0x8100;
         //uint vendorcode = 0x4321;
         //uint revision = 0x1;
+
 
 
         //ESIXMLData.ESIDevice dev = DevicesData.FirstOrDefault(d => d.ProductCode == productcode && d.VendorId == vendorcode && d.Revision == revision);
