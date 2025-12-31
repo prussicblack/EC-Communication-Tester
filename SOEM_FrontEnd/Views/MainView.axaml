@@ -59,7 +59,7 @@
                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
                    VerticalAlignment="Stretch"
                    HorizontalAlignment="Stretch"
-                   ItemsSource="{Binding Slaves}"
+                   ItemsSource="{Binding SlavesListUI}"
                    SelectedIndex="{Binding SelectedSlave, Mode=TwoWay}">
           </ListBox>
           

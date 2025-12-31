@@ -72,7 +72,10 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    public ObservableCollection<string> Slaves { get;} = new();
+    public ObservableCollection<string> SlavesListUI { get;} = new();
+
+    List<SoemSlaveInfo> SlaveInfoData = new List<SoemSlaveInfo>();
+
 
 
 
@@ -201,10 +204,6 @@ public partial class MainViewModel : ViewModelBase
 
     private void HandleNIC()
     {
-        //Slaves.Add($" test - Name = testname-01234567890, Alias = 0, StationAddress = 0x0000000, VendorCode = 0x0000000, ProductCode = 0x0000000, Revision=0x0000000");
-
-        //return;
-
 
         string ifname = NICSelect.Substring(NICSelect.LastIndexOf(" - ") + (" - ".Length));
 
@@ -212,50 +211,34 @@ public partial class MainViewModel : ViewModelBase
 
         int slave = ECClient.SlaveCount;
 
-        List<SoemSlaveInfo> slaves = new List<SoemSlaveInfo>();
-        
-        Slaves.Clear();
+        //List<SoemSlaveInfo> slaves = new List<SoemSlaveInfo>();
 
-        for (int i = 1; i <= slave; i++)
+        SlavesListUI.Clear();
+
+        for (int i = 0; i <= slave; i++)
         {
-            if (ECClient.SlaveInfo(i, out SoemSlaveInfo info) != 0)
+            if (i == 0) //0은 마스터로 사용.
             {
-                slaves.Add(info);
-                Slaves.Add($" {i} - Name = {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
-                Console.WriteLine($" {i} - Name = {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+                SlaveInfoData.Add(new SoemSlaveInfo());
+                SlavesListUI.Add($"{i} - Master - {ifname}");
             }
             else
             {
-                Console.WriteLine($"#{i} -> failed to query");
+                if (ECClient.SlaveInfo(i, out SoemSlaveInfo info) != 0)
+                {
+                    SlaveInfoData.Add(info);
+                    SlavesListUI.Add($"{i} - Name = {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+                    Console.WriteLine($"{i} - Name = {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+                }
+                else
+                {
+                    Console.WriteLine($"#{i} -> failed to query");
+                }
             }
+
         }
 
-
-
-
-        //SOEMNative.soem_open(ifname);
-        //SOEMNative.soem_config_init(1);
-
-        //int slave = SOEMNative.soem_slave_count();
-
-        ////EC 슬레이브 조회.
-        //List<SoemSlaveInfo> slaves = new List<SoemSlaveInfo>();
-
-        //Slaves.Clear();
-
-        //for (int i = 1; i <= slave; i++)
-        //{
-        //    if (SOEMNative.soem_get_slave_info(i, out SoemSlaveInfo info) != 0)
-        //    {
-        //        slaves.Add(info);
-        //        Slaves.Add($" {i} - Name = {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
-        //        Console.WriteLine($" {i} - Name = {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
-        //    }
-        //    else
-        //    {
-        //        Console.WriteLine($"#{i} -> failed to query");
-        //    }
-        //}
+        //성공시 랜카드 Nic 저장.
 
     }
 
@@ -274,7 +257,7 @@ public partial class MainViewModel : ViewModelBase
         //uint productcode = 0x8100;
         //uint vendorcode = 0x4321;
         //uint revision = 0x1;
-
+        //var test1 = SelectedSlaveData;
 
 
         //ESIXMLData.ESIDevice dev = DevicesData.FirstOrDefault(d => d.ProductCode == productcode && d.VendorId == vendorcode && d.Revision == revision);
