@@ -227,8 +227,8 @@ public partial class MainViewModel : ViewModelBase
                 if (ECClient.SlaveInfo(i, out SoemSlaveInfo info) != 0)
                 {
                     SlaveInfoData.Add(info);
-                    SlavesListUI.Add($"{i} - Name = {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
-                    Console.WriteLine($"{i} - Name = {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+                    SlavesListUI.Add($"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+                    Console.WriteLine($"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
                 }
                 else
                 {

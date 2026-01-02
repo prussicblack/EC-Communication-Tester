@@ -76,13 +76,10 @@
 
 			  </TabItem>
 
-
-
-
 			  <TabItem Header="SDO">
                 <Grid>
 					<Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
