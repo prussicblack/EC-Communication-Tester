@@ -128,9 +128,23 @@ namespace SOEM_FrontEnd.Ethercat
                     cw |= (1 << 4); // New set-point
                 }
 
+                ushort Outout;
+                //----출력테스트
+                //나중에 PDOWrite Bit도 있어야 되겠는데?
+                if (goingPositive)
+                {
+                    Outout = 0x0001;
+                }
+                else
+                {
+                    Outout = 0x0000;
+                }
+
                 // ----- RxPDO 쓰기 -----
                 _ec.PdoWriteU16(_slave, RX_OFF_CW, cw);
                 _ec.PdoWriteI32(_slave, RX_OFF_TPOS, currentTarget);
+                _ec.PdoWriteU16(0x09, 0, Outout);
+
 
                 // ----- PDO 전송/수신 -----
                 _ec.SendProcessData();

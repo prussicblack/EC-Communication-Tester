@@ -269,6 +269,7 @@ public partial class MainViewModel : ViewModelBase
                 
         //SDOObjects = new ObservableCollection<ESIXMLData.ESISDOObject>(dev.SDOObjects.Values);
 
+        /*
         int testslavecount = 5;
         List<SoemSlaveInfo> test = new List<SoemSlaveInfo>();
         ushort index = 1;
@@ -291,7 +292,7 @@ public partial class MainViewModel : ViewModelBase
         SelectedSlave = 1;
 
         return;
-
+        */
         //다음 할일.
         //Slave Loading, Info loading, 이후 Slave 데이터 구성 및 PDO/SDO 데이터 구성필요.
         //Slave는 Index별로 설정되니, List구조로 작성, 0번은 Master/ 전체 슬레이브를 뜻하니, 0은 비워놓고, 구성하면 될듯.
@@ -350,15 +351,22 @@ public partial class MainViewModel : ViewModelBase
         }
 
 
+        ushort slaveno = 1;
+
+        ECClient.SetModePP(slaveno);                  // 6060 = 1
+        ECClient.SetProfile(slaveno, 10000, 500, 500); // 예: vel/acc/dec
+        
+        ECClient.SdoWriteI16(slaveno, 0x6040, 00, 0x0080);  //slave alarm reset. SDO로 써도 먹네..
+
+        //Span<byte> buf = stackalloc byte[1];
+        //buf[0] = true ? (byte)1 : (byte)0;
+
+        //ECClient.SdoWriteRaw(9, 0x7000, 01, buf);
+
+        uint supportmode = ECClient.SdoReadU32(slaveno, 0x6502, 0);
 
 
-        ECClient.SetModePP(1);                  // 6060 = 1
-        ECClient.SetProfile(1, 10000, 500, 500); // 예: vel/acc/dec
-
-        uint supportmode = ECClient.SdoReadU32(1, 0x6502, 0);
-
-
-        var worker = new PDORTWorker(ECClient, 1);
+        var worker = new PDORTWorker(ECClient, slaveno);
         worker.Start();
 
         //// 우리가 리맵한 PDO 기준 오프셋 (테스트용 하드코딩)
