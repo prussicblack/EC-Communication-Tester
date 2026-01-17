@@ -677,8 +677,10 @@ namespace SOEM_FrontEnd.DataMap
                         _slaves[i] = null;
                         
                     }
-
-                    _slaves[i] = new SlaveStore(i, slaveInfos[i]);
+                    else
+                    {
+                        _slaves[i] = new SlaveStore(i, slaveInfos[i]);
+                    }
                     //Slave는 1부터. 0은 전체라서 일단 없는걸로 처리.
 
                 }

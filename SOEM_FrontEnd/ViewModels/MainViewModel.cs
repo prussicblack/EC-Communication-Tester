@@ -46,7 +46,9 @@ public partial class MainViewModel : ViewModelBase
     private EcClient ECClient;
 
     public ICommand CMD_Test { get; private set; }
+
     public ICommand CMD_SelectNIC { get; private set; }
+
 
     private ObservableCollection<string> _NICList = new ObservableCollection<string>();
 
@@ -138,9 +140,49 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
+    //SDO 관련
+    public ICommand CMD_ReadAllSdoCommand { get; private set; }
+    public ICommand CMD_ReadSelectedSdoCommand { get; private set; }
+    public ICommand CMD_WriteSelectedSdoCommand { get; private set; }
 
+    private string _WriteValueText;
+    public string WriteValueText
+    {
+        get => _WriteValueText;
+        set
+        {
+            if (_WriteValueText == value)
+                return;
+            _WriteValueText = value;
+            OnPropertyChanged(nameof(WriteValueText));
+        }
+    }
 
+    private bool _CanReadSelectedSdo;
+    public bool CanReadSelectedSdo
+    {
+        get => _CanReadSelectedSdo;
+        set
+        {
+            if (_CanReadSelectedSdo == value)
+                return;
+            _CanReadSelectedSdo = value;
+            OnPropertyChanged(nameof(CanReadSelectedSdo));
+        }
+    }
 
+    private bool _CanWriteSelectedSdo;
+    public bool CanWriteSelectedSdo
+    {
+        get => _CanWriteSelectedSdo;
+        set
+        {
+            if (_CanWriteSelectedSdo == value)
+                return;
+            _CanWriteSelectedSdo = value;
+            OnPropertyChanged(nameof(CanWriteSelectedSdo));
+        }
+    }
 
 
     public MainViewModel()
@@ -187,6 +229,10 @@ public partial class MainViewModel : ViewModelBase
         NICSelect = lastset;
 
 
+        CMD_ReadAllSdoCommand = new RelayCommand(HandleReadAllSDO);
+        //CMD_ReadSelectedSdoCommand = new RelayCommand(HandleReadSelectedSDO);
+        //CMD_WriteSelectedSdoCommand = new RelayCommand(HandleSelectedWriteSDO);
+
 
         //나중에 프로그램 로딩시 Splash Screen 과 함께 로딩.
         //의외로 시간이 좀 걸릴 수 있음.
@@ -209,13 +255,13 @@ public partial class MainViewModel : ViewModelBase
 
         ECClient.Open(ifname);
 
-        int slave = ECClient.SlaveCount;
+        int slaveCount = ECClient.SlaveCount;
 
         //List<SoemSlaveInfo> slaves = new List<SoemSlaveInfo>();
 
         SlavesListUI.Clear();
 
-        for (int i = 0; i <= slave; i++)
+        for (int i = 0; i <= slaveCount; i++)
         {
             if (i == 0) //0은 마스터로 사용.
             {
@@ -237,6 +283,16 @@ public partial class MainViewModel : ViewModelBase
             }
 
         }
+
+        Datamap.Instance.Init(SlaveInfoData);
+
+        SelectedSlave = 1;
+
+        return;
+
+
+
+
 
         //성공시 랜카드 Nic 저장.
 
@@ -269,7 +325,7 @@ public partial class MainViewModel : ViewModelBase
                 
         //SDOObjects = new ObservableCollection<ESIXMLData.ESISDOObject>(dev.SDOObjects.Values);
 
-        /*
+        
         int testslavecount = 5;
         List<SoemSlaveInfo> test = new List<SoemSlaveInfo>();
         ushort index = 1;
@@ -292,7 +348,7 @@ public partial class MainViewModel : ViewModelBase
         SelectedSlave = 1;
 
         return;
-        */
+        
         //다음 할일.
         //Slave Loading, Info loading, 이후 Slave 데이터 구성 및 PDO/SDO 데이터 구성필요.
         //Slave는 Index별로 설정되니, List구조로 작성, 0번은 Master/ 전체 슬레이브를 뜻하니, 0은 비워놓고, 구성하면 될듯.
@@ -549,6 +605,20 @@ public partial class MainViewModel : ViewModelBase
         ECClient.SdoWriteU16(slave, 0x1C12, 0x01, RxMap.Index); // 1번째 PDO = rxMap.Index
         Console.WriteLine($"RxMap Connect");
         */
+
+    }
+
+    public void HandleReadAllSDO()
+    {
+        //해당 Slave의 SDO 오브젝트들을 모두 읽어서 SlaveStore에 기록.
+
+        //SelectedSlave --> SlaveID 부터 시작.
+
+        SlaveStore slave = Datamap.Instance.GetSlave(SelectedSlave);
+
+
+
+
 
     }
 
