@@ -659,13 +659,21 @@ namespace SOEM_FrontEnd.DataMap
             }
         }
 
+        public bool IsInit()
+        {
+            return _initialized;
+        }
+
+
         public void Init(List<SoemSlaveInfo> slaveInfos)
         {
             lock (_lock)
             {
+                //재 이니셜 라이즈 가능하도록.
                 if (_initialized)
                 {
-                    throw new InvalidOperationException("Already initialized.");
+                    //throw new InvalidOperationException("Already initialized.");
+                    Console.WriteLine("Already initialized. ReInitializing"); //재 이니셜라이징 되었다고 콘솔로그만.
                 }
 
                 _slaves = new SlaveStore[slaveInfos.Count];
@@ -675,7 +683,6 @@ namespace SOEM_FrontEnd.DataMap
                     if (i == 0)
                     {
                         _slaves[i] = null;
-                        
                     }
                     else
                     {
@@ -695,7 +702,9 @@ namespace SOEM_FrontEnd.DataMap
             {
                 if (!_initialized) 
                 { 
-                    throw new InvalidOperationException("Not initialized."); 
+                    throw new InvalidOperationException("Not initialized.");
+
+                    //Console.WriteLine("Not initialized.");
                 }
 
                 return _slaves[slaveNo];

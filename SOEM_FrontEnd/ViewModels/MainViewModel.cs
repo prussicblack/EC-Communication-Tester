@@ -117,7 +117,10 @@ public partial class MainViewModel : ViewModelBase
     {
         get
         {
-            return Datamap.Instance.GetSlave(_SelectedSlave);
+            if(Datamap.Instance.IsInit() == true)
+                return Datamap.Instance.GetSlave(_SelectedSlave);
+
+            return null;
         }
     }
 
@@ -291,9 +294,6 @@ public partial class MainViewModel : ViewModelBase
         return;
 
 
-
-
-
         //성공시 랜카드 Nic 저장.
 
     }
@@ -342,6 +342,30 @@ public partial class MainViewModel : ViewModelBase
             test.Add(testinfo);
             index++;
         }
+
+
+        for (int i = 0; i <= test.Count; i++)
+        {
+            if (i == 0) //0은 마스터로 사용.
+            {
+                SlaveInfoData.Add(new SoemSlaveInfo());
+                SlavesListUI.Add($"{i} - Master - Simulator");
+            }
+            else
+            {
+                //SlaveInfoData.Add(info);
+                //SlavesListUI.Add(
+                //    $"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+                //Console.WriteLine(
+                //    $"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+
+            }
+
+        }
+
+
+
+
 
         Datamap.Instance.Init(test);
 
@@ -616,6 +640,8 @@ public partial class MainViewModel : ViewModelBase
 
         SlaveStore slave = Datamap.Instance.GetSlave(SelectedSlave);
 
+        if (slave == null)
+            return;
 
 
 
