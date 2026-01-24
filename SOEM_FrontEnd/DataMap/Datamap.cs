@@ -501,6 +501,35 @@ namespace SOEM_FrontEnd.DataMap
             if (handler != null) handler(key, p, row);
         }
 
+        public void UpdateError(SDOKey key, string error, uint abortCode)
+        {
+            SDOPoint p;
+            lock (_lock)
+            {
+                if (!_dic.TryGetValue(key, out p))
+                {
+                    p = new SDOPoint();
+                    _dic[key] = p;
+                }
+
+                _seq++;
+                p.Seq = _seq;
+                p.LastUpdateUtc = DateTime.UtcNow;
+                p.LastRaw = null;
+                p.Status = SDOReadStatus.Error; // abortCode가 실제 Abort code로 들어오면 Abort로 바꿔도 됨
+                p.AbortCode = abortCode;
+                p.Error = error;
+            }
+
+            SDOFlatObject row;
+            _leafRowByKey.TryGetValue(key, out row);
+
+            var handler = PointUpdated;
+            if (handler != null) handler(key, p, row);
+        }
+
+
+
         public SDOPoint TryGetPoint(SDOKey key)
         {
             lock (_lock)

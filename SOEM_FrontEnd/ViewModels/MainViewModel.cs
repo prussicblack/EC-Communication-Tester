@@ -325,7 +325,7 @@ public partial class MainViewModel : ViewModelBase
                 
         //SDOObjects = new ObservableCollection<ESIXMLData.ESISDOObject>(dev.SDOObjects.Values);
 
-        
+        /*
         int testslavecount = 5;
         List<SoemSlaveInfo> test = new List<SoemSlaveInfo>();
         ushort index = 1;
@@ -348,7 +348,7 @@ public partial class MainViewModel : ViewModelBase
         SelectedSlave = 1;
 
         return;
-        
+        */
         //다음 할일.
         //Slave Loading, Info loading, 이후 Slave 데이터 구성 및 PDO/SDO 데이터 구성필요.
         //Slave는 Index별로 설정되니, List구조로 작성, 0번은 Master/ 전체 슬레이브를 뜻하니, 0은 비워놓고, 구성하면 될듯.
