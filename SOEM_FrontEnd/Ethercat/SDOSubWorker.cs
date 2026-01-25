@@ -249,6 +249,8 @@ namespace SOEM_FrontEnd.Ethercat
                 {
                     var trimmed = new byte[actual];
                     Buffer.BlockCopy(buf, 0, trimmed, 0, actual);
+
+                    //
                     _store.UpdateOk(key, trimmed);
                 }
                 else
@@ -299,7 +301,7 @@ namespace SOEM_FrontEnd.Ethercat
 
         private void SafeUpdateError(SDOKey key, string error)
         {
-            // SDOStore에 UpdateError가 필요합니다(아래 2) 패치)
+
             _store.UpdateError(key, error, abortCode: 0);
         }
 
