@@ -499,6 +499,14 @@ namespace SOEM_FrontEnd.DataMap
 
             var handler = PointUpdated;
             if (handler != null) handler(key, p, row);
+
+
+            // Row 갱신(leaf만)
+            if (row != null)
+            {
+                ApplyPointToRowOnUIThread(p, row);
+            }
+
         }
 
         public void UpdateError(SDOKey key, string error, uint abortCode)
@@ -526,6 +534,11 @@ namespace SOEM_FrontEnd.DataMap
 
             var handler = PointUpdated;
             if (handler != null) handler(key, p, row);
+
+            if (row != null)
+            {
+                ApplyPointToRowOnUIThread(p, row);
+            }
         }
 
 
@@ -540,8 +553,92 @@ namespace SOEM_FrontEnd.DataMap
             }
         }
 
+        private void ApplyPointToRowOnUIThread(SDOPoint p, SDOFlatObject row)
+        {
+            // UI 갱신은 반드시 UIThread에서
+            Dispatcher.UIThread.Post(() =>
+            {
+                row.Status = p.Status;
+                row.LastErrorText = p.Error ?? "";
 
+                if (p.Status == SDOReadStatus.Ok)
+                {
+                    row.CurrentValueText = FormatValueText(p, row);
+                }
+                else if (p.Status == SDOReadStatus.Abort)
+                {
+                    row.CurrentValueText = "ABORT 0x" + p.AbortCode.ToString("X8");
+                }
+                else if (p.Status == SDOReadStatus.Timeout)
+                {
+                    row.CurrentValueText = "TIMEOUT";
+                }
+                else if (p.Status == SDOReadStatus.Error)
+                {
+                    row.CurrentValueText = "ERROR: " + (p.Error ?? "");
+                }
+                else
+                {
+                    row.CurrentValueText = "";
+                }
+            });
+        }
 
+        private static string FormatValueText(SDOPoint p, SDOFlatObject row)
+        {
+            var raw = p.LastRaw;
+            if (raw == null || raw.Length == 0) return "";
+
+            string dt = row.DataType;
+            if (string.IsNullOrWhiteSpace(dt)) dt = p.DataType;
+
+            dt = (dt ?? "").Trim().ToUpperInvariant();
+
+            try
+            {
+                if (dt == "BOOLEAN" || dt == "BOOL")
+                    return (raw[0] != 0) ? "TRUE" : "FALSE";
+
+                if (dt == "INT16" || dt == "INTEGER16" || dt == "SINT16")
+                {
+                    if (raw.Length < 2) return BytesToHex(raw);
+                    return BitConverter.ToInt16(raw, 0).ToString();
+                }
+
+                if (dt == "UINT16" || dt == "UNSIGNED16" || dt == "USINT16")
+                {
+                    if (raw.Length < 2) return BytesToHex(raw);
+                    return BitConverter.ToUInt16(raw, 0).ToString();
+                }
+
+                if (dt == "INT32" || dt == "INTEGER32" || dt == "SINT32")
+                {
+                    if (raw.Length < 4) return BytesToHex(raw);
+                    return BitConverter.ToInt32(raw, 0).ToString();
+                }
+
+                if (dt == "UINT32" || dt == "UNSIGNED32" || dt == "UDINT32")
+                {
+                    if (raw.Length < 4) return BytesToHex(raw);
+                    return BitConverter.ToUInt32(raw, 0).ToString();
+                }
+            }
+            catch
+            {
+                // fallthrough
+            }
+
+            return BytesToHex(raw);
+        }
+
+        private static string BytesToHex(byte[] raw)
+        {
+            if (raw == null || raw.Length == 0) return "";
+            var sb = new System.Text.StringBuilder(raw.Length * 2);
+            for (int i = 0; i < raw.Length; i++)
+                sb.Append(raw[i].ToString("X2"));
+            return sb.ToString();
+        }
 
     }
 

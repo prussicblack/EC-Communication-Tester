@@ -19,6 +19,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -187,6 +188,7 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
+    public SDOSubWorker SdoWorker { get; private set; }
 
     public MainViewModel()
     {
@@ -291,17 +293,26 @@ public partial class MainViewModel : ViewModelBase
 
         SelectedSlave = 1;
 
-        return;
+        //Sub Worker Run.
+        SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance.GetSlave(1).SdoStore);
+        SdoWorker.Start();
 
+        return;
 
         //성공시 랜카드 Nic 저장.
 
     }
-
+    public async Task ReadOnceAsync()
+    {
+        // 읽기 요청 (실제 값은 Store 이벤트에서 반영됨)
+        await SdoWorker.EnqueueReadAsync(slaveNo: 1, index: 0x6064, subIndex: 0, maxLen: 4);
+    }
 
     private void HandleTest()
     {
+        ReadOnceAsync();
 
+        return;
         //Log($"Test message - 1234567890");
 
         //return;
