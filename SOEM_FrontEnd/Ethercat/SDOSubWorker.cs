@@ -18,7 +18,8 @@ namespace SOEM_FrontEnd.Ethercat
     public sealed class SDOSubWorker : IDisposable
     {
         private readonly EcClient _ec;
-        private readonly SDOStore _store;
+        //private readonly SDOStore _store;
+        private readonly Datamap _dataMap;
 
         private readonly BlockingCollection<SDOKey> _queue;
         private readonly CancellationTokenSource _cts;
@@ -38,14 +39,14 @@ namespace SOEM_FrontEnd.Ethercat
             public List<TaskCompletionSource<bool>> Waiters; // null 가능 (fire-and-forget만 들어온 경우)
         }
 
-        public SDOSubWorker(EcClient ec, SDOStore store, int boundedCapacity = 4096)
+        public SDOSubWorker(EcClient ec, Datamap datamap, int boundedCapacity = 4096)
         {
             if (ec == null) throw new ArgumentNullException(nameof(ec));
-            if (store == null) throw new ArgumentNullException(nameof(store));
+            if (datamap == null) throw new ArgumentNullException(nameof(datamap));
             if (boundedCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(boundedCapacity));
 
             _ec = ec;
-            _store = store;
+            _dataMap = datamap;
 
             _queue = new BlockingCollection<SDOKey>(new ConcurrentQueue<SDOKey>(), boundedCapacity);
             _cts = new CancellationTokenSource();
