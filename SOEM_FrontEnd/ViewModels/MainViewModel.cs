@@ -1,5 +1,6 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.VisualBasic;
 using SOEM_FrontEnd.DataMap;
@@ -13,6 +14,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -50,6 +52,12 @@ public partial class MainViewModel : ViewModelBase
 
     public ICommand CMD_SelectNIC { get; private set; }
 
+    private double _nicComboWidth = 180;
+    public double NicComboWidth
+    {
+        get => _nicComboWidth;
+        set => SetProperty(ref _nicComboWidth, value);
+    }
 
     private ObservableCollection<string> _NICList = new ObservableCollection<string>();
 
@@ -216,23 +224,27 @@ public partial class MainViewModel : ViewModelBase
 
         CMD_SelectNIC = new RelayCommand(HandleNIC);
 
-        string firstset = string.Empty;
-        string lastset = string.Empty;
-        foreach (var (ifname, desc) in PcapIfEnumerator.GetAll())
-        {
-            //Console.WriteLine($"{ifname}  |  {desc}");
-            string buf = $"{desc} - {ifname}";
-            NICList.Add(buf);
-            if (firstset == string.Empty)
-            {
-                firstset = buf;
-            }
+        //string firstset = string.Empty;
+        //string lastset = string.Empty;
 
-            lastset = buf;
-        }
+        //foreach (var (ifname, desc) in PcapIfEnumerator.GetAll())
+        //{
+        //    //Console.WriteLine($"{ifname}  |  {desc}");
+        //    string buf = $"{desc} - {ifname}";
+        //    //NICList.Add(buf);
 
-        NICSelect = lastset;
+        //    if (firstset == string.Empty)
+        //    {
+        //        firstset = buf;
+        //    }
 
+        //    lastset = buf;
+        //}
+
+
+        //NICSelect = lastset;
+
+        UpdateNicList();
 
         CMD_ReadAllSdoCommand = new RelayCommand(HandleReadAllSDO);
         //CMD_ReadSelectedSdoCommand = new RelayCommand(HandleReadSelectedSDO);
@@ -246,6 +258,71 @@ public partial class MainViewModel : ViewModelBase
         //var devices = ESICatalog.LoadAllDevices(path);
         //DevicesData = devices;
 
+    }
+
+    public void UpdateNicList()
+    {
+        NICList.Clear();
+
+        string firstset = string.Empty;
+        string lastset = string.Empty;
+
+        foreach (var (ifname, desc) in PcapIfEnumerator.GetAll())
+        {
+            //Console.WriteLine($"{ifname}  |  {desc}");
+            string buf = $"{desc} - {ifname}";
+            NICList.Add(buf);
+
+            if (firstset == string.Empty)
+            {
+                firstset = buf;
+            }
+
+            lastset = buf;
+        }
+
+        NICSelect = lastset;
+
+        NicComboWidth = MeasureMaxWidth(NICList);
+    }
+
+    private static double MeasureMaxWidth(IEnumerable<string> items)
+    {
+        // ComboBox 기본 폰트에 최대한 맞추기 (원하면 VM에 FontSize/FontFamily를 넘겨서 더 정확히)
+        var typeface = new Typeface(FontFamily.Default);
+        const double fontSize = 15.0;
+
+        double maxText = 0;
+
+        foreach (var s in items)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+                continue;
+
+            var ft = new FormattedText(
+                s,
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                typeface,
+                fontSize,
+                Brushes.Black);
+
+            if (ft.Width > maxText)
+                maxText = ft.Width;
+        }
+
+        // “콤보박스 크롬” (좌우 패딩 + 드롭다운 버튼 영역) 여유분
+        // 테마/스타일에 따라 달라서 보통 48~64px에서 맞춥니다.
+        const double chrome = 56;
+
+        var width = Math.Ceiling(maxText + chrome);
+
+        // 너무 작아지는 것 방지
+        if (width < 160) width = 160;
+        // 너무 커지는 것 방지(원하면)
+        //if (width > 700) width = 700;
+
+        return width;
     }
 
     private void DrawSlaves()
@@ -294,7 +371,8 @@ public partial class MainViewModel : ViewModelBase
         SelectedSlave = 1;
 
         //Sub Worker Run.
-        SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance.GetSlave(1).SdoStore);
+        //SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance.GetSlave(1).SdoStore);
+        SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance);
         SdoWorker.Start();
 
         return;

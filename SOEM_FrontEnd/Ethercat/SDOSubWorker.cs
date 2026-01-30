@@ -251,11 +251,15 @@ namespace SOEM_FrontEnd.Ethercat
                     Buffer.BlockCopy(buf, 0, trimmed, 0, actual);
 
                     //
-                    _store.UpdateOk(key, trimmed);
+                    //_store.UpdateOk(key, trimmed);
+
+                    _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, trimmed);
                 }
                 else
                 {
-                    _store.UpdateOk(key, buf);
+                    //_store.UpdateOk(key, buf);
+                    _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, buf);
+
                 }
 
                 return true;
@@ -302,7 +306,9 @@ namespace SOEM_FrontEnd.Ethercat
         private void SafeUpdateError(SDOKey key, string error)
         {
 
-            _store.UpdateError(key, error, abortCode: 0);
+            //_store.UpdateError(key, error, abortCode: 0);
+            _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateError(key, error, abortCode: 0);
+
         }
 
         private void DrainPendingOnStop()

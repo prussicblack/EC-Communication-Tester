@@ -12,9 +12,6 @@
     <vm:MainViewModel />
   </Design.DataContext>
 
-  <!--<TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/> -->
-
-
   <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
@@ -25,7 +22,7 @@
         <!-- <RowDefinition Height="Auto" /> -->
 	  </Grid.RowDefinitions>
 
-      <Grid  Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Left">
+      <Grid  Grid.Row="0" Grid.Column="0"  HorizontalAlignment="Stretch">
 
           <Grid.RowDefinitions>
               <RowDefinition Height="Auto" />
@@ -40,7 +37,10 @@
 
 
           <TextBlock Grid.Row="0" Grid.Column="0" Text="NIC List" FontWeight="Bold" />
-          <ComboBox Grid.Row="1" Grid.Column="0" ItemsSource="{Binding NICList}" SelectedItem="{Binding NICSelect, Mode=TwoWay}"/>
+          <ComboBox Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" 
+                    Width="{Binding NicComboWidth}"
+                    ItemsSource="{Binding NICList}" 
+                    SelectedItem="{Binding NICSelect, Mode=TwoWay}"/>
 
           <Button Grid.Row ="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Command="{Binding CMD_SelectNIC}" Content="Select"/>
           <Button Grid.Row ="1" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" Command="{Binding CMD_Test}" Content="Test"/>
