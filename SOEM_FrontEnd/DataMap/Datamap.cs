@@ -317,6 +317,8 @@ namespace SOEM_FrontEnd.DataMap
         private readonly Dictionary<SDOKey, SDOPoint> _dic = new Dictionary<SDOKey, SDOPoint>();
         private readonly Dictionary<SDOKey, SDOFlatObject> _leafRowByKey = new Dictionary<SDOKey, SDOFlatObject>();
 
+        private List<SDOKey> _cachedKeys;
+
         private long _seq;
 
         // DataGrid ItemsSource로 사용
@@ -541,7 +543,22 @@ namespace SOEM_FrontEnd.DataMap
             }
         }
 
+        public IReadOnlyList<SDOKey> GetAllSDOKeyList()
+        {
+            //가져가서 재할당 방지로 IReadOnlyList사용.
+            if (_cachedKeys != null)
+                return _cachedKeys;
 
+            List<SDOKey> keylist = new List<SDOKey>(_dic.Count);
+            foreach (var key in _dic.Keys)
+            {
+                keylist.Add(key);
+            }
+
+            _cachedKeys = keylist;
+
+            return _cachedKeys;
+        }
 
         public SDOPoint TryGetPoint(SDOKey key)
         {

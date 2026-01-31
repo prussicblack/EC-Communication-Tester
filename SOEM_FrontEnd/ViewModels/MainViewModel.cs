@@ -732,11 +732,12 @@ public partial class MainViewModel : ViewModelBase
         if (slave == null)
             return;
 
+        IReadOnlyList<SDOKey> slavekeys = slave.SdoStore.GetAllSDOKeyList();
 
-
-
+        foreach (var key in slavekeys)
+            SdoWorker.EnqueueRead(key.SlaveNo, key.Index, key.SubIndex);
     }
-
+        
 
 
     public void RemapRxPdo(ushort slave, ESIXMLData.ESIPDO RxMap)

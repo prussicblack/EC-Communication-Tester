@@ -111,9 +111,11 @@ namespace SOEM_FrontEnd.Ethercat
                 if (_pending.TryGetValue(key, out wi))
                 {
                     // 이미 대기 중: 대기자만 합치고 maxLen 승격
-                    if (maxLen > wi.MaxLen) wi.MaxLen = maxLen;
+                    if (maxLen > wi.MaxLen) 
+                        wi.MaxLen = maxLen;
 
-                    if (wi.Waiters == null) wi.Waiters = new List<TaskCompletionSource<bool>>();
+                    if (wi.Waiters == null) 
+                        wi.Waiters = new List<TaskCompletionSource<bool>>();
                     wi.Waiters.Add(tcs);
                 }
                 else
@@ -137,6 +139,7 @@ namespace SOEM_FrontEnd.Ethercat
 
             return tcs.Task;
         }
+
 
         /// <summary>
         /// 코얼레싱 Enqueue (fire-and-forget)
