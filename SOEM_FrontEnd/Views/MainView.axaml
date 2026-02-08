@@ -197,6 +197,27 @@
 
                 </Grid>
 		  </TabItem>
+              
+              <TabItem Header="ReMAP">
+
+
+              </TabItem>
+
+              <TabItem Header="PDO">
+				  <!-- PDO설정 및 관련 내용 여기에.-->
+
+
+              </TabItem>
+
+              <TabItem Header="Control">
+                  <!-- PDO에서 설정된 내용 바탕으로 동적UI로 처리.-->
+
+
+
+			  </TabItem>
+
+
+
 
 		  </TabControl>
 
