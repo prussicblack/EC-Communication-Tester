@@ -16,6 +16,55 @@ using static SOEM_FrontEnd.Ethercat.ESI.ESIXMLData;
 
 namespace SOEM_FrontEnd.DataMap
 {
+    //SlaveInfo 저장용 클래스.
+    public sealed class SlaveInfo
+    {
+        //추가필요.
+
+        public int SlaveNo { get; private set; }
+        public string Name { get; set; }
+
+        public uint VendorId { get; set; }
+        public uint ProductCode { get; set; }
+        public uint RevisionNo { get; set; }
+        public uint SerialNo { get; set; }
+
+        public string StateText { get; set; }       // "OP" 등
+        public ushort AlStatusCode { get; set; }
+        public string AlStatusText { get; set; }
+
+        public byte CoEDetails { get; set; }
+        public byte FoEDetails { get; set; }
+        public byte EoEDetails { get; set; }
+        public byte SoEDetails { get; set; }
+        public bool BlockLRW { get; set; }
+
+        public int IBytes { get; set; }
+        public int OBytes { get; set; }
+
+        public ushort EbusCurrentmA { get; set; }
+        public DateTime LastUpdatedUtc { get; set; }
+
+        public SlaveInfo(int slaveNo)
+        {
+            SlaveNo = slaveNo;
+            Name = "";
+            StateText = "";
+            AlStatusText = "";
+            LastUpdatedUtc = DateTime.MinValue;
+        }
+
+
+        public string GetSlaveInfo()
+        {
+            return "Pending implementation";
+        }
+
+    }
+
+
+
+
     //---UI표기 및 Flat클래스.
     public sealed class SDOFlatObject : INotifyPropertyChanged
     {
@@ -58,8 +107,6 @@ namespace SOEM_FrontEnd.DataMap
             }
 
         }
-
-
 
         private SDOReadStatus _status;
         public SDOReadStatus Status
@@ -849,7 +896,7 @@ namespace SOEM_FrontEnd.DataMap
 
     }
 
-    public sealed class DeviceInfo : INotifyPropertyChanged
+    public sealed class DeviceESIInfo : INotifyPropertyChanged
     {
         private ESIDevice _ESIDeviceInfo;
         public ESIDevice? ESIDeviceInfo
@@ -890,7 +937,21 @@ namespace SOEM_FrontEnd.DataMap
 
         private readonly SDOStore _sdo;
 
-        private readonly DeviceInfo _deviceInfo;
+        private readonly DeviceESIInfo _deviceInfo;
+
+
+        //나중에 SlaveInfo 처리하면서 같이 할것.
+        private readonly SlaveInfo _SlaveInfo;
+
+
+        public string SlaveInfo
+        {
+            get
+            {
+                return _SlaveInfo.GetSlaveInfo();
+            }
+        }
+
 
         public SDOStore SdoStore
         {
@@ -916,12 +977,17 @@ namespace SOEM_FrontEnd.DataMap
             ESIDevice? dev = ESICatalog.GetDeviceData(SlaveInfo.product, SlaveInfo.vendor, SlaveInfo.revision);
             if (dev == null)
             {
+                if (_deviceInfo == null)
+                {
+                    Console.WriteLine($"_deviceInfo is Null");
+                    return;
+                }
                 _deviceInfo.ESIDeviceInfo = null;
 
                 Console.WriteLine($"{SlaveInfo.name} is ESI Nothing");
                 return;
             }
-            _deviceInfo = new DeviceInfo();
+            _deviceInfo = new DeviceESIInfo();
 
             _deviceInfo.ESIDeviceInfo = dev;
 

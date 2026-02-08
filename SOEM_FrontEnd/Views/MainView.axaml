@@ -72,6 +72,14 @@
 
 			  <TabItem Header="Slave Status">
               <!--  슬레이브 Status 표시. Text로 걍 질러버리지?  -->
+              <ScrollViewer Margin="8"
+                            HorizontalScrollBarVisibility="Auto"
+                            VerticalScrollBarVisibility="Auto">
+                  <SelectableTextBlock
+                      Text="{Binding SelectedSlaveData.SlaveInfo}"
+                      FontFamily="Consolas"
+                      FontSize="12" />
+              </ScrollViewer>
 
 
 			  </TabItem>
