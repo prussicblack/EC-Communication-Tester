@@ -97,10 +97,10 @@
                   <DataGridTextColumn Header="Index"
                                       Binding="{Binding Index, StringFormat=0x{0:X4}}" />
 
-					<DataGridTextColumn Header="SubIndex"
-                                        Binding="{Binding SubIndex, StringFormat={}{0:D2}}" />
+                  <DataGridTextColumn Header="SubIndex"
+                                      Binding="{Binding SubIndex, StringFormat={}{0:D2}}" />
 
-					<DataGridTextColumn Header="Name"
+                  <DataGridTextColumn Header="Name"
                                       Binding="{Binding DisplayName}" /> 
 
                   <DataGridTextColumn Header="Type"
@@ -122,19 +122,23 @@
                   <DataGridTextColumn Header="PDO"
                                       Binding="{Binding Flags.PDOMapping}"/>
 
-					<!-- Status -->
+                  <!-- Status -->
                   <DataGridTextColumn Header="ReadStatus"
                                       Binding="{Binding Status}"/>
+
+                  <!--Current Value-->
+                  <DataGridTextColumn Header="Value"
+                                      Binding="{Binding CurrentValueText}"/>
+
+                  <DataGridTextColumn Header="RawValue"
+                                      Binding="{Binding CurrentValueRawHexText}"/>
+
 
                   <DataGridTextColumn Header="Error"
                                       Binding="{Binding LastErrorText}"/>
 
-					<!--Current Value-->
-                  <DataGridTextColumn Header="Value"
-                                      Binding="{Binding CurrentValueText}"/>
 
-
-              </DataGrid.Columns>
+				</DataGrid.Columns>
 
 
         	  </DataGrid>
@@ -162,7 +166,7 @@
 
 							<!-- Write 입력 -->
 							<TextBox Grid.Row="0" Grid.Column="2"
-									 Watermark="Write value (Maybe HEX Code)"
+									 Watermark="Write value (HEX Code Ex: 0x01)"
 									 Text="{Binding WriteValueText}"/>
 
 							<!-- Write 버튼 -->

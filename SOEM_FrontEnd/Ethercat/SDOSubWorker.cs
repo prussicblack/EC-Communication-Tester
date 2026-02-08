@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 
 namespace SOEM_FrontEnd.Ethercat
 {
+
+
     /// <summary>
     /// 단일 SDO 전용 스레드에서만 SDO를 읽고, SDOStore(Map)에 기록한다.
     ///
@@ -17,11 +19,34 @@ namespace SOEM_FrontEnd.Ethercat
     /// </summary>
     public sealed class SDOSubWorker : IDisposable
     {
+        private enum SdoOp
+        {
+            Read = 0,
+            Write = 1
+        }
+
+
+        private sealed class SdoJob
+        {
+            public SdoOp Op;
+            public SDOKey Key;
+
+            // Read용 (기존 maxLen/size)
+            public int MaxLen;
+
+            // Write용 payload (little-endian raw bytes)
+            public byte[] Data;
+
+            // 필요하면 완료 통지용 (옵션)
+            public List<TaskCompletionSource<bool>> Waiters;
+        }
+
+
         private readonly EcClient _ec;
         //private readonly SDOStore _store;
         private readonly Datamap _dataMap;
 
-        private readonly BlockingCollection<SDOKey> _queue;
+        private readonly BlockingCollection<SdoJob> _queue;
         private readonly CancellationTokenSource _cts;
 
         // pending: key -> workitem (대기자 합치기용)
@@ -48,7 +73,7 @@ namespace SOEM_FrontEnd.Ethercat
             _ec = ec;
             _dataMap = datamap;
 
-            _queue = new BlockingCollection<SDOKey>(new ConcurrentQueue<SDOKey>(), boundedCapacity);
+            _queue = new BlockingCollection<SdoJob>(boundedCapacity);
             _cts = new CancellationTokenSource();
         }
 
@@ -134,7 +159,14 @@ namespace SOEM_FrontEnd.Ethercat
 
             if (needEnqueue)
             {
-                _queue.Add(key); // 여기서만 실제 큐 증가
+                _queue.Add(new SdoJob   // 여기서만 실제 큐 증가
+                {
+                    Op = SdoOp.Read,
+                    Key = key,
+                    MaxLen = maxLen,     // 네 코드에 있는 길이 변수명으로
+                    Data = null,
+                    Waiters = null       // async 대기자 묶고 있으면 여기 넣기
+                }); 
             }
 
             return tcs.Task;
@@ -177,47 +209,84 @@ namespace SOEM_FrontEnd.Ethercat
 
             if (needEnqueue)
             {
-                _queue.Add(key);
+                _queue.Add(new SdoJob
+                {
+                    Op = SdoOp.Read,
+                    Key = key,
+                    MaxLen = maxLen,     // 네 코드에 있는 길이 변수명으로
+                    Data = null,
+                    Waiters = null       // async 대기자 묶고 있으면 여기 넣기
+                });
             }
         }
+
+        public void EnqueueWrite(int slaveNo, ushort index, byte subIndex, byte[] data)
+        {
+            ThrowIfDisposed();
+            if (!_running) throw new InvalidOperationException("SDOSubWorker is not running. Call Start() first.");
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
+            var key = new SDOKey(slaveNo, index, subIndex);
+
+            // Write는 보통 coalesce 하지 않는게 안전(사용자 의도 순서 보존)
+            _queue.Add(new SdoJob
+            {
+                Op = SdoOp.Write,
+                Key = key,
+                MaxLen = 0,
+                Data = (byte[])data.Clone(),
+                Waiters = null
+            });
+        }
+        public Task<bool> EnqueueWriteAsync(int slaveNo, ushort index, byte subIndex, byte[] data)
+        {
+            ThrowIfDisposed();
+            if (!_running) throw new InvalidOperationException("SDOSubWorker is not running. Call Start() first.");
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
+            var key = new SDOKey(slaveNo, index, subIndex);
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var waiters = new List<TaskCompletionSource<bool>>();
+            waiters.Add(tcs);
+
+            _queue.Add(new SdoJob
+            {
+                Op = SdoOp.Write,
+                Key = key,
+                MaxLen = 0,
+                Data = (byte[])data.Clone(),
+                Waiters = waiters
+            });
+
+            return tcs.Task;
+        }
+
 
         private void ThreadMain()
         {
             try
             {
-                foreach (var key in _queue.GetConsumingEnumerable(_cts.Token))
+                foreach (var job in _queue.GetConsumingEnumerable(_cts.Token))
                 {
-                    WorkItem wi = null;
-
-                    lock (_pendingLock)
-                    {
-                        // 큐에서 키를 받았으면 pending에서 제거 후 처리(한 번만 실행)
-                        if (_pending.TryGetValue(key, out wi))
-                            _pending.Remove(key);
-                    }
-
-                    // Stop 직전 경합 등으로 wi가 null일 수 있음
-                    if (wi == null)
+                    if (job == null)
                         continue;
 
                     bool ok = false;
-                    try
-                    {
-                        ok = ExecuteReadAndWriteMap(wi.Key, wi.MaxLen);
-                    }
-                    catch (Exception ex)
-                    {
-                        SafeUpdateError(wi.Key, "SDO worker exception: " + ex.Message);
-                        ok = false;
-                    }
 
-                    // 코얼레싱된 대기자 모두 완료 처리
-                    if (wi.Waiters != null)
+                    if (job.Op == SdoOp.Read)
                     {
-                        for (int i = 0; i < wi.Waiters.Count; i++)
-                        {
-                            wi.Waiters[i].TrySetResult(ok);
-                        }
+                        HandleReadJob(job);
+                        continue;
+                    }
+                    
+                    //Write는 Job.Waiter를 여기서 완료 처리.
+                    ok = HandleWriteJob(job);
+
+                    //코얼레싱된 대기자 모두 완료 처리
+                    if (job.Waiters != null)
+                    {
+                        for (int i = 0; i < job.Waiters.Count; i++)
+                            job.Waiters[i].TrySetResult(ok);
                     }
                 }
             }
@@ -231,6 +300,77 @@ namespace SOEM_FrontEnd.Ethercat
                 FailAllPending("SDO worker fatal error: " + ex.Message);
             }
         }
+
+        private bool HandleReadJob(SdoJob job)
+        {
+            WorkItem wi = null;
+
+            //여기서 pending에서 꺼내면서 Remove (성공/실패와 무관)
+            lock (_pendingLock)
+            {
+                if (_pending.TryGetValue(job.Key, out wi))
+                {
+                    _pending.Remove(job.Key);
+                }
+            }
+
+            // pending이 없으면: 중복 트리거나 stop race 등. 그냥 무시
+            if (wi == null)
+                return false;
+
+            bool ok = false;
+
+            try
+            {
+                // wi.MaxLen이 coalesce 결과(최대)라서 job.MaxLen보다 신뢰도가 높음
+                ok = ExecuteReadAndWriteMap(wi.Key, wi.MaxLen);
+            }
+            catch (Exception ex)
+            {
+                SafeUpdateError(wi.Key, "SDO read worker exception: " + ex.Message);
+                ok = false;
+            }
+
+            if (wi.Waiters != null)
+            {
+                for (int i = 0; i < wi.Waiters.Count; i++)
+                    wi.Waiters[i].TrySetResult(ok);
+            }
+
+
+            return ok;
+        }
+
+
+        private bool HandleWriteJob(SdoJob job)
+        {
+            if (job.Data == null)
+                return false;
+
+            return ExecuteWriteAndUpdateMap(job.Key, job.Data);
+        }
+
+        private bool ExecuteWriteAndUpdateMap(SDOKey key, byte[] data)
+        {
+            // 예: soem_sdo_write(slave, index, sub, buf, len) 같은 wrapper
+            int rc = SOEMNative.soem_sdo_write((ushort)key.SlaveNo, key.Index, key.SubIndex, data, (uint)data.Length);
+
+            if (rc == 0)
+            {
+                // 즉시 UI에 "쓴 값" 반영(빠른 피드백)
+                //_dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, data);
+
+                // 원하면: write 성공 후 실제 반영값 확인을 위해 read를 추가로 enqueue
+                // EnqueueReadInternal(key, data.Length, null);
+
+                return true;
+            }
+
+            SafeUpdateError(key, "SDO write failed (rc=" + rc + ")");
+            return false;
+        }
+
+
 
         /// <summary>
         /// 실제 SDO read 수행 + Map(SDOStore)에 결과 기록

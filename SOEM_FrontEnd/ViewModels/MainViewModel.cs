@@ -116,7 +116,21 @@ public partial class MainViewModel : ViewModelBase
 
     }
 
-    public ESIXMLData.ESISDOObject? SelectedSDO { get; set; }
+    private SDOFlatObject _selectedSDO;
+    public SDOFlatObject SelectedSDO
+    {
+        get { return _selectedSDO; }
+        set
+        {
+            if (object.ReferenceEquals(_selectedSDO, value))
+                return;
+
+            _selectedSDO = value;
+            OnPropertyChanged(nameof(SelectedSDO));
+
+            UpdateSdoSelectionState();
+        }
+    }
 
 
     //Slave데이터를 보여주기 위한 프로퍼티들.
@@ -247,8 +261,8 @@ public partial class MainViewModel : ViewModelBase
         UpdateNicList();
 
         CMD_ReadAllSdoCommand = new RelayCommand(HandleReadAllSDO);
-        //CMD_ReadSelectedSdoCommand = new RelayCommand(HandleReadSelectedSDO);
-        //CMD_WriteSelectedSdoCommand = new RelayCommand(HandleSelectedWriteSDO);
+        CMD_ReadSelectedSdoCommand = new RelayCommand(HandleReadSelectedSDO);
+        CMD_WriteSelectedSdoCommand = new RelayCommand(HandleSelectedWriteSDO);
 
 
         //나중에 프로그램 로딩시 Splash Screen 과 함께 로딩.
@@ -259,6 +273,190 @@ public partial class MainViewModel : ViewModelBase
         //DevicesData = devices;
 
     }
+
+    private void HandleReadSelectedSDO()
+    {
+        if (CanReadSelectedSdo == false)
+            return;
+
+        var row = _selectedSDO;
+        if (row == null)
+            return;
+
+        // 선택된 row에 SlaveNo/Index/SubIndex가 이미 들어있음
+        SdoWorker.EnqueueRead(row.SlaveNo, row.Index, row.SubIndex);
+    }
+
+
+    private void HandleSelectedWriteSDO()
+    {
+        if (!CanWriteSelectedSdo)
+            return;
+
+        var row = SelectedSDO;
+        if (row == null)
+            return;
+
+        string err;
+        byte[] payload = TryBuildWritePayload(row, WriteValueText, out err);
+        if (payload == null)
+        {
+            LogLines.Add("[SDO][WRITE] " + err);
+            return;
+        }
+
+        SdoWorker.EnqueueWrite(row.SlaveNo, row.Index, row.SubIndex, payload);
+
+
+    }
+
+    private static byte[] TryBuildWritePayload(SDOFlatObject row, string text, out string error)
+    {
+        error = null;
+
+        if (row == null) { error = "No selected SDO."; return null; }
+        if (string.IsNullOrWhiteSpace(text)) { error = "WriteValueText is empty."; return null; }
+
+        string dt = (row.DataType ?? "").Trim().ToUpperInvariant();
+        string s = text.Trim();
+
+        // HEX 판별: 0x... 또는 (공백 포함) "11 22 33"
+        bool isHexNum = s.StartsWith("0x", StringComparison.OrdinalIgnoreCase);
+
+        try
+        {
+            if (dt == "BOOLEAN" || dt == "BOOL")
+            {
+                if (string.Equals(s, "TRUE", StringComparison.OrdinalIgnoreCase) || s == "1") return new byte[] { 1 };
+                if (string.Equals(s, "FALSE", StringComparison.OrdinalIgnoreCase) || s == "0") return new byte[] { 0 };
+                error = "BOOL expects TRUE/FALSE/1/0.";
+                return null;
+            }
+
+            if (dt == "INT16" || dt == "INTEGER16")
+            {
+                short v;
+                if (isHexNum) v = unchecked((short)Convert.ToUInt16(s.Substring(2), 16));
+                else v = short.Parse(s);
+                return BitConverter.GetBytes(v);
+            }
+
+            if (dt == "UINT16" || dt == "UNSIGNED16")
+            {
+                ushort v;
+                if (isHexNum) v = Convert.ToUInt16(s.Substring(2), 16);
+                else v = ushort.Parse(s);
+                return BitConverter.GetBytes(v);
+            }
+
+            if (dt == "INT32" || dt == "INTEGER32")
+            {
+                int v;
+                if (isHexNum) v = unchecked((int)Convert.ToUInt32(s.Substring(2), 16));
+                else v = int.Parse(s);
+                return BitConverter.GetBytes(v);
+            }
+
+            if (dt == "UINT32" || dt == "UNSIGNED32" || dt == "UDINT")
+            {
+                uint v;
+                if (isHexNum) v = Convert.ToUInt32(s.Substring(2), 16);
+                else v = uint.Parse(s);
+                return BitConverter.GetBytes(v);
+            }
+
+            // RAW HEX bytes:
+            // 1) "11 22 33"
+            if (s.IndexOf(' ') >= 0 || s.IndexOf('\t') >= 0 || s.IndexOf(',') >= 0)
+            {
+                string[] parts = s.Split(new[] { ' ', '\t', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                byte[] buf = new byte[parts.Length];
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    string p = parts[i];
+                    if (p.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) p = p.Substring(2);
+                    buf[i] = Convert.ToByte(p, 16);
+                }
+                return buf;
+            }
+
+            // 2) "11223344"
+            string hex = s;
+            if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) hex = hex.Substring(2);
+            if (hex.Length % 2 != 0) { error = "Hex string length must be even."; return null; }
+
+            byte[] raw = new byte[hex.Length / 2];
+            for (int i = 0; i < raw.Length; i++)
+                raw[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+
+            return raw;
+        }
+        catch (Exception ex)
+        {
+            error = "Parse failed: " + ex.Message;
+            return null;
+        }
+    }
+
+
+
+
+    private void UpdateSdoSelectionState()
+    {
+        // 기본값
+        CanReadSelectedSdo = false;
+        CanWriteSelectedSdo = false;
+
+        if (_selectedSDO == null)
+            return;
+
+        // 그룹행(HasSubIndex=true)은 읽기/쓰기 금지로 설계되어 있음
+        if (_selectedSDO.HasSubIndex)
+            return;
+
+        // 워커 준비 + 슬레이브 선택 유효성
+        if (SdoWorker == null || !SdoWorker.IsRunning)
+            return;
+
+        if (Datamap.Instance.IsInit() == false)
+            return;
+
+        // 읽기는 leaf면 허용
+        CanReadSelectedSdo = true;
+
+
+        // Write 권한 체크
+        if (IsWritableByAccess(_selectedSDO) == false) return;
+
+        // 입력값이 있어야 write 가능하게(권장)
+        //if (string.IsNullOrWhiteSpace(WriteValueText)) return;
+
+        // 입력값 파싱 가능해야 write 가능하게(권장)
+        //string err;
+        //var payload = TryBuildWritePayload(row, WriteValueText, out err);
+        //if (payload == null) return;
+
+        CanWriteSelectedSdo = true;
+    }
+
+    private static bool IsWritableByAccess(SDOFlatObject row)
+    {
+        if (row == null) return false;
+
+        // Flags가 없을 수도 있으니 방어적으로
+        string acc = null;
+        if (row.Flags != null) acc = row.Flags.Access;
+        if (string.IsNullOrWhiteSpace(acc)) return false;
+
+        acc = acc.Trim().ToLowerInvariant();
+
+        // ro는 무조건 금지
+        if (acc.Contains("ro")) return false;
+
+        // rw/wo 같은 케이스: w 포함이면 허용
+        return acc.Contains("w");
+    }
+
 
     public void UpdateNicList()
     {

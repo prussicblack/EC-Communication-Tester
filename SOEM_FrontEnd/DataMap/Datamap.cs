@@ -45,6 +45,22 @@ namespace SOEM_FrontEnd.DataMap
             }
         }
 
+        private string _currentValueRawHexText = "";
+
+        public string CurrentValueRawHexText
+        {
+            get { return _currentValueRawHexText; }
+            set
+            {
+                if (_currentValueRawHexText == value) return;
+                _currentValueRawHexText = value;
+                OnPropertyChanged(nameof(CurrentValueRawHexText));
+            }
+
+        }
+
+
+
         private SDOReadStatus _status;
         public SDOReadStatus Status
         {
@@ -580,26 +596,232 @@ namespace SOEM_FrontEnd.DataMap
 
                 if (p.Status == SDOReadStatus.Ok)
                 {
-                    row.CurrentValueText = FormatValueText(p, row);
+                    //Raw Hex값
+                    row.CurrentValueRawHexText = FormatValueText(p, row);
+
+                    //타입에 따라 변환된값.
+                    row.CurrentValueText = FormatValueTextByType(p, row);
                 }
                 else if (p.Status == SDOReadStatus.Abort)
                 {
-                    row.CurrentValueText = "ABORT 0x" + p.AbortCode.ToString("X8");
+                    //에러값 Value 에 기록금지.
+                    //row.CurrentValueText = "ABORT 0x" + p.AbortCode.ToString("X8");
+                    Console.WriteLine(row.CurrentValueRawHexText);
                 }
                 else if (p.Status == SDOReadStatus.Timeout)
                 {
-                    row.CurrentValueText = "TIMEOUT";
+                    //에러값 Value 에 기록금지.
+                    //row.CurrentValueText = "TIMEOUT";
+                    Console.WriteLine(row.CurrentValueRawHexText);
+
                 }
                 else if (p.Status == SDOReadStatus.Error)
                 {
-                    row.CurrentValueText = "ERROR: " + (p.Error ?? "");
+                    //에러값 Value 에 기록금지.
+                    //row.CurrentValueText = "ERROR: " + (p.Error ?? "");
+                    Console.WriteLine(row.CurrentValueRawHexText);
                 }
                 else
                 {
-                    row.CurrentValueText = "";
+                    row.CurrentValueRawHexText = "";
                 }
             });
         }
+
+        private static string FormatValueTextByType(SDOPoint p, SDOFlatObject row)
+        {
+            var raw = p.LastRaw;
+            if (raw == null || raw.Length == 0) return "";
+
+            string dt = row.DataType;
+            if (string.IsNullOrWhiteSpace(dt)) dt = p.DataType;
+
+            dt = NormalizeDataType(dt);
+
+
+            try
+            {
+                if (dt == "BOOLEAN")
+                {
+                    bool b = raw[0] != 0;
+                    return b ? "True" : "False";
+                }
+
+                if (dt == "INT8")
+                {
+                    sbyte v = unchecked((sbyte)raw[0]);
+                    return v.ToString();
+                }
+
+                if (dt == "UINT8")
+                {
+                    byte v = raw[0];
+                    return v.ToString();
+                }
+
+                if (dt == "INT16")
+                {
+                    if (raw.Length < 2) return BytesToHex(raw);
+                    short v = ReadInt16LE(raw, 0);
+                    return v.ToString(); // 필요하면 + HexSuffix16((ushort)v)
+                }
+
+                if (dt == "UINT16")
+                {
+                    if (raw.Length < 2) return BytesToHex(raw);
+                    ushort v = ReadUInt16LE(raw, 0);
+                    return v.ToString();
+                }
+
+                if (dt == "INT32")
+                {
+                    if (raw.Length < 4) return BytesToHex(raw);
+                    int v = ReadInt32LE(raw, 0);
+                    return v.ToString();
+                }
+
+                if (dt == "UINT32")
+                {
+                    if (raw.Length < 4) return BytesToHex(raw);
+                    uint v = ReadUInt32LE(raw, 0);
+                    return v.ToString();
+                }
+
+                if (dt == "INT64")
+                {
+                    if (raw.Length < 8) return BytesToHex(raw);
+                    long v = ReadInt64LE(raw, 0);
+                    return v.ToString();
+                }
+
+                if (dt == "UINT64")
+                {
+                    if (raw.Length < 8) return BytesToHex(raw);
+                    ulong v = ReadUInt64LE(raw, 0);
+                    return v.ToString();
+                }
+
+                if (dt == "REAL32")
+                {
+                    if (raw.Length < 4) return BytesToHex(raw);
+                    float v = ReadSingleLE(raw, 0);
+                    return v.ToString("G9");
+                }
+
+                if (dt == "REAL64")
+                {
+                    if (raw.Length < 8) return BytesToHex(raw);
+                    double v = ReadDoubleLE(raw, 0);
+                    return v.ToString("G17");
+                }
+
+                if (dt == "VISIBLE_STRING")
+                {
+                    int n = 0;
+                    while (n < raw.Length && raw[n] != 0) n++;
+                    return System.Text.Encoding.ASCII.GetString(raw, 0, n);
+                }
+            }
+            catch
+            {
+                // fallthrough
+            }
+
+            return BytesToHex(raw);
+
+        }
+
+        private static string NormalizeDataType(string dt)
+        {
+            dt = (dt ?? "").Trim().ToUpperInvariant();
+
+            // 흔한 alias 통일
+            if (dt == "BOOL") return "BOOLEAN";
+
+            if (dt == "SINT") return "INT8";
+            if (dt == "USINT") return "UINT8";
+
+            if (dt == "INT") return "INT16";
+            if (dt == "UINT") return "UINT16";
+            if (dt == "INTEGER16") return "INT16";
+            if (dt == "UNSIGNED16") return "UINT16";
+
+            if (dt == "DINT") return "INT32";
+            if (dt == "UDINT") return "UINT32";
+            if (dt == "INTEGER32") return "INT32";
+            if (dt == "UNSIGNED32") return "UINT32";
+
+            if (dt == "LINT") return "INT64";
+            if (dt == "ULINT") return "UINT64";
+            if (dt == "INTEGER64") return "INT64";
+            if (dt == "UNSIGNED64") return "UINT64";
+
+            if (dt == "REAL") return "REAL32";
+            if (dt == "LREAL") return "REAL64";
+
+            if (dt.Contains("STRING")) return "VISIBLE_STRING";
+
+            //혹시 몰라서..
+            if (dt == "USINT16") return "UINT16";
+            if (dt == "SINT32") return "INT32";
+            if (dt == "UDINT32") return "UINT32";
+
+            return dt;
+        }
+
+        // 플랫폼 독립 little-endian reader들
+        private static short ReadInt16LE(byte[] b, int o)
+        {
+            return unchecked((short)ReadUInt16LE(b, o));
+        }
+        private static ushort ReadUInt16LE(byte[] b, int o)
+        {
+            return (ushort)(b[o] | (b[o + 1] << 8));
+        }
+
+        private static int ReadInt32LE(byte[] b, int o)
+        {
+            return unchecked((int)ReadUInt32LE(b, o));
+        }
+        private static uint ReadUInt32LE(byte[] b, int o)
+        {
+            return (uint)(b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24));
+        }
+
+        private static long ReadInt64LE(byte[] b, int o)
+        {
+            return unchecked((long)ReadUInt64LE(b, o));
+        }
+        private static ulong ReadUInt64LE(byte[] b, int o)
+        {
+            uint lo = ReadUInt32LE(b, o);
+            uint hi = ReadUInt32LE(b, o + 4);
+            return ((ulong)hi << 32) | lo;
+        }
+
+        private static float ReadSingleLE(byte[] b, int o)
+        {
+            // BitConverter는 엔디안 의존 → 필요시 swap
+            if (BitConverter.IsLittleEndian)
+                return BitConverter.ToSingle(b, o);
+
+            var tmp = new byte[4];
+            tmp[0] = b[o + 3]; tmp[1] = b[o + 2]; tmp[2] = b[o + 1]; tmp[3] = b[o + 0];
+            return BitConverter.ToSingle(tmp, 0);
+        }
+
+        private static double ReadDoubleLE(byte[] b, int o)
+        {
+            if (BitConverter.IsLittleEndian)
+                return BitConverter.ToDouble(b, o);
+
+            var tmp = new byte[8];
+            tmp[0] = b[o + 7]; tmp[1] = b[o + 6]; tmp[2] = b[o + 5]; tmp[3] = b[o + 4];
+            tmp[4] = b[o + 3]; tmp[5] = b[o + 2]; tmp[6] = b[o + 1]; tmp[7] = b[o + 0];
+            return BitConverter.ToDouble(tmp, 0);
+        }
+
+
 
         private static string FormatValueText(SDOPoint p, SDOFlatObject row)
         {
@@ -611,41 +833,8 @@ namespace SOEM_FrontEnd.DataMap
 
             dt = (dt ?? "").Trim().ToUpperInvariant();
 
-            try
-            {
-                if (dt == "BOOLEAN" || dt == "BOOL")
-                    return (raw[0] != 0) ? "TRUE" : "FALSE";
 
-                if (dt == "INT16" || dt == "INTEGER16" || dt == "SINT16")
-                {
-                    if (raw.Length < 2) return BytesToHex(raw);
-                    return BitConverter.ToInt16(raw, 0).ToString();
-                }
-
-                if (dt == "UINT16" || dt == "UNSIGNED16" || dt == "USINT16")
-                {
-                    if (raw.Length < 2) return BytesToHex(raw);
-                    return BitConverter.ToUInt16(raw, 0).ToString();
-                }
-
-                if (dt == "INT32" || dt == "INTEGER32" || dt == "SINT32")
-                {
-                    if (raw.Length < 4) return BytesToHex(raw);
-                    return BitConverter.ToInt32(raw, 0).ToString();
-                }
-
-                if (dt == "UINT32" || dt == "UNSIGNED32" || dt == "UDINT32")
-                {
-                    if (raw.Length < 4) return BytesToHex(raw);
-                    return BitConverter.ToUInt32(raw, 0).ToString();
-                }
-            }
-            catch
-            {
-                // fallthrough
-            }
-
-            return BytesToHex(raw);
+            return "0x"+BytesToHex(raw);
         }
 
         private static string BytesToHex(byte[] raw)
@@ -656,6 +845,7 @@ namespace SOEM_FrontEnd.DataMap
                 sb.Append(raw[i].ToString("X2"));
             return sb.ToString();
         }
+
 
     }
 
