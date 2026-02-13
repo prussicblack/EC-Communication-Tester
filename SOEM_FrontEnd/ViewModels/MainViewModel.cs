@@ -566,7 +566,8 @@ public partial class MainViewModel : ViewModelBase
 
         Datamap.Instance.Init(SlaveInfoData);
 
-        SelectedSlave = 1;
+        if(SlaveInfoData.Count() > 1)
+            SelectedSlave = 1;
 
         //Sub Worker Run.
         //SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance.GetSlave(1).SdoStore);
