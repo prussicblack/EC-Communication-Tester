@@ -886,11 +886,23 @@ namespace SOEM_FrontEnd.DataMap
 
         private static string BytesToHex(byte[] raw)
         {
+            //정방향 MSB
+            //if (raw == null || raw.Length == 0) return "";
+            //var sb = new System.Text.StringBuilder(raw.Length * 2);
+            //for (int i = 0; i < raw.Length; i++)
+            //    sb.Append(raw[i].ToString("X2"));
+            // return sb.ToString();
+
+            //역방향 LSB
             if (raw == null || raw.Length == 0) return "";
+
             var sb = new System.Text.StringBuilder(raw.Length * 2);
-            for (int i = 0; i < raw.Length; i++)
+            for (int i = raw.Length - 1; i >= 0; i--)
+            {
                 sb.Append(raw[i].ToString("X2"));
+            }
             return sb.ToString();
+
         }
 
 
@@ -944,13 +956,13 @@ namespace SOEM_FrontEnd.DataMap
         private readonly SlaveInfo _SlaveInfo;
 
 
-        public string SlaveInfo
-        {
-            get
-            {
-                return _SlaveInfo.GetSlaveInfo();
-            }
-        }
+        //public string SlaveInfo
+        //{
+            //get
+            //{
+                //return _SlaveInfo.GetSlaveInfo();
+            //}
+        //}
 
 
         public SDOStore SdoStore

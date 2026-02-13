@@ -75,10 +75,10 @@
               <ScrollViewer Margin="8"
                             HorizontalScrollBarVisibility="Auto"
                             VerticalScrollBarVisibility="Auto">
-                  <SelectableTextBlock
+                  <!--<SelectableTextBlock
                       Text="{Binding SelectedSlaveData.SlaveInfo}"
                       FontFamily="Consolas"
-                      FontSize="12" />
+                      FontSize="12" />-->
               </ScrollViewer>
 
 
