@@ -135,7 +135,7 @@ public partial class MainViewModel : ViewModelBase
 
     //Slave데이터를 보여주기 위한 프로퍼티들.
     //SlaveStore 에 대한 프로퍼티 노출.
-    //참조 변경으로 갈아끼우틑 방식임.
+    //참조 변경으로 갈아끼우는 방식임.
     public SlaveStore SelectedSlaveData
     {
         get
@@ -163,8 +163,16 @@ public partial class MainViewModel : ViewModelBase
             OnPropertyChanged(nameof(SelectedSlave));
             OnPropertyChanged(nameof(SelectedSlaveData));           // 중요
             //OnPropertyChanged(nameof(SdoRows));                     // (선택) 별도 프로퍼티 쓰면
+
+            OnPropertyChanged(nameof(IsMasterSelected));
+            OnPropertyChanged(nameof(IsSlaveSelected));
+
         }
     }
+
+    public bool IsMasterSelected => SelectedSlave == 0;
+    public bool IsSlaveSelected => SelectedSlave != 0;
+
 
     //SDO 관련
     public ICommand CMD_ReadAllSdoCommand { get; private set; }

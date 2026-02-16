@@ -162,25 +162,30 @@ namespace SOEM_FrontEnd.Model
             return (uint)((index << 16) | (subIndex << 8) | bitLen);
         }
 
-        public void RebuildPdoMap()
+        public bool RebuildPdoMap()
         {
             int rc = SOEMNative.soem_config_map_only();
             if (rc < 0)
             {
                 Console.WriteLine($"PDO map rebuild failed.");
 
+                return false;
                 //throw new InvalidOperationException("PDO map rebuild failed.");
             }
+            return true;
         }
 
-        public void EnsureState(ushort state, int timeoutMs)
+        public bool EnsureState(ushort state, int timeoutMs)
         {
             int rc = SOEMNative.soem_set_state(state, timeoutMs);
             if (rc != 0)
             {
                 Console.WriteLine($"State transition failed -> 0x{state:X}.");
                 //throw new InvalidOperationException($"State transition failed -> 0x{state:X}.");
+                return false;
             }
+
+            return true;
         }
 
         public int SlaveCount => SOEMNative.soem_slave_count();
