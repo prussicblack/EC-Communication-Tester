@@ -102,11 +102,11 @@ namespace SOEM_FrontEnd.Automation
             try
             {
                 //PP모드 전환.
-                //ECClient.SetModePP(slaveno);
+                _ECClient.SetModePP(1);
                 //초기 프로파일 입력.
-                //ECClient.SetProfile(slaveno, 10000, 500, 500); // 예: vel/acc/dec
+                _ECClient.SetProfile(1, 10000, 500, 500); // 예: vel/acc/dec
                 //초기 알람 클리어.
-                //ECClient.SdoWriteI16(slaveno, 0x6040, 00, 0x0080);  //slave alarm reset. SDO로 써도 먹네..
+                _ECClient.SdoWriteI16(1, 0x6040, 00, 0x0080);  //slave alarm reset. SDO로 써도 먹네..
 
                 bool ret = _ECClient.EnsureState(EcClient.EC_STATE_OPERATIONAL, 5000);
                 if (ret == false)
@@ -117,8 +117,8 @@ namespace SOEM_FrontEnd.Automation
                 m_eCurrentSequence = eStateSequenceName.Op;
 
                 //Worker시작.
-                //var worker = new PDORTWorker(_ECClient);
-                //worker.Start();
+                var worker = new PDORTWorker(_ECClient, 1);
+                worker.Start();
 
             }
 

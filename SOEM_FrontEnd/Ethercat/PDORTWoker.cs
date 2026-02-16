@@ -19,8 +19,8 @@ namespace SOEM_FrontEnd.Ethercat
         private const int RX_OFF_CW = 0; // 0x6040
         private const int RX_OFF_TPOS = 2; // 0x607A
 
-        private const int TX_OFF_SW = 0; // 0x6041
-        private const int TX_OFF_POS = 2; // 0x6064
+        private const int TX_OFF_SW = 2; // 0x6041
+        private const int TX_OFF_POS = 5; // 0x6064
 
         private Thread _thread;
         private volatile bool _running;
@@ -143,7 +143,7 @@ namespace SOEM_FrontEnd.Ethercat
                 // ----- RxPDO 쓰기 -----
                 _ec.PdoWriteU16(_slave, RX_OFF_CW, cw);
                 _ec.PdoWriteI32(_slave, RX_OFF_TPOS, currentTarget);
-                _ec.PdoWriteU16(0x09, 0, Outout);
+                //_ec.PdoWriteU16(0x09, 0, Outout);
 
 
                 // ----- PDO 전송/수신 -----
@@ -169,8 +169,8 @@ namespace SOEM_FrontEnd.Ethercat
                 loop++;
 
                 // 테스트용: 60초 정도 돌리고 자동 종료
-                if (loop >= 600000)
-                    return false;
+                //if (loop >= 600000)
+                //    return false;
 
                 return true;
             });

@@ -82,8 +82,24 @@
                           <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SlaveCountUI}" Margin="0,0,0,10"/>
 
                           <Border Grid.Row="2" Grid.ColumnSpan="2" BorderThickness="1" CornerRadius="6" Padding="10">
-                              <TextBlock Text="(여기에 Master 상태머신 요약 UI를 붙이면 됨)" Opacity="0.7"/>
+                              <StackPanel Orientation="Horizontal"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Top"
+                                          Spacing="8"
+                                          Margin="16">
+
+                                  <TextBlock Text="슬레이브 모드 변경" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                                  <Button Content="Init" Command="{Binding CMD_MoveToInit}" />
+                                  <Button Content="PreOP" Command="{Binding CMD_MoveToPreOp}" />
+                                  <Button Content="SafeOP" Command="{Binding CMD_MoveToSafeOp}" />
+                                  <Button Content="OP" Command="{Binding CMD_MoveToOp}" />
+
+                              </StackPanel>
                           </Border>
+
+
+
                       </Grid>
                   </TabItem>
               </TabControl>
@@ -195,7 +211,7 @@
 
 							<!-- Write 입력 -->
 							<TextBox Grid.Row="0" Grid.Column="2"
-									 Watermark="Write value (HEX Code Ex: 0x01)"
+									 Watermark="Write value (HEX Code Ex: 0x123 DEC Code Ex: 123)"
 									 Text="{Binding WriteValueText}"/>
 
 							<!-- Write 버튼 -->

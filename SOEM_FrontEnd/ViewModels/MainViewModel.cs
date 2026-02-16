@@ -8,6 +8,7 @@ using SOEM_FrontEnd.Ethercat;
 using SOEM_FrontEnd.Ethercat.ESI;
 using SOEM_FrontEnd.Model;
 using System;
+using System.Buffers.Binary;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -23,6 +24,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using SOEM_FrontEnd.Automation;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace SOEM_FrontEnd.ViewModels;
@@ -47,6 +49,8 @@ public partial class MainViewModel : ViewModelBase
     //public string Greeting => "Welcome to Avalonia!";
 
     private EcClient ECClient;
+
+    private StateMachine StateMachine;
 
     public ICommand CMD_Test { get; private set; }
 
@@ -235,10 +239,19 @@ public partial class MainViewModel : ViewModelBase
 
     public SDOSubWorker SdoWorker { get; private set; }
 
+    public ICommand CMD_MoveToInit { get; private set; }
+    public ICommand CMD_MoveToPreOp { get; private set; }
+    public ICommand CMD_MoveToSafeOp { get; private set; }
+    public ICommand CMD_MoveToOp { get; private set; }
+    
+    
+    
     public MainViewModel()
     {
 
         ECClient = new EcClient();
+
+        StateMachine = new StateMachine(ECClient);
 
         ////NativeBootstrap.EnsureLoaded(); //DLL로딩용.
 
@@ -288,12 +301,38 @@ public partial class MainViewModel : ViewModelBase
         CMD_WriteSelectedSdoCommand = new RelayCommand(HandleSelectedWriteSDO);
 
 
+        CMD_MoveToInit = new RelayCommand(HandleMoveToInit);
+        CMD_MoveToPreOp = new RelayCommand(HandleMoveToPreOp);
+        CMD_MoveToSafeOp = new RelayCommand(HandleMoveToSafeOp);
+        CMD_MoveToOp = new RelayCommand(HandleMoveToOp);
+
         //나중에 프로그램 로딩시 Splash Screen 과 함께 로딩.
         //의외로 시간이 좀 걸릴 수 있음.
         //string path = AppDomain.CurrentDomain.BaseDirectory + "ESI";
 
         //var devices = ESICatalog.LoadAllDevices(path);
         //DevicesData = devices;
+    }
+
+    private void HandleMoveToOp()
+    {
+        StateMachine.MoveToOperate();
+    }
+
+    private void HandleMoveToSafeOp()
+    {
+        StateMachine.MoveToSafeOP();
+
+    }
+
+    private void HandleMoveToPreOp()
+    {
+        StateMachine.MoveToPreOP();
+    }
+
+    private void HandleMoveToInit()
+    {
+        StateMachine.MoveToInit();
 
     }
 
@@ -341,78 +380,160 @@ public partial class MainViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(text)) { error = "WriteValueText is empty."; return null; }
 
         string dt = (row.DataType ?? "").Trim().ToUpperInvariant();
+        ushort bs = row.BitSize;
         string s = text.Trim();
 
-        // HEX 판별: 0x... 또는 (공백 포함) "11 22 33"
-        bool isHexNum = s.StartsWith("0x", StringComparison.OrdinalIgnoreCase);
+        // 규칙: 0x 붙으면 16진수, 없으면 10진수
+        bool isHex = s.StartsWith("0x", StringComparison.OrdinalIgnoreCase);
 
         try
         {
+            // ---------- BOOL ----------
             if (dt == "BOOLEAN" || dt == "BOOL")
             {
-                if (string.Equals(s, "TRUE", StringComparison.OrdinalIgnoreCase) || s == "1") return new byte[] { 1 };
-                if (string.Equals(s, "FALSE", StringComparison.OrdinalIgnoreCase) || s == "0") return new byte[] { 0 };
-                error = "BOOL expects TRUE/FALSE/1/0.";
-                return null;
+                if (string.Equals(s, "TRUE", StringComparison.OrdinalIgnoreCase)) return new byte[] { 1 };
+                if (string.Equals(s, "FALSE", StringComparison.OrdinalIgnoreCase)) return new byte[] { 0 };
+
+                // 숫자도 허용: 0x1 / 1 / 0x0 / 0
+                if (isHex)
+                {
+                    ulong hv = Convert.ToUInt64(s.Substring(2), 16);
+                    return new byte[] { (byte)(hv != 0 ? 1 : 0) };
+                }
+                else
+                {
+                    long dv = long.Parse(s);
+                    return new byte[] { (byte)(dv != 0 ? 1 : 0) };
+                }
             }
 
-            if (dt == "INT16" || dt == "INTEGER16")
+            // --------- SINT -----------
+            if (dt == "SINT" || (dt == "INT" && bs == 8))
+            {
+                sbyte v;
+
+                if (isHex)
+                    v = unchecked((sbyte)Convert.ToByte(s.Substring(2), 16)); // 0x80~0xFF도 음수로 매핑됨
+                else
+                    v = sbyte.Parse(s);
+
+                return new byte[] { unchecked((byte)v) };
+            }
+
+            // -------- USINT ------------
+            if (dt == "USINT" || (dt == "UINT" && bs == 8))
+            {
+                byte v;
+
+                if (isHex)
+                    v = Convert.ToByte(s.Substring(2), 16);
+                else
+                    v = byte.Parse(s);
+
+                return new byte[] { v };
+            }
+
+            // ---------- INT16 ----------
+            if (dt == "INT16" || dt == "INTEGER16" || (dt == "INT" && bs == 16))
             {
                 short v;
-                if (isHexNum) v = unchecked((short)Convert.ToUInt16(s.Substring(2), 16));
+                if (isHex) v = unchecked((short)Convert.ToUInt16(s.Substring(2), 16));
                 else v = short.Parse(s);
-                return BitConverter.GetBytes(v);
+
+                var b = new byte[2];
+                System.Buffers.Binary.BinaryPrimitives.WriteInt16LittleEndian(b, v);   // MSB
+                return b;
             }
 
-            if (dt == "UINT16" || dt == "UNSIGNED16")
+            // ---------- UINT16 ----------
+            if (dt == "UINT16" || dt == "UNSIGNED16" || (dt == "UINT" && bs == 16))
             {
                 ushort v;
-                if (isHexNum) v = Convert.ToUInt16(s.Substring(2), 16);
+                if (isHex) v = Convert.ToUInt16(s.Substring(2), 16);
                 else v = ushort.Parse(s);
-                return BitConverter.GetBytes(v);
+
+                var b = new byte[2];
+                System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(b, v);  // MSB
+                return b;
             }
 
-            if (dt == "INT32" || dt == "INTEGER32")
+            // ---------- INT32 ----------
+            if (dt == "INT32" || dt == "INTEGER32" || (dt == "DINT" && bs == 32))
             {
                 int v;
-                if (isHexNum) v = unchecked((int)Convert.ToUInt32(s.Substring(2), 16));
+                if (isHex) v = unchecked((int)Convert.ToUInt32(s.Substring(2), 16));
                 else v = int.Parse(s);
-                return BitConverter.GetBytes(v);
+
+                var b = new byte[4];
+                System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(b, v);   // MSB
+                return b;
             }
 
-            if (dt == "UINT32" || dt == "UNSIGNED32" || dt == "UDINT")
+            // ---------- UINT32 / UDINT ----------
+            if (dt == "UINT32" || dt == "UNSIGNED32" || (dt == "UDINT" && bs == 32))
             {
                 uint v;
-                if (isHexNum) v = Convert.ToUInt32(s.Substring(2), 16);
+                if (isHex) v = Convert.ToUInt32(s.Substring(2), 16);
                 else v = uint.Parse(s);
-                return BitConverter.GetBytes(v);
+
+                var b = new byte[4];
+                System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(b, v);  // MSB
+                return b;
             }
 
-            // RAW HEX bytes:
-            // 1) "11 22 33"
-            if (s.IndexOf(' ') >= 0 || s.IndexOf('\t') >= 0 || s.IndexOf(',') >= 0)
+            // ---------- RAW BYTES (정의 안 된 타입은 raw로) ----------
+            // 허용 형식:
+            //  1) "0x11223344"          (연속 hex)
+            //  2) "0x11 0x22 0x33"      (토큰별 hex)
+            //  3) "17 34 255"           (토큰별 dec)
+            //  4) "0x11 34 0xFF, 1"     (혼합)
             {
-                string[] parts = s.Split(new[] { ' ', '\t', ',' }, StringSplitOptions.RemoveEmptyEntries);
-                byte[] buf = new byte[parts.Length];
-                for (int i = 0; i < parts.Length; i++)
+                bool hasDelim = s.IndexOf(' ') >= 0 || s.IndexOf('\t') >= 0 || s.IndexOf(',') >= 0;
+
+                // (A) 토큰 리스트: 혼합 허용
+                if (hasDelim)
                 {
-                    string p = parts[i];
-                    if (p.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) p = p.Substring(2);
-                    buf[i] = Convert.ToByte(p, 16);
+                    string[] parts = s.Split(new[] { ' ', '\t', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    byte[] buf = new byte[parts.Length];
+
+                    for (int i = 0; i < parts.Length; i++)
+                    {
+                        string p = parts[i].Trim();
+
+                        if (p.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string hx = p.Substring(2);
+                            buf[i] = Convert.ToByte(hx, 16);
+                        }
+                        else
+                        {
+                            buf[i] = byte.Parse(p); // 0~255 아니면 예외
+                        }
+                    }
+
+                    return buf;
                 }
-                return buf;
+
+                // (B) 연속 hex는 0x... 일 때만
+                if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                {
+                    string hex = s.Substring(2);
+                    if (hex.Length % 2 != 0)
+                    {
+                        error = "Hex string length must be even (e.g., 0x0A, 0x1122).";
+                        return null;
+                    }
+
+                    byte[] raw = new byte[hex.Length / 2];
+                    for (int i = 0; i < raw.Length; i++)
+                        raw[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+
+                    return raw;
+                }
+
+                // (C) 단일 10진 바이트
+                return new byte[] { byte.Parse(s) };
             }
-
-            // 2) "11223344"
-            string hex = s;
-            if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) hex = hex.Substring(2);
-            if (hex.Length % 2 != 0) { error = "Hex string length must be even."; return null; }
-
-            byte[] raw = new byte[hex.Length / 2];
-            for (int i = 0; i < raw.Length; i++)
-                raw[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
-
-            return raw;
         }
         catch (Exception ex)
         {
