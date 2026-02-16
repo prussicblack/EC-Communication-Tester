@@ -85,6 +85,21 @@ public partial class MainViewModel : ViewModelBase
 
     public ObservableCollection<string> SlavesListUI { get;} = new();
 
+    private int _SlaveCountUI;
+
+    public int SlaveCountUI
+    {
+        get
+        { 
+            return _SlaveCountUI;
+        }
+        set
+        {
+            _SlaveCountUI = value;
+            OnPropertyChanged(nameof(SlaveCountUI));
+        }
+    }
+
     List<SoemSlaveInfo> SlaveInfoData = new List<SoemSlaveInfo>();
 
 
@@ -543,7 +558,7 @@ public partial class MainViewModel : ViewModelBase
 
         ECClient.Open(ifname);
 
-        int slaveCount = ECClient.SlaveCount;
+        int slaveCount = SlaveCountUI = ECClient.SlaveCount;
 
         //List<SoemSlaveInfo> slaves = new List<SoemSlaveInfo>();
 
@@ -574,8 +589,8 @@ public partial class MainViewModel : ViewModelBase
 
         Datamap.Instance.Init(SlaveInfoData);
 
-        if(SlaveInfoData.Count() > 1)
-            SelectedSlave = 1;
+        //if(SlaveInfoData.Count() > 1)
+        //    SelectedSlave = 1;
 
         //Sub Worker Run.
         //SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance.GetSlave(1).SdoStore);

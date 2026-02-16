@@ -79,7 +79,7 @@
                           <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding NICSelect}" Margin="0,0,0,6"/>
 
                           <TextBlock Grid.Row="1" Grid.Column="0" Text="Slave Count:" FontWeight="Bold" Margin="0,0,8,10"/>
-                          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SlavesListUI.Count}" Margin="0,0,0,10"/>
+                          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SlaveCountUI}" Margin="0,0,0,10"/>
 
                           <Border Grid.Row="2" Grid.ColumnSpan="2" BorderThickness="1" CornerRadius="6" Padding="10">
                               <TextBlock Text="(여기에 Master 상태머신 요약 UI를 붙이면 됨)" Opacity="0.7"/>
