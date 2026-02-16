@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SOEM_FrontEnd.Ethercat.EthercatProfile
+namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
 {
     public interface IPDOAccess
     {
