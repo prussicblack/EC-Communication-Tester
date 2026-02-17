@@ -33,6 +33,9 @@ namespace SOEM_FrontEnd.Automation
 
         private readonly EcClient _ECClient;
 
+        private PDORTWorker worker;
+        
+        
         public StateMachine(EcClient EC)
         {
             _ECClient = EC;
@@ -75,6 +78,10 @@ namespace SOEM_FrontEnd.Automation
         public bool MoveToSafeOP()
         {
             bool ret;
+
+            //woker 생성.
+            worker = new PDORTWorker(_ECClient, 1);
+            worker.Stop();
             
             ret = _ECClient.RebuildPdoMap();
             if (ret == false)
@@ -95,9 +102,6 @@ namespace SOEM_FrontEnd.Automation
 
         public bool MoveToOperate()
         {
-            //1회 processData run 후 Operate이동.
-            _ECClient.SendProcessData();
-            _ECClient.ReceiveProcessData();
 
             try
             {
@@ -108,6 +112,11 @@ namespace SOEM_FrontEnd.Automation
                 //초기 알람 클리어.
                 _ECClient.SdoWriteI16(1, 0x6040, 00, 0x0080);  //slave alarm reset. SDO로 써도 먹네..
 
+
+                //1회 processData run 후 Operate이동.
+                _ECClient.SendProcessData();
+                _ECClient.ReceiveProcessData();
+
                 bool ret = _ECClient.EnsureState(EcClient.EC_STATE_OPERATIONAL, 5000);
                 if (ret == false)
                 {
@@ -117,7 +126,7 @@ namespace SOEM_FrontEnd.Automation
                 m_eCurrentSequence = eStateSequenceName.Op;
 
                 //Worker시작.
-                var worker = new PDORTWorker(_ECClient, 1);
+                //worker = new PDORTWorker(_ECClient, 1);
                 worker.Start();
 
             }
