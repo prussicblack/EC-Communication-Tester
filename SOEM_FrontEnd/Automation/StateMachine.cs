@@ -80,14 +80,15 @@ namespace SOEM_FrontEnd.Automation
             bool ret;
 
             //woker 생성.
-            worker = new PDORTWorker(_ECClient, 1);
-            worker.Stop();
+            //worker.Stop();
             
             ret = _ECClient.RebuildPdoMap();
             if (ret == false)
             {
                 return false;
             }
+
+            worker = new PDORTWorker(_ECClient, 1);
 
             ret = _ECClient.EnsureState(EcClient.EC_STATE_SAFE_OP, 2000);
             if (ret == false)
@@ -108,7 +109,7 @@ namespace SOEM_FrontEnd.Automation
                 //PP모드 전환.
                 _ECClient.SetModePP(1);
                 //초기 프로파일 입력.
-                _ECClient.SetProfile(1, 10000, 500, 500); // 예: vel/acc/dec
+                _ECClient.SetProfile(1, 1000000, 5000000, 5000000); // 예: vel/acc/dec
                 //초기 알람 클리어.
                 _ECClient.SdoWriteI16(1, 0x6040, 00, 0x0080);  //slave alarm reset. SDO로 써도 먹네..
 

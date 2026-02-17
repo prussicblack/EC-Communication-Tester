@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Rendering;
 
 namespace SOEM_FrontEnd.Ethercat
 {
@@ -66,6 +67,7 @@ namespace SOEM_FrontEnd.Ethercat
             }
         }
 
+        private int test = 0;
         private void RunPdoLoop()
         {
             // PP 모드라고 가정 (외부에서 6060=1, 프로파일/Enable까지 완료)
@@ -114,12 +116,14 @@ namespace SOEM_FrontEnd.Ethercat
                     if (targetReached && (loop % 2000 == 0))
                     {
                         goingPositive = !goingPositive;
-                        currentTarget = goingPositive ? 50000 : 0;
+                        currentTarget = goingPositive ? 5000000 : 0;
                         newSetPointBitHigh = true;
                     }
                 }
 
                 // ----- Controlword 구성 -----
+
+                
                 ushort cw = cwBase;
                 cw |= (1 << 5); // Change immediately
 
@@ -138,6 +142,23 @@ namespace SOEM_FrontEnd.Ethercat
                 else
                 {
                     Outout = 0x0000;
+                }
+
+
+                if (test == 0)
+                {
+                    cw = 0x0006;
+                    test++;
+                }
+                else if (test == 1)
+                {
+                    cw = 0x0007;
+                    test++;
+                }
+                else if (test == 2)
+                {
+                    cw = 0x000f;
+                    test++;
                 }
 
                 // ----- RxPDO 쓰기 -----
