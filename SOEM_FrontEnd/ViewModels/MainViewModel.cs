@@ -2,14 +2,11 @@
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.VisualBasic;
 using SOEM_FrontEnd.DataMap;
 using SOEM_FrontEnd.Ethercat;
 using SOEM_FrontEnd.Ethercat.ESI;
 using SOEM_FrontEnd.Model;
 using System;
-using System.Buffers.Binary;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;

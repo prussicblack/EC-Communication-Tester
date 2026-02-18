@@ -1,0 +1,212 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:SOEM_FrontEnd.ViewModels"
+             xmlns:views="clr-namespace:SOEM_FrontEnd.Views"
+             x:DataType="vm:MotorControlViewModel"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="SOEM_FrontEnd.Views.MotorControl">
+
+
+	<UserControl.DataContext>
+		<vm:MotorControlViewModel/>
+	</UserControl.DataContext>
+
+    <Border Margin="5"
+            Background="White"
+            BorderBrush="#C5CBD3"
+            BorderThickness="1"
+            Padding="8">
+
+			<StackPanel Spacing="8">
+
+				<!-- Header (GroupBox.Header 대체) -->
+				<Grid ColumnDefinitions="*,Auto">
+					<TextBlock Grid.Column="0"
+							   Text="{Binding AxisName}"
+							   FontWeight="Bold"
+							   FontSize="13"
+							   VerticalAlignment="Center"/>
+
+					<StackPanel Grid.Column="1"
+								Orientation="Horizontal"
+								VerticalAlignment="Center"
+								Spacing="4">
+
+						<!-- P 상태등: Background는 Converter로 -->
+						<Border Width="18" Height="18" CornerRadius="9" Margin="8,0,0,0"
+								Background="{Binding IsServoOn, Converter={StaticResource BoolToBrushGrayGreen}}">
+							<TextBlock Text="P"
+									   FontSize="11"
+									   FontWeight="Bold"
+									   Foreground="White"
+									   HorizontalAlignment="Center"
+									   VerticalAlignment="Center"/>
+						</Border>
+
+						<!-- E 상태등 -->
+						<Border Width="18" Height="18" CornerRadius="9"
+								Background="{Binding HasError, Converter={StaticResource BoolToBrushGrayRed}}">
+							<TextBlock Text="E"
+									   FontSize="11"
+									   FontWeight="Bold"
+									   Foreground="White"
+									   HorizontalAlignment="Center"
+									   VerticalAlignment="Center"/>
+						</Border>
+
+						<!-- H 상태등 -->
+						<Border Width="18" Height="18" CornerRadius="9"
+								Background="{Binding IsHomed, Converter={StaticResource BoolToBrushGrayGreen}}">
+							<TextBlock Text="H"
+									   FontSize="11"
+									   FontWeight="Bold"
+									   Foreground="White"
+									   HorizontalAlignment="Center"
+									   VerticalAlignment="Center"/>
+						</Border>
+
+					</StackPanel>
+				</Grid>
+
+				<!-- Body -->
+				<Grid RowDefinitions="Auto,Auto,Auto"
+					  ColumnDefinitions="230,260">
+
+					<!-- Current Position -->
+					<StackPanel Grid.Row="0" Grid.ColumnSpan="2"
+								Orientation="Horizontal"
+								Margin="0,6"
+								Spacing="5">
+
+						<TextBlock Width="70"
+								   Text="Cur Pos"
+								   FontWeight="Bold"/>
+
+						<TextBlock Width="110"
+								   Text="{Binding CurrentPosition, StringFormat={}{0:F3}}"
+								   FontSize="18"
+								   FontWeight="Bold"/>
+
+						<TextBlock Text="mm"/>
+
+						<!-- InPosition 표시 -->
+						<Border Margin="24,0,0,0"
+								Padding="6,2"
+								CornerRadius="6"
+								Background="{Binding IsInPosition, Converter={StaticResource BoolToBrushGrayGreen}}">
+							<TextBlock Text="IN POS"
+									   Foreground="White"
+									   FontWeight="Bold"
+									   FontSize="9"
+									   VerticalAlignment="Center"/>
+						</Border>
+
+					</StackPanel>
+
+					<!-- Params -->
+					<StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
+
+						<StackPanel Orientation="Horizontal" Spacing="5">
+							<TextBlock Width="70" Text="Speed"/>
+							<TextBox Width="110" Height="28"
+									 Text="{Binding SpeedText, UpdateSourceTrigger=PropertyChanged}"
+									 HorizontalContentAlignment="Right"/>
+							<TextBlock Text="mm/s"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Spacing="5">
+							<TextBlock Width="70" Text="Acc Time"/>
+							<TextBox Width="110" Height="26"
+									 Text="{Binding AccelTimeText}"
+									 HorizontalContentAlignment="Right"/>
+							<TextBlock Text="ms"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Spacing="5">
+							<TextBlock Width="70" Text="Dec Time"/>
+							<TextBox Width="110" Height="26"
+									 Text="{Binding DecelTimeText, UpdateSourceTrigger=PropertyChanged}"
+									 HorizontalContentAlignment="Right"/>
+							<TextBlock Text="ms"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Spacing="5">
+							<TextBlock Width="70" Text="Distance"/>
+							<TextBox Width="110" Height="26"
+									 Text="{Binding IncDistanceText, UpdateSourceTrigger=PropertyChanged}"
+									 HorizontalContentAlignment="Right"/>
+							<TextBlock Text="mm"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Spacing="5">
+							<TextBlock Width="70" Text="Abs Pos"/>
+							<TextBox Width="110" Height="26"
+									 Text="{Binding AbsPositionText}"
+									 HorizontalContentAlignment="Right"/>
+							<TextBlock Text="mm"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Margin="0,6,0,0" Spacing="5">
+							<TextBlock Width="70" Text="Start Pos"/>
+							<TextBox Width="110" Height="26"
+									 Text="{Binding StartPositionText}"
+									 HorizontalContentAlignment="Right"/>
+							<TextBlock Text="mm"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Spacing="5">
+							<TextBlock Width="70" Text="End Pos"/>
+							<TextBox Width="110" Height="26"
+									 Text="{Binding EndPositionText}"
+									 HorizontalContentAlignment="Right"/>
+							<TextBlock Text="mm"/>
+						</StackPanel>
+
+						<TextBlock FontSize="12"
+								   Foreground="#444"
+								   Margin="0,5,0,0"
+								   Text="{Binding CurrentVelocity, StringFormat={}{0:F2}}"/>
+					</StackPanel>
+
+					<!-- Buttons -->
+					<Grid Grid.Row="1" Grid.Column="1"
+						  RowDefinitions="Auto,Auto,Auto"
+						  RowSpacing="6">
+
+						<!-- Jog: WPF PreviewMouse -> Avalonia Pointer -->
+						<!--<UniformGrid Grid.Row="0" Columns="2">
+							<Button Content="◀ JOG"
+									PointerPressed="Button_JogMinus_Down"
+									PointerReleased="Button_Jog_Up"/>
+							<Button Content="JOG ▶"
+									PointerPressed="Button_JogPlus_Down"
+									PointerReleased="Button_Jog_Up"/>
+						</UniformGrid>-->
+
+						<UniformGrid Grid.Row="1" Columns="2">
+							<Button Content="◀ INC" Command="{Binding CmdMoveIncMinus}"/>
+							<Button Content="INC ▶" Command="{Binding CmdMoveIncPlus}"/>
+						</UniformGrid>
+
+						<UniformGrid Grid.Row="2" Columns="2">
+							<Button Content="Servo ON" Command="{Binding CmdServoOn}"/>
+							<Button Content="Servo OFF" Command="{Binding CmdServoOff}"/>
+							<Button Content="Alarm Clear" Foreground="Red" Command="{Binding CmdAlarmClear}"/>
+							<Button Content="HOME" Command="{Binding CmdHome}"/>
+							<Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" IsEnabled="{Binding IsHomed}"/>
+							<Button Height="32" Content="Start Pos" Command="{Binding CmdMoveToStart}" IsEnabled="{Binding IsHomed}"/>
+							<Button Height="32" Content="End Pos" Command="{Binding CmdMoveToEnd}" IsEnabled="{Binding IsHomed}"/>
+							<Button Height="32" Content="Repeat" Command="{Binding CmdStartRepeat}" IsEnabled="{Binding IsHomed}"/>
+							<Button Height="32" Content="Repeat Stop" Command="{Binding CmdStopRepeat}"/>
+							<Border Margin="0,3,0,0" Padding="4" CornerRadius="3"/>
+						</UniformGrid>
+
+					</Grid>
+
+				</Grid>
+			</StackPanel>
+		</Border>
+
+</UserControl>
