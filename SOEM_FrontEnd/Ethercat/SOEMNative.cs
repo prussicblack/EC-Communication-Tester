@@ -82,6 +82,18 @@ namespace SOEM_FrontEnd.Model
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int soem_read_s32(ushort slv, int off, out int v);
 
+        //추가 byte 및 전체.
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int soem_write_u8(ushort slv, int off, byte v);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int soem_read_u8(ushort slv, int off, out byte v);
+
+        //Slave당 pdo크기 읽어오기. 주의 ecx_config_map_group 호출 후에 읽어와야함.
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int soem_get_slave_inout_size(int slave, out int inBytes, out int outBytes, out int inBits, out int outBits);
+        
+
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int soem_get_slave_info(int idx, out SoemSlaveInfo info);
 

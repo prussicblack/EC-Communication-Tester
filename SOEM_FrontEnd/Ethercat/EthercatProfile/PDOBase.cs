@@ -41,6 +41,18 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
             System.Threading.Volatile.Write(ref _rxSnapCurrent, nextRx);
             System.Threading.Volatile.Write(ref _txSnapCurrent, nextTx);
         }
+
+
+        //PDO 루프에서 Tx를 채워 넣을 수 있게
+        internal Span<byte> TxWriteSpan
+        {
+            get
+            {
+                return _tx;
+            }
+        }
+
+
         //PDO View
 
         public PDOBase(int rxSize, int txSize)

@@ -110,6 +110,11 @@ namespace SOEM_FrontEnd.Ethercat
                 int actPos = _ec.PdoReadI32(_slave, TX_OFF_POS);
                 bool targetReached = (sw & (1 << 10)) != 0; // bit10
 
+
+
+
+
+
                 // ----- 새 타겟 + New set-point 펄스 결정 -----
                 if (!newSetPointBitHigh)
                 {

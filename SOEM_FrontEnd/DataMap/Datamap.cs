@@ -16,6 +16,16 @@ using static SOEM_FrontEnd.Ethercat.ESI.ESIXMLData;
 
 namespace SOEM_FrontEnd.DataMap
 {
+    public enum DeviceMode
+    {
+        None = 0,
+        NormalIO = 1,
+        NormalPPMode = 2,
+
+        //되는대로 추가.
+    }
+
+
     //SlaveInfo 저장용 클래스.
     public sealed class SlaveInfo
     {
@@ -955,7 +965,6 @@ namespace SOEM_FrontEnd.DataMap
         //나중에 SlaveInfo 처리하면서 같이 할것.
         private readonly SlaveInfo _SlaveInfo;
 
-
         //public string SlaveInfo
         //{
             //get
@@ -964,6 +973,25 @@ namespace SOEM_FrontEnd.DataMap
             //}
         //}
 
+        private object _BaseProfile;
+
+        public object BaseProfile
+        {
+            get
+            {
+                return _BaseProfile;
+            }
+            set
+            {
+
+                if (_BaseProfile == value) 
+                    return;
+                _BaseProfile = value;
+                //OnPropertyChanged(nameof(BaseProfile));
+            }
+        }
+
+        public DeviceMode DeviceMode;
 
         public SDOStore SdoStore
         {
@@ -1016,6 +1044,17 @@ namespace SOEM_FrontEnd.DataMap
             return _sdo.TryGetPoint(new SDOKey(SlaveNo, index, sub));
         }
 
+        //프로파일 reading용.
+        public T GetProfile<T>() where T : class
+        {
+            return BaseProfile as T;
+        }
+
+        public bool TryGetProfile<T>(out T profile) where T : class
+        {
+            profile = BaseProfile as T;
+            return profile != null;
+        }
 
         //PDO(임시) 나중에 변경 및 제거.
         // 수집 스레드가 호출

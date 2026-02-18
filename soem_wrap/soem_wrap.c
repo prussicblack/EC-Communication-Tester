@@ -18,10 +18,11 @@
 #define CALL
 #endif
 
-#include <soem/soem.h>  //SOEM
+#include <soem/soem.h> //SOEM
 
 static ecx_contextt g_ctx;
 static int g_inited = 0;
+static int g_iomap_size_bytes = 0; // ecx_config_map_group() return (total IOmap/PDO bytes)
 
 // IOmap 크기는 필요 시 늘리세요.
 static uint8_t IOmap[8192];
@@ -50,14 +51,14 @@ EXP void CALL soem_close(void)
 
 EXP int CALL soem_config_init(int use_map)
 {
-   if (!g_inited) 
-       return -2;
+   if (!g_inited)
+      return -2;
 
    int ret = ecx_config_init(&g_ctx);
 
    // v2.0: ecx_config_init(context) ← 인자 1개
-   if (ret <= 0) 
-       return -1;
+   if (ret <= 0)
+      return -1;
 
    if (use_map)
    {
@@ -66,14 +67,15 @@ EXP int CALL soem_config_init(int use_map)
       {
          return -3;
       }
+      g_iomap_size_bytes = iomap;
    }
    return ret;
 }
 
 EXP int CALL soem_config_init_only()
 {
-   if (!g_inited) 
-       return -2;
+   if (!g_inited)
+      return -2;
 
    int ret = ecx_config_init(&g_ctx);
    // v2.0: ecx_config_init(context) ← 인자 1개
@@ -82,7 +84,6 @@ EXP int CALL soem_config_init_only()
 
    return ret;
 }
-
 
 EXP int CALL soem_config_map_only(void)
 {
@@ -93,9 +94,53 @@ EXP int CALL soem_config_map_only(void)
    if (iomap <= 0)
       return -1;
 
+   g_iomap_size_bytes = iomap;
+
    return iomap; // 맵 크기 바이트 수 리턴 (원하면 그냥 0/에러로 해도 됨)
 }
 
+// --------- PDO/IO size queries ----------
+// 1) Total IOmap bytes created by ecx_config_map_group()
+EXP int CALL soem_get_pdo_total_bytes(void)
+{
+   if (!g_inited) return -2;
+   return g_iomap_size_bytes;
+}
+
+// 2) Current total in/out bytes (sum of slavelist[i].Ibytes/Obytes)
+//    returns: 0=ok, negative=error
+EXP int CALL soem_get_total_inout_bytes(int *out_in_bytes, int *out_out_bytes)
+{
+   if (!g_inited) return -2;
+   if (!out_in_bytes || !out_out_bytes) return -3;
+
+   int in_sum = 0;
+   int out_sum = 0;
+   for (int i = 1; i <= g_ctx.slavecount; ++i)
+   {
+      in_sum += (int)g_ctx.slavelist[i].Ibytes;
+      out_sum += (int)g_ctx.slavelist[i].Obytes;
+   }
+
+   *out_in_bytes = in_sum;
+   *out_out_bytes = out_sum;
+   return 0;
+}
+
+// (Optional) per-slave in/out bytes and bits
+EXP int CALL soem_get_slave_inout_size(int slave, int *out_in_bytes, int *out_out_bytes, int *out_in_bits, int *out_out_bits)
+{
+   if (!g_inited) return -2;
+   if (slave < 1 || slave > g_ctx.slavecount) return -4;
+   if (!out_in_bytes || !out_out_bytes || !out_in_bits || !out_out_bits) return -3;
+
+   ec_slavet *s = &g_ctx.slavelist[slave];
+   *out_in_bytes = (int)s->Ibytes;
+   *out_out_bytes = (int)s->Obytes;
+   *out_in_bits = (int)s->Ibits;
+   *out_out_bits = (int)s->Obits;
+   return 0;
+}
 
 EXP int CALL soem_set_state(uint16_t state, int timeout_ms)
 {
@@ -123,7 +168,7 @@ typedef struct soem_slave_info_t
    uint16 configadr;          // Station Address (논리 주소)
    uint32 vendor;             // eep_man
    uint32 product;            // eep_id
-   uint32 revision;            // revision
+   uint32 revision;           // revision
    char name[EC_MAXNAME + 1]; // 슬레이브 이름(ESI)
 } soem_slave_info_t;
 
@@ -141,21 +186,20 @@ EXP int CALL soem_get_slave_info(int idx, soem_slave_info_t *outInfo)
    outInfo->revision = s->eep_rev; // ★ 여기
 
    // 이름 복사
-   //strncpy(outInfo->name, s->name, EC_MAXNAME);
+   // strncpy(outInfo->name, s->name, EC_MAXNAME);
    strncpy_s(outInfo->name, EC_MAXNAME + 1, s->name, _TRUNCATE);
    outInfo->name[EC_MAXNAME] = '\0';
 
    return 1;
 }
 
-
 // --------- CoE SDO ----------
 EXP int CALL soem_sdo_read(uint16_t slave, uint16_t index, uint8_t subindex, void *buf, uint32_t *inout_len)
 {
    int len = (int)*inout_len;
    int wkc = ecx_SDOread(&g_ctx, slave, index, subindex, FALSE, &len, buf, EC_TIMEOUTRXM);
-   if (wkc <= 0) 
-       return -1;
+   if (wkc <= 0)
+      return -1;
    *inout_len = (uint32_t)len;
    return 0;
 }
@@ -176,29 +220,92 @@ EXP int CALL soem_receive_processdata(int timeout_us)
    return ecx_receive_processdata(&g_ctx, timeout_us);
 }
 
-//PDO 직접 접근 유틸
+// PDO 직접 접근 유틸
 EXP int CALL soem_write_u16(uint16_t s, int off, uint16_t v)
 {
-   memcpy(g_ctx.slavelist[s].outputs + off, &v, 2);
+   if (s == 0 || s > g_ctx.slavecount) return -2;
+   if (off < 0) return -3;
+   if (!g_ctx.slavelist[s].outputs) return -4;
+
+   uint8_t *dst = (uint8_t *)g_ctx.slavelist[s].outputs;
+   memcpy(dst + off, &v, 2);
    return 0;
 }
 EXP int CALL soem_write_s32(uint16_t s, int off, int32_t v)
 {
-   memcpy(g_ctx.slavelist[s].outputs + off, &v, 4);
+   if (s == 0 || s > g_ctx.slavecount) return -2;
+   if (off < 0) return -3;
+   if (!g_ctx.slavelist[s].outputs) return -4;
+
+   uint8_t *dst = (uint8_t *)g_ctx.slavelist[s].outputs;
+   memcpy(dst + off, &v, 4);
    return 0;
 }
 EXP int CALL soem_read_u16(uint16_t s, int off, uint16_t *v)
 {
-   memcpy(v, g_ctx.slavelist[s].inputs + off, 2);
+   if (!v) return -1;
+   if (s == 0 || s > g_ctx.slavecount) return -2;
+   if (off < 0) return -3;
+   if (!g_ctx.slavelist[s].inputs) return -4;
+
+   const uint8_t *src = (const uint8_t *)g_ctx.slavelist[s].inputs;
+   memcpy(v, src + off, 2);
    return 0;
 }
 EXP int CALL soem_read_s32(uint16_t s, int off, int32_t *v)
 {
-   memcpy(v, g_ctx.slavelist[s].inputs + off, 4);
+   if (!v) return -1;
+   if (s == 0 || s > g_ctx.slavecount) return -2;
+   if (off < 0) return -3;
+   if (!g_ctx.slavelist[s].inputs) return -4;
+
+   const uint8_t *src = (const uint8_t *)g_ctx.slavelist[s].inputs;
+   memcpy(v, src + off, 4);
    return 0;
 }
 
-//Ethercat Slave 조회.
+//입력 PDO에서 1바이트 읽기
+EXP int CALL soem_read_u8(uint16_t s, int off, uint8_t *v)
+{
+   if (!v) return -1;
+   if (s == 0 || s > g_ctx.slavecount) return -2;
+   if (off < 0) return -3;
+   if (!g_ctx.slavelist[s].inputs) return -4;
+
+   const uint8_t *src = (const uint8_t *)g_ctx.slavelist[s].inputs;
+   memcpy(v, src + off, 1);
+   return 0;
+}
+
+//출력 PDO에 1바이트 쓰기
+EXP int CALL soem_write_u8(uint16_t s, int off, uint8_t v)
+{
+   if (s == 0 || s > g_ctx.slavecount) return -2;
+   if (off < 0) return -3;
+   if (!g_ctx.slavelist[s].outputs) return -4;
+
+   uint8_t *dst = (uint8_t *)g_ctx.slavelist[s].outputs;
+   memcpy(dst + off, &v, 1);
+   return 0;
+}
+
+//전체 byte 배열로 읽어오기.
+EXP int CALL soem_read_bytes(uint16_t s, int off, uint8_t *buf, int len)
+{
+   if (!buf) return -1;
+   if (len < 0) return -5;
+   if (s == 0 || s > g_ctx.slavecount) return -2;
+   if (!g_ctx.slavelist[s].inputs) return -3;
+   if (off < 0) return -4;
+   if (len == 0) return 0;
+
+   const uint8_t *src = (const uint8_t *)g_ctx.slavelist[s].inputs;
+   memcpy(buf, src + off, (size_t)len);
+   return 0;
+}
+
+
+// Ethercat Slave 조회.
 EXP void CALL soem_readstate(void)
 {
    // 2.x: 컨텍스트 기반
@@ -207,35 +314,35 @@ EXP void CALL soem_readstate(void)
 
 EXP unsigned short CALL soem_slave_state(int i)
 {
-   if (i < 1 || i > g_ctx.slavecount) 
-       return 0;
+   if (i < 1 || i > g_ctx.slavecount)
+      return 0;
    return g_ctx.slavelist[i].state;
 }
 
 EXP const char *CALL soem_slave_name(int i)
 {
-   if (i < 1 || i > g_ctx.slavecount) 
-       return "";
+   if (i < 1 || i > g_ctx.slavecount)
+      return "";
    return g_ctx.slavelist[i].name;
 }
 
 // ESI(EEPROM) 식별
 EXP unsigned int CALL soem_slave_vendor_id(int i)
 {
-   if (i < 1 || i > g_ctx.slavecount) 
-       return 0;
+   if (i < 1 || i > g_ctx.slavecount)
+      return 0;
    return g_ctx.slavelist[i].eep_man;
 }
 EXP unsigned int CALL soem_slave_product_code(int i)
 {
-   if (i < 1 || i > g_ctx.slavecount) 
-       return 0;
+   if (i < 1 || i > g_ctx.slavecount)
+      return 0;
    return g_ctx.slavelist[i].eep_id;
 }
 EXP unsigned int CALL soem_slave_revision(int i)
 {
-   if (i < 1 || i > g_ctx.slavecount) 
-       return 0;
+   if (i < 1 || i > g_ctx.slavecount)
+      return 0;
    return g_ctx.slavelist[i].eep_rev;
 }
 
@@ -280,7 +387,7 @@ EXP int CALL soem_elist2string(char *outBuf, int outBufLen)
    if (!g_inited || !outBuf || outBufLen <= 0)
       return -1;
 
-    const char *s = ecx_elist2string(&g_ctx); // SOEM 2.0: returns char*
+   const char *s = ecx_elist2string(&g_ctx); // SOEM 2.0: returns char*
    if (!s) s = "";
 
 #ifdef _WIN32
@@ -292,5 +399,3 @@ EXP int CALL soem_elist2string(char *outBuf, int outBufLen)
 
    return (int)strlen(outBuf);
 }
-
-
