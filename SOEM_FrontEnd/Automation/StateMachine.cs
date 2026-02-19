@@ -221,7 +221,7 @@ namespace SOEM_FrontEnd.Automation
                 }
 
                 //워커에 PDO주소 바인딩.
-                worker.SetBinds(binds);
+                worker.SetBinds(binds,(ushort)_ECClient.SlaveCount);
 
                 //1회 processData run 후 Operate이동.
                 _ECClient.SendProcessData();
