@@ -4,7 +4,11 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:SOEM_FrontEnd.ViewModels"
              xmlns:views="clr-namespace:SOEM_FrontEnd.Views"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d"  d:DesignWidth="550" d:DesignHeight="350"
              x:Class="SOEM_FrontEnd.Views.IOControl">
+	
+	
+	
+	
   Welcome to Avalonia!
 </UserControl>

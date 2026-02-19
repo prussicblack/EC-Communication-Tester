@@ -10,6 +10,9 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 {
     //기본 Profile.
     //Bit관련 IO가 기본.
+
+    //raw View를 기본으로.
+
     public sealed class NormalOProfile : PDOBase, IEthercatStateTransition
     {
         private readonly int _SlaveNo;

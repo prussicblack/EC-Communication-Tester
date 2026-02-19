@@ -250,46 +250,9 @@ public partial class MainViewModel : ViewModelBase
 
         StateMachine = new StateMachine(ECClient);
 
-        ////NativeBootstrap.EnsureLoaded(); //DLL로딩용.
-
-        ////public static void LoadSoemWrap()
-        ////{
-        //string baseDir = @"C:\Users\ursae\Desktop\Git\SOEM\build\x64\Debug\";
-        //// exe 옆에 둘 경우
-        //string p = Path.Combine(baseDir, "soem_wrap.dll");
-        //if (!File.Exists(p))
-        //    throw new FileNotFoundException(p);
-
-        //if (!NativeLibrary.TryLoad(p, out var h))
-        //    throw new DllNotFoundException($"NativeLibrary.TryLoad failed: {p}");
-        ////}
-
-        //NativeLibrary.TryLoad(Path.Combine(AppContext.BaseDirectory, "soem_wrap.dll"), out _);
-        //_ = SOEMNative.soem_slave_count();
-
         CMD_Test = new RelayCommand(HandleTest);
 
         CMD_SelectNIC = new RelayCommand(HandleNIC);
-
-        //string firstset = string.Empty;
-        //string lastset = string.Empty;
-
-        //foreach (var (ifname, desc) in PcapIfEnumerator.GetAll())
-        //{
-        //    //Console.WriteLine($"{ifname}  |  {desc}");
-        //    string buf = $"{desc} - {ifname}";
-        //    //NICList.Add(buf);
-
-        //    if (firstset == string.Empty)
-        //    {
-        //        firstset = buf;
-        //    }
-
-        //    lastset = buf;
-        //}
-
-
-        //NICSelect = lastset;
 
         UpdateNicList();
 
@@ -303,12 +266,6 @@ public partial class MainViewModel : ViewModelBase
         CMD_MoveToSafeOp = new RelayCommand(HandleMoveToSafeOp);
         CMD_MoveToOp = new RelayCommand(HandleMoveToOp);
 
-        //나중에 프로그램 로딩시 Splash Screen 과 함께 로딩.
-        //의외로 시간이 좀 걸릴 수 있음.
-        //string path = AppDomain.CurrentDomain.BaseDirectory + "ESI";
-
-        //var devices = ESICatalog.LoadAllDevices(path);
-        //DevicesData = devices;
     }
 
     private void HandleMoveToOp()
@@ -565,17 +522,8 @@ public partial class MainViewModel : ViewModelBase
         // 읽기는 leaf면 허용
         CanReadSelectedSdo = true;
 
-
         // Write 권한 체크
         if (IsWritableByAccess(_selectedSDO) == false) return;
-
-        // 입력값이 있어야 write 가능하게(권장)
-        //if (string.IsNullOrWhiteSpace(WriteValueText)) return;
-
-        // 입력값 파싱 가능해야 write 가능하게(권장)
-        //string err;
-        //var payload = TryBuildWritePayload(row, WriteValueText, out err);
-        //if (payload == null) return;
 
         CanWriteSelectedSdo = true;
     }
@@ -658,16 +606,12 @@ public partial class MainViewModel : ViewModelBase
 
         // 너무 작아지는 것 방지
         if (width < 160) width = 160;
-        // 너무 커지는 것 방지(원하면)
+        // 너무 커지는 것 방지
         //if (width > 700) width = 700;
 
         return width;
     }
 
-    private void DrawSlaves()
-    {
-
-    }
 
     private void HandleNIC()
     {
@@ -677,8 +621,6 @@ public partial class MainViewModel : ViewModelBase
         ECClient.Open(ifname);
 
         int slaveCount = SlaveCountUI = ECClient.SlaveCount;
-
-        //List<SoemSlaveInfo> slaves = new List<SoemSlaveInfo>();
 
         SlavesListUI.Clear();
 
@@ -707,11 +649,6 @@ public partial class MainViewModel : ViewModelBase
 
         Datamap.Instance.Init(SlaveInfoData);
 
-        //if(SlaveInfoData.Count() > 1)
-        //    SelectedSlave = 1;
-
-        //Sub Worker Run.
-        //SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance.GetSlave(1).SdoStore);
         SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance);
         SdoWorker.Start();
 
@@ -720,15 +657,10 @@ public partial class MainViewModel : ViewModelBase
         //성공시 랜카드 Nic 저장.
 
     }
-    public async Task ReadOnceAsync()
-    {
-        // 읽기 요청 (실제 값은 Store 이벤트에서 반영됨)
-        await SdoWorker.EnqueueReadAsync(slaveNo: 1, index: 0x6064, subIndex: 0, maxLen: 4);
-    }
+
 
     private void HandleTest()
     {
-        ReadOnceAsync();
 
         return;
 

@@ -23,6 +23,7 @@ namespace SOEM_FrontEnd.Ethercat
 
         public TimeSpan Period { get; set; } = TimeSpan.FromMilliseconds(1);
         public int ReceiveTimeoutUs { get; set; } = 2000;
+        public int UiPublishDiv { get; set; } = 15; // 1ms 기준 약 60Hz
 
         public PDORTWorker(EcClient ec)
         {
@@ -85,6 +86,7 @@ namespace SOEM_FrontEnd.Ethercat
             var jitterSw = Stopwatch.StartNew();
             long lastTicks = jitterSw.ElapsedTicks;
             double ticksPerMs = (double)Stopwatch.Frequency / 1000.0;
+            long loop = 0;
 
             EthercatRtLoop.Run(Period, () =>
             {
@@ -120,6 +122,17 @@ namespace SOEM_FrontEnd.Ethercat
                         inBuf.AsSpan().CopyTo(pdo.TxWriteSpan);
                     }
                 }
+
+                loop++;
+
+                if (UiPublishDiv > 0 && (loop % UiPublishDiv) == 0)
+                {
+                    for (int k = 0; k < _binds.Count; k++)
+                    {
+                        _binds[k].Pdo.PublishSnapshots();
+                    }
+                }
+
 
                 // ---- jitter calc (원하면 외부로 뽑기) ----
                 long nowTicks = jitterSw.ElapsedTicks;

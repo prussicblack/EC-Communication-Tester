@@ -5,7 +5,7 @@
              xmlns:vm="using:SOEM_FrontEnd.ViewModels"
              xmlns:views="clr-namespace:SOEM_FrontEnd.Views"
              x:DataType="vm:MotorControlViewModel"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" d:DesignWidth="550" d:DesignHeight="350"
              x:Class="SOEM_FrontEnd.Views.MotorControl">
 
 
@@ -89,7 +89,7 @@
 								   FontSize="18"
 								   FontWeight="Bold"/>
 
-						<TextBlock Text="mm"/>
+						<TextBlock Text="pls"/>
 
 						<!-- InPosition 표시 -->
 						<Border Margin="24,0,0,0"
@@ -113,31 +113,31 @@
 							<TextBox Width="110" Height="28"
 									 Text="{Binding SpeedText, UpdateSourceTrigger=PropertyChanged}"
 									 HorizontalContentAlignment="Right"/>
-							<TextBlock Text="mm/s"/>
+							<TextBlock Text="pls"/>
 						</StackPanel>
 
 						<StackPanel Orientation="Horizontal" Spacing="5">
-							<TextBlock Width="70" Text="Acc Time"/>
+							<TextBlock Width="70" Text="Acc"/>
 							<TextBox Width="110" Height="26"
 									 Text="{Binding AccelTimeText}"
 									 HorizontalContentAlignment="Right"/>
-							<TextBlock Text="ms"/>
+							<!--<TextBlock Text="ms"/>-->
 						</StackPanel>
 
 						<StackPanel Orientation="Horizontal" Spacing="5">
-							<TextBlock Width="70" Text="Dec Time"/>
+							<TextBlock Width="70" Text="Dec"/>
 							<TextBox Width="110" Height="26"
 									 Text="{Binding DecelTimeText, UpdateSourceTrigger=PropertyChanged}"
 									 HorizontalContentAlignment="Right"/>
-							<TextBlock Text="ms"/>
+							<!--<TextBlock Text="ms"/>-->
 						</StackPanel>
 
 						<StackPanel Orientation="Horizontal" Spacing="5">
-							<TextBlock Width="70" Text="Distance"/>
+							<TextBlock Width="70" Text="Inc"/>
 							<TextBox Width="110" Height="26"
 									 Text="{Binding IncDistanceText, UpdateSourceTrigger=PropertyChanged}"
 									 HorizontalContentAlignment="Right"/>
-							<TextBlock Text="mm"/>
+							<TextBlock Text="pls"/>
 						</StackPanel>
 
 						<StackPanel Orientation="Horizontal" Spacing="5">
@@ -145,7 +145,7 @@
 							<TextBox Width="110" Height="26"
 									 Text="{Binding AbsPositionText}"
 									 HorizontalContentAlignment="Right"/>
-							<TextBlock Text="mm"/>
+							<TextBlock Text="pls"/>
 						</StackPanel>
 
 						<StackPanel Orientation="Horizontal" Margin="0,6,0,0" Spacing="5">
@@ -153,7 +153,7 @@
 							<TextBox Width="110" Height="26"
 									 Text="{Binding StartPositionText}"
 									 HorizontalContentAlignment="Right"/>
-							<TextBlock Text="mm"/>
+							<TextBlock Text="pls"/>
 						</StackPanel>
 
 						<StackPanel Orientation="Horizontal" Spacing="5">
@@ -161,13 +161,9 @@
 							<TextBox Width="110" Height="26"
 									 Text="{Binding EndPositionText}"
 									 HorizontalContentAlignment="Right"/>
-							<TextBlock Text="mm"/>
+							<TextBlock Text="pls"/>
 						</StackPanel>
-
-						<TextBlock FontSize="12"
-								   Foreground="#444"
-								   Margin="0,5,0,0"
-								   Text="{Binding CurrentVelocity, StringFormat={}{0:F2}}"/>
+						
 					</StackPanel>
 
 					<!-- Buttons -->
@@ -175,31 +171,29 @@
 						  RowDefinitions="Auto,Auto,Auto"
 						  RowSpacing="6">
 
-						<!-- Jog: WPF PreviewMouse -> Avalonia Pointer -->
-						<!--<UniformGrid Grid.Row="0" Columns="2">
-							<Button Content="◀ JOG"
-									PointerPressed="Button_JogMinus_Down"
-									PointerReleased="Button_Jog_Up"/>
-							<Button Content="JOG ▶"
-									PointerPressed="Button_JogPlus_Down"
-									PointerReleased="Button_Jog_Up"/>
-						</UniformGrid>-->
-
-						<UniformGrid Grid.Row="1" Columns="2">
-							<Button Content="◀ INC" Command="{Binding CmdMoveIncMinus}"/>
-							<Button Content="INC ▶" Command="{Binding CmdMoveIncPlus}"/>
+						<!--조그버튼에 떼면 정지하는 로직 있어야됨. 누르고 있는동안에만 이동할것.-->
+						<UniformGrid Grid.Row="0" Columns="2">
+							<Button Content="◀ JOG-" Command="{Binding CmdMoveIncMinus}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Content="+JOG ▶" Command="{Binding CmdMoveIncPlus}"  VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 						</UniformGrid>
 
+						<UniformGrid Grid.Row="1" Columns="2">
+							<Button Content="◀ INC-" Command="{Binding CmdMoveIncMinus}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Content="+INC ▶" Command="{Binding CmdMoveIncPlus}"  VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+						</UniformGrid>
+						
+
 						<UniformGrid Grid.Row="2" Columns="2">
-							<Button Content="Servo ON" Command="{Binding CmdServoOn}"/>
-							<Button Content="Servo OFF" Command="{Binding CmdServoOff}"/>
-							<Button Content="Alarm Clear" Foreground="Red" Command="{Binding CmdAlarmClear}"/>
-							<Button Content="HOME" Command="{Binding CmdHome}"/>
-							<Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" IsEnabled="{Binding IsHomed}"/>
-							<Button Height="32" Content="Start Pos" Command="{Binding CmdMoveToStart}" IsEnabled="{Binding IsHomed}"/>
-							<Button Height="32" Content="End Pos" Command="{Binding CmdMoveToEnd}" IsEnabled="{Binding IsHomed}"/>
-							<Button Height="32" Content="Repeat" Command="{Binding CmdStartRepeat}" IsEnabled="{Binding IsHomed}"/>
-							<Button Height="32" Content="Repeat Stop" Command="{Binding CmdStopRepeat}"/>
+							<Button Content="Servo ON" Command="{Binding CmdServoOn}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Content="Servo OFF" Command="{Binding CmdServoOff}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Content="Alarm Clear" Foreground="Red" Command="{Binding CmdAlarmClear}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Content="HOME" Command="{Binding CmdHome}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Height="32" Content="" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+							<Button Height="32" Content="Move Start Pos" Command="{Binding CmdMoveToStart}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Height="32" Content="Move End Pos" Command="{Binding CmdMoveToEnd}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Height="32" Content="Repeat" Command="{Binding CmdStartRepeat}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Height="32" Content="Repeat Stop" Command="{Binding CmdStopRepeat}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 							<Border Margin="0,3,0,0" Padding="4" CornerRadius="3"/>
 						</UniformGrid>
 
