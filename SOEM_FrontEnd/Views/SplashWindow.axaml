@@ -10,7 +10,9 @@
         SystemDecorations="None"
         x:Class="SOEM_FrontEnd.SplashWindow"
 		x:DataType="vm:LoadingViewModel"
-        Title="SplashWindow">
+        Title="SplashWindow"
+	    Icon="/Assets/icon-cat-16397242.ico"
+>
 	
 	
 	<StackPanel Margin="20" Spacing="12">
