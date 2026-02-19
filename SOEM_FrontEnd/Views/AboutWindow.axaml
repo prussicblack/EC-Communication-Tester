@@ -1,0 +1,55 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="225"
+		Width="400" Height="225"
+		CanResize="False"
+		WindowStartupLocation="CenterOwner"
+		ShowInTaskbar="False"
+		ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="32"
+        x:Class="SOEM_FrontEnd.AboutWindow"
+        Title="About">
+	
+	<DockPanel>
+	<!-- Custom title bar -->
+	<Grid DockPanel.Dock="Top"
+          Height="32"
+          ColumnDefinitions="*,56"
+          Background="{DynamicResource ThemeBackgroundBrush}"
+          PointerPressed="TitleBar_PointerPressed">
+
+		<TextBlock Grid.Row="0"
+			Margin="10,0,0,0"
+				   VerticalAlignment="Center"
+				   Text="About"
+				   FontWeight="Bold"/>
+
+		<!-- Close only -->
+		<Button Grid.Row="0"
+				Grid.Column="1"
+				Width="30"
+				Height="30"
+				HorizontalAlignment="Right"
+				VerticalAlignment="Stretch"
+				Content="✕"
+				Click="Close_Click"/>
+	</Grid>
+
+	<!-- Content -->
+	<Border Padding="16">
+		<StackPanel Spacing="8">
+			<TextBlock Text="EtherCAT Front-End (SOEM 기반)"/>
+			<TextBlock Text="Version: 0.1.0"/>
+			<Separator Margin="0,8,0,8"/>
+
+			<!-- 모달리스니까 OK 버튼은 없어도 되지만, 있으면 편함 -->
+
+		</StackPanel>
+	</Border>
+		
+	</DockPanel>
+
+</Window>

@@ -7,6 +7,49 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="SOEM_FrontEnd.Views.MainWindow"
         Icon="/Assets/icon-cat-16397242.ico"
-        Title="SOEM_FrontEnd">
-        <views:MainView />
+        Title="SOEM FrontEnd"
+		ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="36">
+	
+	<DockPanel>
+		<!-- Title bar area -->
+		<Grid DockPanel.Dock="Top" Height="36"
+			  ColumnDefinitions="Auto,*,Auto,144,"
+			  VerticalAlignment="Top"
+			  Background="DarkSlateGray"
+			  PointerPressed="TitleBar_PointerPressed">
+
+			<!-- App icon -->
+			<Image Grid.Column="0"
+						Width="16" Height="16"
+						Margin="10,0,6,0"
+						VerticalAlignment="Center"
+						Source="avares://SOEM_FrontEnd/Assets/icon-cat-16397242.ico"/>
+			<!-- title -->
+			<TextBlock Grid.Column="1"
+					   Margin="10,0,0,0"
+					   VerticalAlignment="Center"
+					   Text="SOEM_FrontEnd"
+					   FontWeight="Bold"/>
+
+			<!-- About button (right side) -->
+			<Button Grid.Column="2"
+					Content="?"
+					Margin="0,0,8,0"
+					VerticalAlignment="Center"
+					Click="About_Click"/>
+
+			<!-- Window buttons (optional) -->
+			<!-- 원하면 Min/Max/Close도 커스텀으로 만들 수 있음 -->
+		</Grid>
+
+		<!-- Main content -->
+		<ContentPresenter/>
+
+		<views:MainView Margin="5,5,5,5"/>
+
+	</DockPanel>
+		
+		
 </Window>
