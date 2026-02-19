@@ -12,13 +12,17 @@
         ExtendClientAreaChromeHints="PreferSystemChrome"
         ExtendClientAreaTitleBarHeightHint="36">
 	
-	<DockPanel>
+	
+	<Border Padding="{Binding $parent[views:MainWindow].WindowPadding}">
+
+		<DockPanel>
 		<!-- Title bar area -->
 		<Grid DockPanel.Dock="Top" Height="36"
-			  ColumnDefinitions="Auto,*,Auto,144,"
+			  ColumnDefinitions="Auto,*,Auto,144"
 			  VerticalAlignment="Top"
 			  Background="DarkSlateGray"
-			  PointerPressed="TitleBar_PointerPressed">
+			  PointerPressed="TitleBar_PointerPressed"
+			  DoubleTapped="TitleBar_DoubleTapped">
 
 			<!-- App icon -->
 			<Image Grid.Column="0"
@@ -36,7 +40,7 @@
 			<!-- About button (right side) -->
 			<Button Grid.Column="2"
 					Content="?"
-					Margin="0,0,8,0"
+					Margin="0,0,0,0"
 					VerticalAlignment="Center"
 					Click="About_Click"/>
 
@@ -45,11 +49,10 @@
 		</Grid>
 
 		<!-- Main content -->
-		<ContentPresenter/>
-
 		<views:MainView Margin="5,5,5,5"/>
 
 	</DockPanel>
-		
-		
+	</Border>
+
+
 </Window>
