@@ -304,6 +304,23 @@ EXP int CALL soem_read_bytes(uint16_t s, int off, uint8_t *buf, int len)
    return 0;
 }
 
+//전체 byte배열로 output 쓰기
+
+//나중에 래퍼쪽 에러코드 정리필요.
+EXP int CALL soem_write_bytes(uint16_t s, int off, const uint8_t *buf, int len)
+{
+   if (!buf) return -1;
+   if (len < 0) return -5;
+   if (s == 0 || s > g_ctx.slavecount) return -2;
+   if (!g_ctx.slavelist[s].outputs) return -3;
+   if (off < 0) return -4;
+   if (len == 0) return 0;
+
+   uint8_t *dst = (uint8_t *)g_ctx.slavelist[s].outputs;
+   memcpy(dst + off, buf, (size_t)len);
+   return 0;
+}
+
 
 // Ethercat Slave 조회.
 EXP void CALL soem_readstate(void)

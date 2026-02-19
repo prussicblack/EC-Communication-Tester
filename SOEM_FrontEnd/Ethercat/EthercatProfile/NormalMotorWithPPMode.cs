@@ -1,4 +1,5 @@
-﻿using SOEM_FrontEnd.Ethercat.EthercatProfile;
+﻿using Avalonia.Controls.Shapes;
+using SOEM_FrontEnd.Ethercat.EthercatProfile;
 using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
 using SOEM_FrontEnd.Model;
 using System;
@@ -35,23 +36,28 @@ namespace SOEM_FrontEnd.Ethercat
         }
 
 
-        bool IEthercatStateTransition.EnsureSafeOp(int timeoutMs)
+        bool IEthercatStateTransition.PrepareSafeOp(int timeoutMs)
         {
             //safeop로 넘어가기 전 실행될 코드.
 
             return true;
         }
 
-        bool IEthercatStateTransition.EnsureOp(int timeoutMs)
+        bool IEthercatStateTransition.PrepareOp(int timeoutMs)
         {
             //op로 넘어 가기 전 실행될 코드.
             //PP모드 전환 전 PP모드 변환.
-            _ECClient.SetModePP(_SlaveNo);
+            //_ECClient.SetModePP(_SlaveNo);
+
+            _ECClient.SdoWriteI8(_SlaveNo, 0x6060, 0x00, 1); //PPMode 1
 
             //초기 프로파일 입력.
             //외부에서 설정 가능하도록 처리할것.
             //_ECClient.SetProfile(_SlaveNo, 1000000, 5000000, 5000000); // 예: vel/acc/dec
-            
+            //_ECClient.SdoWriteU32(_SlaveNo, 0x6081, 0x00, vel);
+            //_ECClient.SdoWriteU32(_SlaveNo, 0x6083, 0x00, acc);
+            //_ECClient.SdoWriteU32(_SlaveNo, 0x6084, 0x00, dec);
+
             //초기 알람 클리어. //따로 해줄것.
             //_ECClient.SdoWriteI16(_SlaveNo, 0x6040, 00, 0x0080);  //slave alarm reset. SDO로 써도 먹네..
 

@@ -89,6 +89,14 @@ namespace SOEM_FrontEnd.Model
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int soem_read_u8(ushort slv, int off, out byte v);
 
+        //전체.
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int soem_read_bytes(ushort slv, int off, byte[] buf, int len);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int soem_write_bytes(ushort slv, int off, byte[] buf, int len);
+
+
         //Slave당 pdo크기 읽어오기. 주의 ecx_config_map_group 호출 후에 읽어와야함.
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int soem_get_slave_inout_size(int slave, out int inBytes, out int outBytes, out int inBits, out int outBits);
@@ -292,25 +300,6 @@ namespace SOEM_FrontEnd.Model
             return val;
         }
 
-        // ---------- PP 모드 빠른 시퀀스(예시) ----------
-        public void SetModePP(ushort slave) => SdoWriteI8(slave, 0x6060, 0x00, 1);
-        public void SetProfile(ushort slave, uint vel, uint acc, uint dec)
-        {
-            SdoWriteU32(slave, 0x6081, 0x00, vel);
-            SdoWriteU32(slave, 0x6083, 0x00, acc);
-            SdoWriteU32(slave, 0x6084, 0x00, dec);
-        }
-        public void PpMoveAbs(ushort slave, int targetCounts, bool changeImmediately = false)
-        {
-            // Target Position
-            SdoWriteI32(slave, 0x607A, 0x00, targetCounts);
-
-            // Controlword: New Set-Point(bit4) 토글(+ enable 비트는 장치 상태에 따라 사전 세팅돼 있어야 함)
-            ushort cw = 0x000F; // 예: Switch on + Enable operation까지 완료된 상태라고 가정
-            if (changeImmediately) cw |= (1 << 5); // bit5
-            SdoWriteU16(slave, 0x6040, 0x00, (ushort)(cw | (1 << 4))); // set bit4=1
-            SdoWriteU16(slave, 0x6040, 0x00, cw);                      // clear bit4=0
-        }
 
         public void Dispose()
         {
@@ -349,6 +338,24 @@ namespace SOEM_FrontEnd.Model
 
             return sb.ToString();
         }
+
+
+        //PDO래핑 매서드 추가.
+        public int PdoReadBytes(ushort slave, int offset, Span<byte> dst)
+        {
+            // DllImport가 byte[]만 받으니 임시 배열 사용 (필요하면 ArrayPool로 최적화 가능)
+            var tmp = new byte[dst.Length];
+            int rc = SOEMNative.soem_read_bytes(slave, offset, tmp, tmp.Length);
+            if (rc == 0) tmp.AsSpan().CopyTo(dst);
+            return rc;
+        }
+
+        public int PdoWriteBytes(ushort slave, int offset, ReadOnlySpan<byte> src)
+        {
+            var tmp = src.ToArray();
+            return SOEMNative.soem_write_bytes(slave, offset, tmp, tmp.Length);
+        }
+
 
     }
 

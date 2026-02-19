@@ -1,4 +1,6 @@
-﻿using SOEM_FrontEnd.Model;
+﻿using SOEM_FrontEnd.Ethercat.EthercatProfile;
+using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
+using SOEM_FrontEnd.Model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,30 +8,40 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia.Rendering;
 
 namespace SOEM_FrontEnd.Ethercat
 {
-    //엎긴 해야되네..
     public sealed class PDORTWorker : IDisposable
     {
         private readonly EcClient _ec;
-        private readonly ushort _slave;
-
-        // PDO 오프셋 (PP용으로 리맵해 둔 값 기준)
-        private const int RX_OFF_CW = 0; // 0x6040
-        private const int RX_OFF_TPOS = 2; // 0x607A
-
-        private const int TX_OFF_SW = 2; // 0x6041
-        private const int TX_OFF_POS = 5; // 0x6064
+        private List<(ushort Slave, PDOBase Pdo)> _binds = new();
+        private byte[][] _tmpInBySlave = Array.Empty<byte[]>();
+        private byte[][] _tmpOutBySlave = Array.Empty<byte[]>();
 
         private Thread _thread;
         private volatile bool _running;
 
-        public PDORTWorker(EcClient ec, ushort slave)
+        public TimeSpan Period { get; set; } = TimeSpan.FromMilliseconds(1);
+        public int ReceiveTimeoutUs { get; set; } = 2000;
+
+        public PDORTWorker(EcClient ec)
         {
             _ec = ec;
-            _slave = slave;
+            _binds = new List<(ushort, PDOBase)>();
+        }
+        public void SetBinds(List<(ushort Slave, PDOBase Pdo)> binds, ushort slaveCount)
+        {
+            _binds = binds ?? new List<(ushort, PDOBase)>();
+
+            _tmpInBySlave = new byte[slaveCount + 1][];
+            _tmpOutBySlave = new byte[slaveCount + 1][];
+
+            for (int i = 0; i < _binds.Count; i++)
+            {
+                var (slave, pdo) = _binds[i];
+                _tmpInBySlave[slave] = pdo.Tx.Length > 0 ? new byte[pdo.Tx.Length] : Array.Empty<byte>();
+                _tmpOutBySlave[slave] = pdo.Rx.Length > 0 ? new byte[pdo.Rx.Length] : Array.Empty<byte>();
+            }
         }
 
         public void Start()
@@ -67,139 +79,57 @@ namespace SOEM_FrontEnd.Ethercat
             }
         }
 
-        private int test = 0;
         private void RunPdoLoop()
         {
-            // PP 모드라고 가정 (외부에서 6060=1, 프로파일/Enable까지 완료)
-            ushort cwBase = 0x000F; // 장비에 맞게 조정
-
-            int loop = 0;
-            int currentTarget = 0;
-            bool newSetPointBitHigh = false;
-            bool goingPositive = true;
-
             // 지터 측정
-            Stopwatch jitterSw = Stopwatch.StartNew();
+            var jitterSw = Stopwatch.StartNew();
             long lastTicks = jitterSw.ElapsedTicks;
             double ticksPerMs = (double)Stopwatch.Frequency / 1000.0;
 
-            double lastPeriodMs = 0.0;
-            double lastJitterUs = 0.0;
-            double maxAbsJitterUs = 0.0;
-
-            EthercatRtLoop.Run(TimeSpan.FromMilliseconds(1), () =>
+            EthercatRtLoop.Run(Period, () =>
             {
-                if (!_running)
-                    return false;
+                if (!_running) return false;
 
-                // ----- 지터 측정 -----
-                long nowTicks = jitterSw.ElapsedTicks;
-                double dtMs = (nowTicks - lastTicks) / ticksPerMs;
-                lastTicks = nowTicks;
-
-                lastPeriodMs = dtMs;
-                lastJitterUs = (dtMs - 1.0) * 1000.0;
-                double absJitter = Math.Abs(lastJitterUs);
-                if (absJitter > maxAbsJitterUs)
+                // ---- BeforeSend: Rx(출력 PDO) → SOEM outputs ----
+                // 1) outputs: Rx -> SOEM outputs
+                for (int k = 0; k < _binds.Count; k++)
                 {
-                    maxAbsJitterUs = absJitter;
-                }
-
-                // ----- TxPDO 읽기 (저번 주기 결과) -----
-                ushort sw = _ec.PdoReadU16(_slave, TX_OFF_SW);
-                int actPos = _ec.PdoReadI32(_slave, TX_OFF_POS);
-                bool targetReached = (sw & (1 << 10)) != 0; // bit10
-
-
-
-
-
-
-                // ----- 새 타겟 + New set-point 펄스 결정 -----
-                if (!newSetPointBitHigh)
-                {
-                    if (targetReached && (loop % 2000 == 0))
+                    var (slave, pdo) = _binds[k];
+                    var outBuf = _tmpOutBySlave[slave];
+                    if (outBuf.Length > 0)
                     {
-                        goingPositive = !goingPositive;
-                        currentTarget = goingPositive ? 5000000 : 0;
-                        newSetPointBitHigh = true;
+                        pdo.Rx.CopyTo(outBuf);
+                        SOEMNative.soem_write_bytes(slave, 0, outBuf, outBuf.Length); // 래퍼 필요
                     }
                 }
 
-                // ----- Controlword 구성 -----
-
-                
-                ushort cw = cwBase;
-                cw |= (1 << 5); // Change immediately
-
-                if (newSetPointBitHigh)
-                {
-                    cw |= (1 << 4); // New set-point
-                }
-
-                ushort Outout;
-                //----출력테스트
-                //나중에 PDOWrite Bit도 있어야 되겠는데?
-                if (goingPositive)
-                {
-                    Outout = 0x0001;
-                }
-                else
-                {
-                    Outout = 0x0000;
-                }
-
-
-                if (test == 0)
-                {
-                    cw = 0x0006;
-                    test++;
-                }
-                else if (test == 1)
-                {
-                    cw = 0x0007;
-                    test++;
-                }
-                else if (test == 2)
-                {
-                    cw = 0x000f;
-                    test++;
-                }
-
-                // ----- RxPDO 쓰기 -----
-                _ec.PdoWriteU16(_slave, RX_OFF_CW, cw);
-                _ec.PdoWriteI32(_slave, RX_OFF_TPOS, currentTarget);
-                //_ec.PdoWriteU16(0x09, 0, Outout);
-
-
-                // ----- PDO 전송/수신 -----
+                // ---- Send / Receive ----
+                // 2) send/recv
                 _ec.SendProcessData();
-                _ec.ReceiveProcessData();
+                _ec.ReceiveProcessData(ReceiveTimeoutUs);
 
-                // ----- 로그 -----
-                if ((loop % 500) == 0)
+                // ---- AfterReceive: SOEM inputs → Tx(입력 PDO) ----
+                // 3) inputs: SOEM inputs -> TxWriteSpan
+                for (int k = 0; k < _binds.Count; k++)
                 {
-                    Console.WriteLine(
-                        $"loop={loop}, period={lastPeriodMs:F3} ms, " +
-                        $"jitter={lastJitterUs:F1} us, max|jitter|={maxAbsJitterUs:F1} us, " +
-                        $"CW=0x{cw:X4}, SW=0x{sw:X4}, " +
-                        $"TR={(targetReached ? 1 : 0)}, TPOS={currentTarget}, ACT={actPos}");
+                    var (slave, pdo) = _binds[k];
+                    var inBuf = _tmpInBySlave[slave];
+                    if (inBuf.Length > 0)
+                    {
+                        SOEMNative.soem_read_bytes(slave, 0, inBuf, inBuf.Length);
+                        inBuf.AsSpan().CopyTo(pdo.TxWriteSpan);
+                    }
                 }
 
-                // bit4 펄스는 한 사이클만 유지하고 끔
-                if (newSetPointBitHigh)
-                {
-                    newSetPointBitHigh = false;
-                }
-
-                loop++;
-
-                // 테스트용: 60초 정도 돌리고 자동 종료
-                //if (loop >= 600000)
-                //    return false;
+                // ---- jitter calc (원하면 외부로 뽑기) ----
+                long nowTicks = jitterSw.ElapsedTicks;
+                double dtMs = (nowTicks - lastTicks) / ticksPerMs;
+                lastTicks = nowTicks;
+                // dtMs, (dtMs - Period.TotalMilliseconds)*1000us 등 필요시 기록
 
                 return true;
             });
+
         }
 
         public void Stop()

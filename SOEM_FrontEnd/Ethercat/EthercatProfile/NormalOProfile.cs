@@ -23,14 +23,14 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
             _ECClient = EcClient;
         }
 
-        bool IEthercatStateTransition.EnsureSafeOp(int timeoutMs)
+        bool IEthercatStateTransition.PrepareSafeOp(int timeoutMs)
         {
             //safeop로 넘어가기 전 실행될 코드.
 
             return true;
         }
 
-        bool IEthercatStateTransition.EnsureOp(int timeoutMs)
+        bool IEthercatStateTransition.PrepareOp(int timeoutMs)
         {
             //op로 넘어 가기 전 실행될 코드.
 

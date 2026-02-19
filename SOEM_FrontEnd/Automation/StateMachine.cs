@@ -154,21 +154,19 @@ namespace SOEM_FrontEnd.Automation
 
                 if (store.BaseProfile is IEthercatStateTransition)
                 {
-                    bool result = (store.BaseProfile as IEthercatStateTransition).EnsureSafeOp(5000);
+                    bool result = (store.BaseProfile as IEthercatStateTransition).PrepareSafeOp(5000);
 
                     if (result == false)
                     {
                         //로그기록.
                         //어차피 걍 SafeOP까지 올릴거임.
-                        Console.WriteLine($"{i} - EnsureSafeOp Fail");
+                        Console.WriteLine($"{i} - PrepareSafeOp Fail");
                     }
                 }
 
 
 
             }
-
-
 
             ret = _ECClient.EnsureState(EcClient.EC_STATE_SAFE_OP, 2000); //safeop이행.
             if (ret == false)
@@ -177,10 +175,6 @@ namespace SOEM_FrontEnd.Automation
 
                 return false;
             }
-
-
-            //워커 미리 생성.
-            worker = new PDORTWorker(_ECClient, 1);
 
             m_eCurrentSequence = eStateSequenceName.SafeOp;
 
@@ -192,6 +186,9 @@ namespace SOEM_FrontEnd.Automation
 
             try
             {
+                //워커 생성
+                worker = new PDORTWorker(_ECClient);
+
                 var map = Datamap.Instance;
 
                 for (int i = 1; i <= _ECClient.SlaveCount; i++)
@@ -200,18 +197,31 @@ namespace SOEM_FrontEnd.Automation
 
                     if (store.BaseProfile is IEthercatStateTransition)
                     {
-                        bool result = (store.BaseProfile as IEthercatStateTransition).EnsureOp(5000);
+                        bool result = (store.BaseProfile as IEthercatStateTransition).PrepareOp(5000);
 
                         if (result == false)
                         {
                             //로그기록.
                             //어차피 걍 OP까지 올릴거임.
-                            Console.WriteLine("EnsureOp Macro Fail");
+                            Console.WriteLine("PrepareOp Macro Fail");
                         }
                     }
 
                 }
 
+                //최종 완성된 EC object를 이용하여 데이터 바인딩 처리.
+                List<(ushort Slave, PDOBase Pdo)> binds = new List<(ushort Slave, PDOBase Pdo)>();
+
+                for(int i = 1;i <= _ECClient.SlaveCount;i++)
+                {
+                    var pdo = map.GetSlave(i).BaseProfile as PDOBase;
+                    if (pdo == null) continue; // IO/402 아닌 경우 등
+
+                    binds.Add(((ushort)i, pdo));
+                }
+
+                //워커에 PDO주소 바인딩.
+                worker.SetBinds(binds);
 
                 //1회 processData run 후 Operate이동.
                 _ECClient.SendProcessData();
@@ -221,14 +231,17 @@ namespace SOEM_FrontEnd.Automation
                 if (ret == false)
                 {
                     Console.WriteLine("EnsureOp Fail");
+                    worker?.Stop();
+
+                    worker = null;
 
                     return false;
                 }
 
                 m_eCurrentSequence = eStateSequenceName.Op;
+                
 
                 //Worker시작.
-                //worker = new PDORTWorker(_ECClient, 1);
                 worker.Start();
 
             }
@@ -277,7 +290,7 @@ namespace SOEM_FrontEnd.Automation
 
             int rxmapcount = _ECClient.SdoReadI8(slave, 0x1C12, 0); //0번 서브인덱스, 총 엔트리 갯수.
 
-            if (rxmapcount == 0)
+            if (rxmapcount <= 0)
             {
                 rxmapcount = _ECClient.SdoReadU16(slave, 0x1C12, 0); //설마 이걸 쓰진 않겠지..-0-
                 if (rxmapcount == 0) 
@@ -294,7 +307,7 @@ namespace SOEM_FrontEnd.Automation
                 rxentrylist.Add(listelement);
             }
 
-            if (rxentrylist.Count == 0)
+            if (rxentrylist.Count <= 0 )
                 return false;
 
 
@@ -311,7 +324,7 @@ namespace SOEM_FrontEnd.Automation
 
             int txmapcount = _ECClient.SdoReadI8(slave, 0x1C13, 0); //0번 서브인덱스, 총 엔트리 갯수.
 
-            if (txmapcount == 0)
+            if (txmapcount <= 0)
             {
                 txmapcount = _ECClient.SdoReadU16(slave, 0x1C13, 0); //설마 이걸 쓰진 않겠지..-0-
                 if (txmapcount == 0)
@@ -329,7 +342,7 @@ namespace SOEM_FrontEnd.Automation
             }
 
 
-            if (txentrylist.Count == 0)
+            if (txentrylist.Count <= 0 )
                 return false;
 
             for (int i = 0; i < txentrylist.Count; i++)
