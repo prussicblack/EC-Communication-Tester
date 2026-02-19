@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace SOEM_FrontEnd.Ethercat
+namespace SOEM_FrontEnd.Util
 {
     internal static class MMCSSHelper
     {
@@ -14,29 +14,29 @@ namespace SOEM_FrontEnd.Ethercat
         }
 
         [DllImport("avrt.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern IntPtr AvSetMmThreadCharacteristicsW(string taskName, out uint taskIndex);
+        private static extern nint AvSetMmThreadCharacteristicsW(string taskName, out uint taskIndex);
 
         [DllImport("avrt.dll", SetLastError = true)]
-        private static extern bool AvSetMmThreadPriority(IntPtr avrtHandle, AvrtPriority priority);
+        private static extern bool AvSetMmThreadPriority(nint avrtHandle, AvrtPriority priority);
 
         [DllImport("avrt.dll", SetLastError = true)]
-        private static extern bool AvRevertMmThreadCharacteristics(IntPtr avrtHandle);
+        private static extern bool AvRevertMmThreadCharacteristics(nint avrtHandle);
 
         /// <summary>
         /// 현재 스레드를 MMCSS "Pro Audio" 태스크로 올리고 CRITICAL 우선순위로 설정.
         /// 실패하면 IntPtr.Zero 반환.
         /// </summary>
-        public static IntPtr EnterProAudio(out int lastError)
+        public static nint EnterProAudio(out int lastError)
         {
             lastError = 0;
 
             uint idx;
 
-            IntPtr handle = AvSetMmThreadCharacteristicsW("Pro Audio", out idx);
-            if (handle == IntPtr.Zero)
+            nint handle = AvSetMmThreadCharacteristicsW("Pro Audio", out idx);
+            if (handle == nint.Zero)
             {
                 lastError = Marshal.GetLastWin32Error();
-                return IntPtr.Zero;
+                return nint.Zero;
             }
 
             if (!AvSetMmThreadPriority(handle, AvrtPriority.AVRT_PRIORITY_CRITICAL))
@@ -45,15 +45,15 @@ namespace SOEM_FrontEnd.Ethercat
                 // 여기서 revert 하고 0을 리턴할지, handle은 유지할지 정책 선택
                 // 보수적으로는 revert 후 실패 처리 권장
                 AvRevertMmThreadCharacteristics(handle);
-                return IntPtr.Zero;
+                return nint.Zero;
             }
 
             return handle;
         }
 
-        public static void LeaveMmcss(IntPtr handle)
+        public static void LeaveMmcss(nint handle)
         {
-            if (handle != IntPtr.Zero)
+            if (handle != nint.Zero)
             {
                 AvRevertMmThreadCharacteristics(handle);
             }

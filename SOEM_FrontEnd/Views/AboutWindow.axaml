@@ -45,8 +45,6 @@
 			<TextBlock Text="Version: 0.1.0"/>
 			<Separator Margin="0,8,0,8"/>
 
-			<!-- 모달리스니까 OK 버튼은 없어도 되지만, 있으면 편함 -->
-
 		</StackPanel>
 	</Border>
 		

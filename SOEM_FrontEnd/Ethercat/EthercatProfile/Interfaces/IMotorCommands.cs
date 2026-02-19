@@ -10,21 +10,21 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
     {
         //UI 혹은 기타 외부가 모터에 대한 접근을 위해 사용되는 인터페이스.
         //일단은 미사용.
-        void MoveABS(double position);
+        bool MoveABS(double position);
 
-        void MoveINC(double position);
+        bool MoveINC(double position);
 
-        void Stop();
+        bool Stop();
 
-        void JogPlus();
-        void JogMinus();
-        void JogStop();
+        bool JogPlus();
+        bool JogMinus();
+        bool JogStop();
 
-        void AlarmClear();
-        void ServoOn();
-        void ServoOff();
+        bool AlarmClear();
+        bool ServoOn();
+        bool ServoOff();
 
-        void Home();
+        bool Home();
 
         int AxisID { get; }
         bool IsServoOn { get; }
