@@ -3,7 +3,9 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using Microsoft.Extensions.Logging;
 using SOEM_FrontEnd.Ethercat.ESI;
+using SOEM_FrontEnd.Util.Logging;
 using SOEM_FrontEnd.ViewModels;
 using SOEM_FrontEnd.Views;
 using System;
@@ -39,6 +41,24 @@ public partial class App : Application
         //    };
         //}
 
+        //로깅시작 초기화
+        OPLogger.Configure(new OPLoggerOptions
+        {
+            LogFolder = "OPLogs",
+            FileNamePrefix = "soem_",
+            MaxFolderBytes = 1024L * 1024L * 1024L,   // 1GB
+            MaxActiveFileBytes = 64L * 1024L * 1024L, // 64MB
+            QueueCapacity = 8192,
+            QueueMode = OPLogQueueMode.Block,
+            MinimumLevel = LogLevel.Information,
+            EnableFailover = true
+        });
+
+        var log = OPLogger.CreateLogger("App");
+        log.LogInformation("App boot");
+        //로깅시작 초기화 완료.
+
+        
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var loadingVm = new LoadingViewModel

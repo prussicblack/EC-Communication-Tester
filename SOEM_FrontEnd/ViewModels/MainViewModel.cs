@@ -21,11 +21,16 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Microsoft.Extensions.Logging;
 using SOEM_FrontEnd.Automation;
 using static System.Net.Mime.MediaTypeNames;
 using SOEM_FrontEnd.Util;
+using SOEM_FrontEnd.Util.Logging;
+using SOEM_FrontEnd.Util.Logging.UI;
 
 namespace SOEM_FrontEnd.ViewModels;
+
+
 
 public class SlaveItem : INotifyPropertyChanged
 {
@@ -241,9 +246,16 @@ public partial class MainViewModel : ViewModelBase
     public ICommand CMD_MoveToPreOp { get; private set; }
     public ICommand CMD_MoveToSafeOp { get; private set; }
     public ICommand CMD_MoveToOp { get; private set; }
+
     
-    
-    
+    //UI단에 표기되는 로그.
+    public ObservableCollection<string> UiLogs { get; } = new();
+    private readonly AvaloniaUiLogSink _sink;
+
+    //로그 베이스.
+    private readonly ILogger<StateMachine> _log;
+
+
     public MainViewModel()
     {
 
@@ -267,7 +279,34 @@ public partial class MainViewModel : ViewModelBase
         CMD_MoveToSafeOp = new RelayCommand(HandleMoveToSafeOp);
         CMD_MoveToOp = new RelayCommand(HandleMoveToOp);
 
+        //UI로그 연결을 위한 코드.
+        _sink = new AvaloniaUiLogSink(line =>
+        {
+            // AvaloniaUiLogSink가 UI thread로 flush하니까 여기선 Add만
+            UiLogs.Add(line);
+
+            // (선택) 너무 길어지면 오래된 것 삭제
+            const int max = 3000;
+            if (UiLogs.Count > max)
+                UiLogs.RemoveAt(0);
+        });
+
+        OPLogger.SetUiSink(_sink);
+
+        //로그 초기화
+        _log = OPLogger.CreateLogger<StateMachine>();
+        //로그 기록
+        _log.LogInformation("MainViewModel Created");
     }
+
+    public void Dispose()
+    {
+        // 창 닫힐 때 sink 해제/정리
+        OPLogger.SetUiSink(null);
+        _sink.Dispose();
+    }
+
+
 
     private void HandleMoveToOp()
     {
