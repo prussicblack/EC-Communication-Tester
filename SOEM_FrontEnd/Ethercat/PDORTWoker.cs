@@ -1,6 +1,7 @@
 ﻿using SOEM_FrontEnd.Ethercat.EthercatProfile;
 using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
 using SOEM_FrontEnd.Model;
+using SOEM_FrontEnd.Util;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
