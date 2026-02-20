@@ -27,6 +27,7 @@ using static System.Net.Mime.MediaTypeNames;
 using SOEM_FrontEnd.Util;
 using SOEM_FrontEnd.Util.Logging;
 using SOEM_FrontEnd.Util.Logging.UI;
+using System.Threading;
 
 namespace SOEM_FrontEnd.ViewModels;
 
@@ -113,10 +114,6 @@ public partial class MainViewModel : ViewModelBase
 
 
     public List<ESIXMLData.ESIDevice> DevicesData = new List<ESIXMLData.ESIDevice>();
-
-
-
-    public ObservableCollection<string> LogLines { get; } = new ObservableCollection<string>();
 
     private ObservableCollection<ESIXMLData.ESISDOObject> _SDOObjects; 
 
@@ -247,13 +244,15 @@ public partial class MainViewModel : ViewModelBase
     public ICommand CMD_MoveToSafeOp { get; private set; }
     public ICommand CMD_MoveToOp { get; private set; }
 
-    
+
     //UI단에 표기되는 로그.
+    public ObservableCollection<string> LogLines { get; } = new ObservableCollection<string>();
+
     public ObservableCollection<string> UiLogs { get; } = new();
     private readonly AvaloniaUiLogSink _sink;
 
     //로그 베이스.
-    private readonly ILogger<StateMachine> _log;
+    private readonly ILogger _log;
 
 
     public MainViewModel()
@@ -285,7 +284,7 @@ public partial class MainViewModel : ViewModelBase
             // AvaloniaUiLogSink가 UI thread로 flush하니까 여기선 Add만
             UiLogs.Add(line);
 
-            // (선택) 너무 길어지면 오래된 것 삭제
+            //너무 길어지면 오래된 것 삭제
             const int max = 3000;
             if (UiLogs.Count > max)
                 UiLogs.RemoveAt(0);
@@ -294,7 +293,7 @@ public partial class MainViewModel : ViewModelBase
         OPLogger.SetUiSink(_sink);
 
         //로그 초기화
-        _log = OPLogger.CreateLogger<StateMachine>();
+        _log = OPLogger.CreateLogger("SOEM_FrontEnd");
         //로그 기록
         _log.LogInformation("MainViewModel Created");
     }
@@ -699,9 +698,12 @@ public partial class MainViewModel : ViewModelBase
     }
 
 
+
+    private int test = 0;
     private void HandleTest()
     {
 
+        _log.LogInformation($"Log start Test.{test}");
         return;
 
     }

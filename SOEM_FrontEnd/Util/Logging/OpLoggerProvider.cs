@@ -74,12 +74,7 @@ namespace SOEM_FrontEnd.Util.Logging
             return logLevel >= _opt.MinimumLevel;
         }
 
-        public void Log<TState>(
-            LogLevel logLevel,
-            EventId eventId,
-            TState state,
-            Exception exception,
-            Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
             if (!IsEnabled(logLevel)) return;
 
@@ -121,7 +116,7 @@ namespace SOEM_FrontEnd.Util.Logging
             }
             catch { }
 
-            var env = new LogEnvelope(DateTime.UtcNow, logLevel, _category, eventId, message, exception, props);
+            var env = new LogEnvelope(DateTime.UtcNow, DateTime.Now, logLevel, _category, eventId, message, exception, props);
             _worker.Enqueue(env);
         }
 

@@ -46,8 +46,10 @@ public partial class App : Application
         {
             LogFolder = "OPLogs",
             FileNamePrefix = "soem_",
-            MaxFolderBytes = 1024L * 1024L * 1024L,   // 1GB
-            MaxActiveFileBytes = 64L * 1024L * 1024L, // 64MB
+            MaxFolderBytes = 512L * 1024L * 1024L,   // 512MB
+            //MaxFolderBytes = 128L * 1024L,   // 128KB
+            MaxActiveFileBytes = 32L * 1024L * 1024L, // 32MB
+            //MaxActiveFileBytes = 32L * 1024L, // 32KB
             QueueCapacity = 8192,
             QueueMode = OPLogQueueMode.Block,
             MinimumLevel = LogLevel.Information,
@@ -56,9 +58,12 @@ public partial class App : Application
 
         var log = OPLogger.CreateLogger("App");
         log.LogInformation("App boot");
+
+        //비선언 타입 초기화.
+        //Log.SetDefaultCategory("SOEM");
         //로깅시작 초기화 완료.
 
-        
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var loadingVm = new LoadingViewModel

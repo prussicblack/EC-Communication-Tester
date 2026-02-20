@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:SOEM_FrontEnd.ViewModels"
+			 xmlns:ui="clr-namespace:SOEM_FrontEnd.Util.Logging.UI"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="SOEM_FrontEnd.Views.MainView"
              x:DataType="vm:MainViewModel">
@@ -269,13 +270,15 @@
       
       <ListBox Grid.Row="4" Grid.Column="0" 
                x:Name ="LogListBox"
-               ItemsSource="{Binding LogLines}"
+               ItemsSource="{Binding UiLogs}"
                FontFamily="Consolas"
                FontSize="12"
                HorizontalAlignment="Stretch"
                VerticalAlignment="Stretch"
                ScrollViewer.VerticalScrollBarVisibility="Auto"
-               ScrollViewer.HorizontalScrollBarVisibility="Auto">
+               ScrollViewer.HorizontalScrollBarVisibility="Auto"
+			    ui:AutoFollowTailBehavior.IsEnabled="True"
+                ui:AutoFollowTailBehavior.ThresholdPx="32">
           <ListBox.Styles>
               <Style Selector="ListBoxItem">
                   <Setter Property="BorderThickness" Value="0" />

@@ -14,9 +14,10 @@ namespace SOEM_FrontEnd.Util.Logging
 {
     internal readonly struct LogEnvelope
     {
-        public LogEnvelope(DateTime utc, LogLevel level, string category, EventId eventId, string message, Exception exception, IReadOnlyDictionary<string, object> props)
+        public LogEnvelope(DateTime utc, DateTime local, LogLevel level, string category, EventId eventId, string message, Exception exception, IReadOnlyDictionary<string, object> props)
         {
             Utc = utc;
+            Local = local;
             Level = level;
             Category = category ?? "";
             EventId = eventId;
@@ -26,6 +27,7 @@ namespace SOEM_FrontEnd.Util.Logging
         }
 
         public DateTime Utc { get; }
+        public DateTime Local { get; }
         public LogLevel Level { get; }
         public string Category { get; }
         public EventId EventId { get; }
@@ -68,7 +70,7 @@ namespace SOEM_FrontEnd.Util.Logging
             _opt = opt;
 
             if (string.IsNullOrWhiteSpace(_opt.LogFolder))
-                _opt.LogFolder = Path.Combine(AppContext.BaseDirectory, "OPLogs");
+                _opt.LogFolder = Path.Combine(AppContext.BaseDirectory, "Logs");
 
             Directory.CreateDirectory(_opt.LogFolder);
 
@@ -172,7 +174,7 @@ namespace SOEM_FrontEnd.Util.Logging
             string msg = e.Message ?? "";
             if (_opt.MaxMessageChars > 0 && msg.Length > _opt.MaxMessageChars)
                 msg = msg.Substring(0, _opt.MaxMessageChars) + " …(truncated)";
-            return string.Format(CultureInfo.InvariantCulture, "{0:HH:mm:ss.fff} [{1}] {2}: {3}", e.Utc, e.Level, e.Category, msg);
+            return string.Format(CultureInfo.InvariantCulture, "{0:HH:mm:ss.fff} [{1}] {2}", e.Local, e.Level, msg);
         }
 
         private void TryWriteToFile(in LogEnvelope e)
