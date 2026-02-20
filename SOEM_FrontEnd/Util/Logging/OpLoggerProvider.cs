@@ -9,13 +9,13 @@ using static SOEM_FrontEnd.Util.Logging.OPLogWorker;
 
 namespace SOEM_FrontEnd.Util.Logging
 {
-    internal sealed class OpLoggerProvider : ILoggerProvider, ISupportExternalScope
+    internal sealed class OPLoggerProvider : ILoggerProvider, ISupportExternalScope
     {
         private readonly OPLogWorker _worker;
         private readonly OPLoggerOptions _opt;
         private IExternalScopeProvider _scopeProvider;
 
-        public OpLoggerProvider(OPLogWorker worker, OPLoggerOptions opt)
+        public OPLoggerProvider(OPLogWorker worker, OPLoggerOptions opt)
         {
             _worker = worker;
             _opt = opt;
@@ -47,9 +47,9 @@ namespace SOEM_FrontEnd.Util.Logging
         private readonly string _category;
         private readonly OPLogWorker _worker;
         private readonly OPLoggerOptions _opt;
-        private readonly OpLoggerProvider _provider;
+        private readonly OPLoggerProvider _provider;
 
-        public OpLogger(string category, OPLogWorker worker, OPLoggerOptions opt, OpLoggerProvider provider)
+        public OpLogger(string category, OPLogWorker worker, OPLoggerOptions opt, OPLoggerProvider provider)
         {
             _category = category ?? "";
             _worker = worker;

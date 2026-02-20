@@ -8,7 +8,9 @@ namespace SOEM_FrontEnd.Util.Logging
     /// <summary>
     /// OPLogger: Microsoft.Extensions.Logging.ILogger 기반 + 내부 Serilog 파일 기록 + UI sink.
     /// - 별도 worker thread (bounded queue)
+    /// - threadSafe, ConcurrentQueue
     /// - 폴더 총 용량 제한(초과 시 오래된 파일 삭제)
+    /// - 파일 용량 제한
     /// - 파일 잠김/공유위반/IO 예외 시 failover(새 파일로 전환)
     /// - 예외가 나도 프로그램이 죽지 않음
     /// </summary>
@@ -20,7 +22,7 @@ namespace SOEM_FrontEnd.Util.Logging
 
         private static OPLoggerOptions _options;
         private static OPLogWorker _worker;
-        private static OpLoggerProvider _provider;
+        private static OPLoggerProvider _provider;
         private static ILoggerFactory _factory;
 
         public static bool IsConfigured
@@ -39,7 +41,7 @@ namespace SOEM_FrontEnd.Util.Logging
                 _options = options;
 
                 _worker = new OPLogWorker(_options, uiSink);
-                _provider = new OpLoggerProvider(_worker, _options);
+                _provider = new OPLoggerProvider(_worker, _options);
 
                 _factory = LoggerFactory.Create(builder =>
                 {

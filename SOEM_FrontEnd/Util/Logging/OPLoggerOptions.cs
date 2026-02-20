@@ -53,7 +53,7 @@ namespace SOEM_FrontEnd.Util.Logging
             "{Timestamp:yyyy-MM-dd HH:mm:ss.fff } [{Level}] {Message:lj}{NewLine}{Exception}";
         //"{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] ({Category}) {Message:lj}{NewLine}{Exception}"; 
         //zzz TimeZone
-        //[{Level:u3}] Level UpperCase 3문자 축약. [{Level:w3}] LowerCase 3문자 축약, 4/5문자 축약형도 존재.
+        //[{Level:u3}] Level UpperCase 3문자 축약. [{Level:w3}] LowerCase 3문자 축약, 4/5문자 축약형도 존재.(SeriLog)
 
         /// <summary>Failover(파일 잠김/IO 예외 시 새 파일로 전환) 사용</summary>
         public bool EnableFailover { get; set; } = true;
