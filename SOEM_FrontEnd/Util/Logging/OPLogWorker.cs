@@ -44,7 +44,7 @@ namespace SOEM_FrontEnd.Util.Logging
         private readonly Thread _thread;
 
         private readonly object _uiLock = new object();
-        private IOpLogUiSink _uiSink;
+        private IOPLogUiSink _uiSink;
 
         private Logger _fileLogger;
         private string _currentFilePath = "";
@@ -64,7 +64,7 @@ namespace SOEM_FrontEnd.Util.Logging
         private long _nextTrimUtcTicks;
         private long _nextSizeCheckUtcTicks;
 
-        public OPLogWorker(OPLoggerOptions opt, IOpLogUiSink uiSink)
+        public OPLogWorker(OPLoggerOptions opt, IOPLogUiSink uiSink)
         {
             if (opt == null) throw new ArgumentNullException(nameof(opt));
             _opt = opt;
@@ -90,7 +90,7 @@ namespace SOEM_FrontEnd.Util.Logging
             _thread.Start();
         }
 
-        public void SetUiSink(IOpLogUiSink uiSink)
+        public void SetUiSink(IOPLogUiSink uiSink)
         {
             lock (_uiLock)
             {
@@ -150,7 +150,7 @@ namespace SOEM_FrontEnd.Util.Logging
             // UI
             try
             {
-                IOpLogUiSink ui;
+                IOPLogUiSink ui;
                 lock (_uiLock) { ui = _uiSink; }
                 ui.Enqueue(FormatForUi(e));
             }
@@ -256,7 +256,7 @@ namespace SOEM_FrontEnd.Util.Logging
         {
             try
             {
-                IOpLogUiSink ui;
+                IOPLogUiSink ui;
                 lock (_uiLock) { ui = _uiSink; }
                 ui.Enqueue(line);
             }

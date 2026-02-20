@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SOEM_FrontEnd.Util.Logging.UI
 {
-    public sealed class AvaloniaUiLogSink : IOpLogUiSink, IDisposable
+    public sealed class AvaloniaUiLogSink : IOPLogUiSink, IDisposable
     {
         private readonly ConcurrentQueue<string> _q = new ConcurrentQueue<string>();
         private readonly Action<string> _append;

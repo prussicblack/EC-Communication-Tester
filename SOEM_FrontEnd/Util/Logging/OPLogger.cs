@@ -30,7 +30,7 @@ namespace SOEM_FrontEnd.Util.Logging
             get { lock (_lock) { return _factory != null; } }
         }
 
-        public static void Configure(OPLoggerOptions options, IOpLogUiSink uiSink = null)
+        public static void Configure(OPLoggerOptions options, IOPLogUiSink uiSink = null)
         {
             if (options == null) throw new ArgumentNullException(nameof(options));
 
@@ -52,7 +52,7 @@ namespace SOEM_FrontEnd.Util.Logging
             }
         }
 
-        public static void SetUiSink(IOpLogUiSink uiSink)
+        public static void SetUiSink(IOPLogUiSink uiSink)
         {
             lock (_lock)
             {
