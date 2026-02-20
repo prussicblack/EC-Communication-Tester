@@ -156,14 +156,8 @@ namespace SOEM_FrontEnd.Util.Logging.UI
             // FollowTail 판정은 "scroll 변화 때" ListBox 기준이 필요.
             // 여기서는 모든 ListBox를 훑지 않고, Offset/Extent/Viewport만 바뀌었으니
             // FollowTail 재판정은 UpdateFollowTail에서 수행 (ListBox + State 필요)
-            // -> ScrollChanged는 ListBox에서 받도록 설계했으면 더 깔끔하지만,
-            //    현재 구조에서는 AttachedToVisualTree 시점에 UpdateFollowTail을 주기적으로 호출하면 됨.
-            //
-            // 현실적인 방법: ScrollChanged 이벤트에서 해당 ListBox를 찾지 않고,
-            // UpdateFollowTail은 CollectionChanged/Threshold 변경/초기 attach 시점에만 사용.
             //
             // 사용자가 스크롤 내렸는지 여부는 'FollowTail'이 계속 true로 유지되면 자동 스크롤이 걸림.
-            // 더 정확히 하려면 아래 "개선 버전" 참고(요청하면 바로 제공).
         }
 
         private static void RewireItemsSource(ListBox lb, State st, object newSource)
