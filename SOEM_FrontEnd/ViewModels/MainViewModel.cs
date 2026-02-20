@@ -29,9 +29,9 @@ using SOEM_FrontEnd.Util.Logging;
 using SOEM_FrontEnd.Util.Logging.UI;
 using System.Threading;
 
+//#nullable enable
+
 namespace SOEM_FrontEnd.ViewModels;
-
-
 
 public class SlaveItem : INotifyPropertyChanged
 {
@@ -43,8 +43,8 @@ public class SlaveItem : INotifyPropertyChanged
     public uint Product { get; init; }
     public uint Revision { get; init; }
 
-    public event PropertyChangedEventHandler? PropertyChanged;
-    protected void OnPropertyChanged([CallerMemberName] string? name = null)
+    public event PropertyChangedEventHandler PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 

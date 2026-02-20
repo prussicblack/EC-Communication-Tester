@@ -31,7 +31,7 @@ public partial class MainWindow : Window
         };
     }
 
-    private void About_Click(object? sender, RoutedEventArgs e)
+    private void About_Click(object sender, RoutedEventArgs e)
     {
         if (_about == null)
         {
@@ -43,12 +43,12 @@ public partial class MainWindow : Window
 
         _about.Activate();
     }
-    private void TitleBar_PointerPressed(object? sender, PointerPressedEventArgs e)
+    private void TitleBar_PointerPressed(object sender, PointerPressedEventArgs e)
     {
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             BeginMoveDrag(e);
     }
-    private void TitleBar_DoubleTapped(object? sender, TappedEventArgs e)
+    private void TitleBar_DoubleTapped(object sender, TappedEventArgs e)
     {
         // 리사이즈 불가면(지금 CanResize=False) 토글 의미 없음
         // MainWindow에서 토글 쓰려면 CanResize=True 여야 함
