@@ -246,8 +246,6 @@ public partial class MainViewModel : ViewModelBase
 
 
     //UI단에 표기되는 로그.
-    public ObservableCollection<string> LogLines { get; } = new ObservableCollection<string>();
-
     public ObservableCollection<string> UiLogs { get; } = new();
     private readonly AvaloniaUiLogSink _sink;
 
@@ -356,7 +354,7 @@ public partial class MainViewModel : ViewModelBase
         byte[] payload = TryBuildWritePayload(row, WriteValueText, out err);
         if (payload == null)
         {
-            LogLines.Add("[SDO][WRITE] " + err);
+            _log.LogInformation("[SDO][WRITE] " + err);
             return;
         }
 
@@ -907,13 +905,4 @@ public partial class MainViewModel : ViewModelBase
 
     }
 
-    public void Log(string message)
-    {
-        var line = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
-        LogLines.Add(line);
-
-        // 너무 많아지면 앞에서 잘라내기 (예: 2000줄 유지)
-        if (LogLines.Count > 2000)
-            LogLines.RemoveAt(0);
-    }
 }
