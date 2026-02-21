@@ -176,9 +176,9 @@ public partial class MotorControlViewModel : ViewModelBase
         if (_motor == null)
             return;
 
-        IsServoOn = _motor.IsServoOn;
-        IsHomed = _motor.IsHome;
-        HasError = _motor.IsError;
+        //IsServoOn = _motor.IsServoOn;
+        //IsHomed = _motor.IsHome;
+        //HasError = _motor.IsError;
 
         CurrentPosition = _motor.ActualPosition;
     }

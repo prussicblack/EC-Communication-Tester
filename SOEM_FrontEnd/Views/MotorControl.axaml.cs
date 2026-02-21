@@ -10,7 +10,7 @@ public partial class MotorControl : UserControl
     public MotorControl()
     {
         InitializeComponent();
-        //axaml에서 이어줄거임.
+        //상위에서 이어줄거임.
         //this.DataContext = new MotorControlViewModel();
     }
 }

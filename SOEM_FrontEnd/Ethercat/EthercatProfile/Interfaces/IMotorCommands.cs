@@ -10,9 +10,9 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
     {
         //UI 혹은 기타 외부가 모터에 대한 접근을 위해 사용되는 인터페이스.
         //일단은 미사용.
-        bool MoveABS(double position);
+        bool MoveABS(int position);
 
-        bool MoveINC(double position);
+        bool MoveINC(int position);
 
         bool Stop();
 

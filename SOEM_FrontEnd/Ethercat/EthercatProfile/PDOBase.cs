@@ -47,6 +47,16 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
         }
 
 
+        /// <summary>
+        /// Called after input (TxPDO) has been received and snapshots are published.
+        /// Implementations may compute next-cycle outputs (RxPDO), e.g., controlword updates.
+        /// Must be RT-safe: no allocations, no locks, no logging.
+        /// </summary>
+        public virtual void OnAfterPdoReceived()
+        {
+
+        }
+
         //PDO 루프에서 Tx를 채워 넣을 수 있게
         internal Span<byte> InputWriteSpan
         {

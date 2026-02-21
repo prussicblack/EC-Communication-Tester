@@ -92,8 +92,7 @@
 								   Text="{Binding CurrentPosition}"
 								   FontSize="18"
 								   FontWeight="Bold"
-								   TextAlignment="Right"
-                                   />
+								   TextAlignment="Right"/>
 
 						<TextBlock Text="pls"/>
 

@@ -95,9 +95,9 @@ namespace SOEM_FrontEnd.Ethercat
 
                 // ---- BeforeSend: Rx(출력 PDO) → SOEM outputs ----
                 // 1) outputs: Rx -> SOEM outputs
-                for (int k = 0; k < _binds.Count; k++)
+                for (int i = 0; i < _binds.Count; i++)
                 {
-                    var (slave, pdo) = _binds[k];
+                    var (slave, pdo) = _binds[i];
                     var outBuf = _tmpOutBySlave[slave];
                     if (outBuf.Length > 0)
                     {
@@ -113,9 +113,9 @@ namespace SOEM_FrontEnd.Ethercat
 
                 // ---- AfterReceive: SOEM inputs → Tx(입력 PDO) ----
                 // 3) inputs: SOEM inputs -> TxWriteSpan
-                for (int k = 0; k < _binds.Count; k++)
+                for (int j = 0; j < _binds.Count; j++)
                 {
-                    var (slave, pdo) = _binds[k];
+                    var (slave, pdo) = _binds[j];
                     var inBuf = _tmpInBySlave[slave];
                     if (inBuf.Length > 0)
                     {
@@ -130,7 +130,10 @@ namespace SOEM_FrontEnd.Ethercat
                 {
                     for (int k = 0; k < _binds.Count; k++)
                     {
-                        _binds[k].Pdo.PublishSnapshots();
+                        //_binds[k].Pdo.PublishSnapshots();
+                        _binds[k].Pdo.OnAfterPdoReceived();
+
+                        _binds[k].Pdo.PublishSnapshots(); //스냅샷이 뒤로 와야됨.
                     }
                 }
 
