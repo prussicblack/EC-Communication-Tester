@@ -10,63 +10,67 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
     public abstract class PDOBase : IPDOAccess, IPDOView
     {
         //PDO Interface기본 틀.
-        private readonly byte[] _rx;
-        private readonly byte[] _tx;
 
-        private readonly byte[] _rxSnapA, _rxSnapB;
-        private readonly byte[] _txSnapA, _txSnapB;
+        //헷갈린다.
+        //SOEM기준으로 output -> 마스터기준 출력 input -> 마스터기준 입력.
 
-        private byte[] _rxSnapCurrent;
-        private byte[] _txSnapCurrent;
+        private readonly byte[] _output; //_rx
+        private readonly byte[] _input; //_tx
 
-        public Span<byte> Rx => _rx;               // 매번 새 Span 생성 (cheap)
-        public ReadOnlySpan<byte> Tx => _tx;
+        private readonly byte[] _outputSnapA, _outputSnapB;
+        private readonly byte[] _inputSnapA, _inputSnapB;
+
+        private byte[] _outputSnapCurrent;
+        private byte[] _inputSnapCurrent;
+
+        public Span<byte> Output => _output;               // 매번 새 Span 생성 (cheap)
+        public ReadOnlySpan<byte> Input => _input;
         //여기까지 PDOInterface 기본틀.
 
 
         //PDO View
-        public ReadOnlyMemory<byte> RxSnapshot => System.Threading.Volatile.Read(ref _rxSnapCurrent);
-        public ReadOnlyMemory<byte> TxSnapshot => System.Threading.Volatile.Read(ref _txSnapCurrent);
+        public ReadOnlyMemory<byte> OutputSnapshot => System.Threading.Volatile.Read(ref _outputSnapCurrent);
+        public ReadOnlyMemory<byte> InputSnapshot => System.Threading.Volatile.Read(ref _inputSnapCurrent);
 
         public void PublishSnapshots()
         {
             // 다음에 공개할 버퍼 선택
-            var nextRx = ReferenceEquals(_rxSnapCurrent, _rxSnapA) ? _rxSnapB : _rxSnapA;
-            var nextTx = ReferenceEquals(_txSnapCurrent, _txSnapA) ? _txSnapB : _txSnapA;
+            var nextRx = ReferenceEquals(_outputSnapCurrent, _outputSnapA) ? _outputSnapB : _outputSnapA;
+            var nextTx = ReferenceEquals(_inputSnapCurrent, _inputSnapA) ? _inputSnapB : _inputSnapA;
 
-            Buffer.BlockCopy(_rx, 0, nextRx, 0, _rx.Length);
-            Buffer.BlockCopy(_tx, 0, nextTx, 0, _tx.Length);
+            Buffer.BlockCopy(_output, 0, nextRx, 0, _output.Length);
+            Buffer.BlockCopy(_input, 0, nextTx, 0, _input.Length);
 
             // 원자적 스왑
-            System.Threading.Volatile.Write(ref _rxSnapCurrent, nextRx);
-            System.Threading.Volatile.Write(ref _txSnapCurrent, nextTx);
+            System.Threading.Volatile.Write(ref _outputSnapCurrent, nextRx);
+            System.Threading.Volatile.Write(ref _inputSnapCurrent, nextTx);
         }
 
 
         //PDO 루프에서 Tx를 채워 넣을 수 있게
-        internal Span<byte> TxWriteSpan
+        internal Span<byte> InputWriteSpan
         {
             get
             {
-                return _tx;
+                return _input;
             }
         }
 
 
         //PDO View
 
-        public PDOBase(int rxSize, int txSize)
+        public PDOBase(int outputSize, int inputSize)
         {
-            _rx = new byte[rxSize];
-            _tx = new byte[txSize];
+            _output = new byte[outputSize];
+            _input = new byte[inputSize];
 
-            _rxSnapA = new byte[rxSize];
-            _rxSnapB = new byte[rxSize];
-            _txSnapA = new byte[txSize];
-            _txSnapB = new byte[txSize];
+            _outputSnapA = new byte[outputSize];
+            _outputSnapB = new byte[outputSize];
+            _inputSnapA = new byte[inputSize];
+            _inputSnapB = new byte[inputSize];
 
-            _rxSnapCurrent = _rxSnapA;
-            _txSnapCurrent = _txSnapA;
+            _outputSnapCurrent = _outputSnapA;
+            _inputSnapCurrent = _inputSnapA;
         }
 
     }

@@ -1,12 +1,9 @@
-﻿using Avalonia.Controls.Shapes;
-using SOEM_FrontEnd.Ethercat.EthercatProfile;
+﻿using SOEM_FrontEnd.Ethercat.EthercatProfile;
 using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
 using SOEM_FrontEnd.Model;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Buffers.Binary;
 
 namespace SOEM_FrontEnd.Ethercat
 {
@@ -17,17 +14,50 @@ namespace SOEM_FrontEnd.Ethercat
     //각 StateMachine에서 사용될 인터페이스 Run코드 필요.
     //PDO접근을 위한 Byte코드 필요.(PDO(RX)에서 읽어와서 PDO(TX)에서 써주는.)
 
-    public sealed class NormalMotorWithPPMode : PDOBase, IEthercatStateTransition
+    //상속구조 정리.
+
+    //PDOBase에서 PDO루프에서 통신담당.
+    //IEthercatStateTransition에서 preop, safeop, op 간 이동시 매크로 작성.
+    //IMotorCommands에서 ViewModel 통신담당. 
+
+    public sealed class NormalMotorWithPPMode : PDOBase, IEthercatStateTransition, IMotorCommands
     {
 
-        private Dictionary<OdKey, PdoField> _rx = new Dictionary<OdKey, PdoField>(); // outputs
-        private Dictionary<OdKey, PdoField> _tx = new Dictionary<OdKey, PdoField>(); // inputs
+        private Dictionary<OdKey, PdoField> _rxMapTable = new Dictionary<OdKey, PdoField>(); // outputs
+        private Dictionary<OdKey, PdoField> _txMapTable = new Dictionary<OdKey, PdoField>(); // inputs
+        //EZServo 기준으로, 
+        //rxMapTable 0x6040(CW), 0x607a(Target Position) 존재.
+        //txMapTable 0x6041(SW), 0x6064(Actual Position) 존재.
+
 
         private readonly ushort _SlaveNo;
 
         private int _off6040cw = -1; // Rx Offset.(매번 lookup 참조가 아니라 빠르게 접근용)
         private int _off6041sw = -1; // Tx Offset.
         private readonly EcClient _ECClient;
+
+        //IMotorCommands 구현부.
+        public int AxisID => throw new NotImplementedException();
+
+        public bool IsServoOn => throw new NotImplementedException();
+
+        public bool IsHome => throw new NotImplementedException();
+
+        public bool IsError => throw new NotImplementedException();
+
+        public int ActualPosition => getActualPosition();
+
+        private int getActualPosition()
+        {
+            bool ret = TryReadActualPosition6064(out int actualPos);
+            if (ret == true)
+            {
+                return actualPos;
+            }
+
+            return 0;
+
+        }
 
         public NormalMotorWithPPMode(int rxSize, int txSize, ushort slaveNo, EcClient ECClient) : base(rxSize, txSize)
         {
@@ -66,8 +96,8 @@ namespace SOEM_FrontEnd.Ethercat
 
         public void SetPdoMapping(List<uint> rxAllMap, List<uint> txAllMap)
         {
-            Build(_rx, rxAllMap);
-            Build(_tx, txAllMap);
+            Build(_rxMapTable, rxAllMap);
+            Build(_txMapTable, txAllMap);
 
             TryResolve402();
         }
@@ -99,8 +129,8 @@ namespace SOEM_FrontEnd.Ethercat
 
         public bool TryResolve402()
         {
-            _off6040cw = TryGetByteOffset(_rx, 0x6040, 0x00);
-            _off6041sw = TryGetByteOffset(_tx, 0x6041, 0x00);
+            _off6040cw = TryGetByteOffset(_rxMapTable, 0x6040, 0x00);
+            _off6041sw = TryGetByteOffset(_txMapTable, 0x6041, 0x00);
             return _off6040cw >= 0 && _off6041sw >= 0;
         }
 
@@ -111,6 +141,110 @@ namespace SOEM_FrontEnd.Ethercat
             return -1;
         }
 
+        public bool TryReadTxI32(ushort idx, byte sub, out int value)
+        {
+            value = 0;
+
+            if (!_txMapTable.TryGetValue(new OdKey(idx, sub), out var f))
+                return false;
+
+            // PDO는 보통 byte-aligned로 매핑됨 (0x6064는 INT32=32bit)
+            if (f.BitLen != 32 || f.BitInByte != 0)
+                return false;
+
+            var span = InputSnapshot.Span; // Slave→Master (TxPDO) snapshot
+            int off = f.ByteOffset;
+            if ((uint)off + 4u > (uint)span.Length)
+                return false;
+
+            value = BinaryPrimitives.ReadInt32LittleEndian(span.Slice(off, 4));
+
+            return true;
+        }
+
+        public bool TryReadTxU16(ushort idx, byte sub, out ushort value)
+        {
+            value = 0;
+
+            if (!_txMapTable.TryGetValue(new OdKey(idx, sub), out var f))
+                return false;
+
+            if (f.BitLen != 16 || f.BitInByte != 0)
+                return false;
+
+            var span = InputSnapshot.Span;
+            int off = f.ByteOffset;
+
+            if ((uint)off + 2u > (uint)span.Length)
+                return false;
+
+            value = BinaryPrimitives.ReadUInt16LittleEndian(span.Slice(off, 2));
+            return true;
+        }
+
+        // === 자주 쓰는 래퍼 ===
+        public bool TryReadActualPosition6064(out int actualPos)
+        {
+            return TryReadTxI32(0x6064, 0x00, out actualPos);
+        }
+
+        public bool TryReadStatusword6041(out ushort statusword)
+        {
+            return TryReadTxU16(0x6041, 0x00, out statusword);
+        }
+
+
+
+        //IMotorCommand 구현부.
+        public bool MoveABS(double position)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool MoveINC(double position)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Stop()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool JogPlus()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool JogMinus()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool JogStop()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool AlarmClear()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ServoOn()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ServoOff()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Home()
+        {
+            throw new NotImplementedException();
+        }
 
         public readonly struct PdoMapEntry
         {

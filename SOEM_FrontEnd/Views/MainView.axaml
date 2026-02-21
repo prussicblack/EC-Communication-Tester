@@ -4,7 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:SOEM_FrontEnd.ViewModels"
 			 xmlns:ui="clr-namespace:SOEM_FrontEnd.Util.Logging.UI"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 xmlns:views="clr-namespace:SOEM_FrontEnd.Views"
+			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="SOEM_FrontEnd.Views.MainView"
              x:DataType="vm:MainViewModel">
   <Design.DataContext>
@@ -249,8 +250,28 @@
 
               <TabItem Header="Control">
                   <!-- PDO에서 설정된 내용 바탕으로 동적UI로 처리.-->
+                  <!-- MotorControl.axaml 내부에서 DataContext를 만들지 않도록 수정했기 때문에 여기서 주입합니다. -->
+                  <Grid>
+                      <Grid.RowDefinitions>
+                          <RowDefinition Height="*" />
+                          <RowDefinition Height="Auto" />
+                      </Grid.RowDefinitions>
 
+                      <!-- 부모 VM(MainViewModel)의 HasMotorControl로 표시/숨김 결정 -->
+                      <ContentControl IsVisible="{Binding HasMotorControl}">
+                          <!-- 실제 MotorControl은 MotorControlVm을 DataContext로 -->
+                          <views:MotorControl DataContext="{Binding MotorControlVm}" />
+                      </ContentControl>
 
+                      <TextBlock
+                          IsVisible="{Binding HasNoMotorControl}"
+                          Text="이 슬레이브는 IMotorCommands(BaseProfile) 프로파일이 없어 MotorControl을 표시하지 않습니다."
+                          Margin="10"
+                          FontSize="14" />
+
+                      <views:PdoHexDumpView Grid.Row="1" DataContext="{Binding PdoHexDumpVm}"/>
+
+                  </Grid>
 
 			  </TabItem>
 

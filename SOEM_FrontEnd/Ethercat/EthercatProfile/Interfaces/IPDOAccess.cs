@@ -11,8 +11,8 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
         //PDO에서 읽어와야 하는 데이터들.
         //PDO는 이 인터페이스로 접근하므로 공통으로 존재해야함.
 
-        ReadOnlySpan<byte> Tx { get; } // Slave -> Master (입력)
-        Span<byte> Rx { get; }         // Master -> Slave (출력)
+        ReadOnlySpan<byte> Input { get; } // Slave -> Master (입력) Tx
+        Span<byte> Output { get; }         // Master -> Slave (출력) Rx
 
     }
 }

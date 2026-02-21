@@ -1,11 +1,18 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
+using SOEM_FrontEnd.Automation;
 using SOEM_FrontEnd.DataMap;
 using SOEM_FrontEnd.Ethercat;
 using SOEM_FrontEnd.Ethercat.ESI;
+using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
 using SOEM_FrontEnd.Model;
+using SOEM_FrontEnd.Util;
+using SOEM_FrontEnd.Util.Logging;
+using SOEM_FrontEnd.Util.Logging.UI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,15 +26,10 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Microsoft.Extensions.Logging;
-using SOEM_FrontEnd.Automation;
 using static System.Net.Mime.MediaTypeNames;
-using SOEM_FrontEnd.Util;
-using SOEM_FrontEnd.Util.Logging;
-using SOEM_FrontEnd.Util.Logging.UI;
-using System.Threading;
 
 //#nullable enable
 
@@ -111,8 +113,6 @@ public partial class MainViewModel : ViewModelBase
     List<SoemSlaveInfo> SlaveInfoData = new List<SoemSlaveInfo>();
 
 
-
-
     public List<ESIXMLData.ESIDevice> DevicesData = new List<ESIXMLData.ESIDevice>();
 
     private ObservableCollection<ESIXMLData.ESISDOObject> _SDOObjects; 
@@ -186,11 +186,59 @@ public partial class MainViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsMasterSelected));
             OnPropertyChanged(nameof(IsSlaveSelected));
 
+            UpdateControlProfile();
+
         }
     }
 
     public bool IsMasterSelected => SelectedSlave == 0;
     public bool IsSlaveSelected => SelectedSlave != 0;
+
+
+    // Control 탭: SelectedSlaveData.BaseProfile이 IMotorCommands이면 MotorControl을 표시
+    private MotorControlViewModel _motorControlVm;
+
+    public MotorControlViewModel MotorControlVm
+    {
+        get => _motorControlVm;
+        private set
+        {
+            if (SetProperty(ref _motorControlVm, value))
+            {
+                OnPropertyChanged(nameof(HasMotorControl));
+                OnPropertyChanged(nameof(HasNoMotorControl));
+            }
+        }
+    }
+
+    public bool HasMotorControl => MotorControlVm != null;
+    public bool HasNoMotorControl => MotorControlVm == null;
+
+    private void UpdateControlProfile()
+    {
+        var store = SelectedSlaveData;
+        if (store == null)
+        {
+            MotorControlVm = null;
+            return;
+        }
+
+        var motor = store.BaseProfile as IMotorCommands;
+        if (motor == null)
+        {
+            MotorControlVm = null;
+            return;
+        }
+
+        if (MotorControlVm == null)
+            MotorControlVm = new MotorControlViewModel();
+
+        MotorControlVm.Attach(motor);
+
+        PdoHexDumpVm.Attach(SelectedSlaveData != null ? (SelectedSlaveData.BaseProfile as IPDOView) : null);
+
+
+    }
 
 
     //SDO 관련
@@ -252,6 +300,12 @@ public partial class MainViewModel : ViewModelBase
     //로그 베이스.
     private readonly ILogger _log;
 
+    //PDO RawView에 대한 프로퍼티.
+    public PdoHexDumpViewModel PdoHexDumpVm { get; } = new PdoHexDumpViewModel();
+
+    //UI갱신용 DispatcherTimer.
+    private DispatcherTimer _uiTimer;
+
 
     public MainViewModel()
     {
@@ -294,6 +348,17 @@ public partial class MainViewModel : ViewModelBase
         _log = OPLogger.CreateLogger("SOEM_FrontEnd");
         //로그 기록
         _log.LogInformation("MainViewModel Created");
+
+        //UI갱신용 UI타이머 생성.
+        _uiTimer = new DispatcherTimer();
+        _uiTimer.Interval = TimeSpan.FromMilliseconds(15); // 갱신주기.약 60Hz
+        _uiTimer.Tick += (_, __) =>
+        {
+            // MotorControl이 떠있을 때만 돌려도 되고, 항상 돌려도 됨
+            if (MotorControlVm != null)
+                MotorControlVm.UiTick();
+        };
+        _uiTimer.Start();
     }
 
     public void Dispose()
@@ -312,8 +377,13 @@ public partial class MainViewModel : ViewModelBase
 
     private void HandleMoveToSafeOp()
     {
-        StateMachine.MoveToSafeOP();
+        bool ok = StateMachine.MoveToSafeOP();
+        if (!ok)
+            return;
 
+        // BaseProfile들이 SafeOP 전환 과정에서 채워지므로, 선택된 Slave UI 갱신
+        OnPropertyChanged(nameof(SelectedSlaveData));
+        UpdateControlProfile();
     }
 
     private void HandleMoveToPreOp()

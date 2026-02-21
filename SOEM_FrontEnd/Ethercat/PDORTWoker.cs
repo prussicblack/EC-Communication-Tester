@@ -41,8 +41,8 @@ namespace SOEM_FrontEnd.Ethercat
             for (int i = 0; i < _binds.Count; i++)
             {
                 var (slave, pdo) = _binds[i];
-                _tmpInBySlave[slave] = pdo.Tx.Length > 0 ? new byte[pdo.Tx.Length] : Array.Empty<byte>();
-                _tmpOutBySlave[slave] = pdo.Rx.Length > 0 ? new byte[pdo.Rx.Length] : Array.Empty<byte>();
+                _tmpInBySlave[slave] = pdo.Input.Length > 0 ? new byte[pdo.Input.Length] : Array.Empty<byte>();
+                _tmpOutBySlave[slave] = pdo.Output.Length > 0 ? new byte[pdo.Output.Length] : Array.Empty<byte>();
             }
         }
 
@@ -101,7 +101,7 @@ namespace SOEM_FrontEnd.Ethercat
                     var outBuf = _tmpOutBySlave[slave];
                     if (outBuf.Length > 0)
                     {
-                        pdo.Rx.CopyTo(outBuf);
+                        pdo.Output.CopyTo(outBuf);
                         SOEMNative.soem_write_bytes(slave, 0, outBuf, outBuf.Length); // 래퍼 필요
                     }
                 }
@@ -120,7 +120,7 @@ namespace SOEM_FrontEnd.Ethercat
                     if (inBuf.Length > 0)
                     {
                         SOEMNative.soem_read_bytes(slave, 0, inBuf, inBuf.Length);
-                        inBuf.AsSpan().CopyTo(pdo.TxWriteSpan);
+                        inBuf.AsSpan().CopyTo(pdo.InputWriteSpan);
                     }
                 }
 
