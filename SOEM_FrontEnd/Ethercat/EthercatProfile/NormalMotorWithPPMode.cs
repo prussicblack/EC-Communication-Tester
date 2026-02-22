@@ -1,9 +1,10 @@
-﻿using SOEM_FrontEnd.Ethercat.EthercatProfile;
+﻿using SOEM_FrontEnd.DataMap;
+using SOEM_FrontEnd.Ethercat.EthercatProfile;
 using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
 using SOEM_FrontEnd.Model;
 using System;
-using System.Collections.Generic;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
 
 namespace SOEM_FrontEnd.Ethercat
@@ -40,14 +41,20 @@ namespace SOEM_FrontEnd.Ethercat
         private int _off6064ap = -1;   // Tx: Actual Position (마찬가지. 빠른 접근용)
         private int _off607Atp = -1;   // Rx: Target Position
 
+        //SDO 핫패스.
+        private SDOPoint _sdo6060; // Mode of operation
+        private SDOPoint _sdo6098; // Homing method 같은 것
+
+
+
         private readonly EcClient _ECClient;
 
         //IMotorCommands 구현부.
-        public int AxisID => throw new NotImplementedException();
+        //public int AxisID => throw new NotImplementedException();
 
         public bool IsServoOn => getIsServoOn();
 
-        public bool IsHome => throw new NotImplementedException();
+        public bool IsHome { get; private set; }
 
         public bool IsError => throw new NotImplementedException();
 
@@ -102,6 +109,11 @@ namespace SOEM_FrontEnd.Ethercat
             //초기 알람 클리어. //따로 해줄것.
             //_ECClient.SdoWriteI16(_SlaveNo, 0x6040, 00, 0x0080);  //slave alarm reset. SDO로 써도 먹네..
 
+            //핫패스 생성.
+            //SlaveStore가 Dic으로 저장되어있기 때문에, 매번 호출하게되면 Dic을 조회해서 찾게됨.
+            //이 경우 시간이 오래걸리는 문제로 미리 주소를 찍어놓고 호출하게됨.
+            BindSdoHotRefs(Datamap.Instance.GetSlave(_SlaveNo));
+
             return true;
         }
 
@@ -137,6 +149,13 @@ namespace SOEM_FrontEnd.Ethercat
 
                 bitOffset += bitLen;
             }
+        }
+
+
+        public void BindSdoHotRefs(SlaveStore slave)
+        {
+            _sdo6060 = slave.TryGetSdo(0x6060, 0x00);
+            _sdo6098 = slave.TryGetSdo(0x6098, 0x00);
         }
 
         public bool TryResolve402()
@@ -281,8 +300,7 @@ namespace SOEM_FrontEnd.Ethercat
             //SW보고 CW작업하기 위해사용.
             //alloc/Lock/Log금지.
 
-            //좀 맘에 안드는데, 이전꺼 읽어와서 비트만 넣어주면 될거 같은데?
-
+            //좀 맘에 안드는데, 이전꺼 읽어와서 비트만 넣어주는 방식으로 나중에 다시 작성.
 
             //없으면 리턴.
             if (_off6040cw < 0 || _off6041sw < 0)
@@ -295,7 +313,7 @@ namespace SOEM_FrontEnd.Ethercat
             if ((uint)_off6040cw + 2u > (uint)Output.Length)
                 return;
 
-            // === 1) 입력(TxPDO) 직접 읽기 ===
+            // 1) 입력(TxPDO) 직접 읽기
             // Statusword 0x6041 (u16)
             ushort sw = BinaryPrimitives.ReadUInt16LittleEndian(Input.Slice(_off6041sw, 2));
 
@@ -310,7 +328,7 @@ namespace SOEM_FrontEnd.Ethercat
                 // 필요하면 내부 캐시에 저장(alloc 없이)
                 // _actualPosCache = ap;
             }
-            // === 2) 402 상태 비트 ===
+            // 2) 402 상태 비트
             bool swReadyToSwitchOn = HasSW(sw, StatusWordBit.ReadySwitchOn);
             bool swSwitchOn = HasSW(sw, StatusWordBit.SwitchedOn);
             bool swOperationEnabled = HasSW(sw, StatusWordBit.OperationEnabled);
@@ -318,11 +336,11 @@ namespace SOEM_FrontEnd.Ethercat
 
             bool swSetPointAck = HasSW(sw, StatusWordBit.SetPointAcknowledge); // 네 enum 이름에 맞춰
 
-            // === 3) 다음 cycle에 보낼 Controlword 계산 ===
+            // 3) 다음 cycle에 보낼 Controlword 계산
             ushort cw = Base402Controlword(sw, prevCw, _reqEnable);
 
 
-            // === 4) Fault reset 펄스 처리(1 cycle) ===
+            // 4) Fault reset 펄스 처리(1 cycle)
             if (_reqFaultReset)
             {
                 _reqFaultReset = false;
@@ -367,7 +385,7 @@ namespace SOEM_FrontEnd.Ethercat
             }
 
 
-            // === 5) MoveABS 요청 처리: TargetPosition 쓰고 NewSetPoint 펄스 ===
+            // 5) MoveABS 요청 처리: TargetPosition 쓰고 NewSetPoint 펄스
             if (_reqMoveAbs)
             {
                 _reqMoveAbs = false;
@@ -406,11 +424,11 @@ namespace SOEM_FrontEnd.Ethercat
             }
 
 
-            // === 6) 최종 CW를 RxPDO(Output)에 기록 ===
+            // 6) 최종 CW를 RxPDO(Output)에 기록
             if ((uint)_off6040cw + 2u > (uint)Output.Length)
                 return;
 
-            // === 7) 최종 Controlword를 outputs(RxPDO)로 기록 ===
+            // 7) 최종 Controlword를 outputs(RxPDO)로 기록
             BinaryPrimitives.WriteUInt16LittleEndian(Output.Slice(_off6040cw, 2), cw);
 
         }

@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
@@ -117,6 +118,8 @@ public partial class App : Application
                 // (선택) 초기 스캔/연결
 
                 Report(vm, 1.00, "Done.");
+
+                throw new Exception("Test");
             });
 
             //await Dispatcher.UIThread.InvokeAsync(() =>
@@ -136,8 +139,12 @@ public partial class App : Application
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 vm.IsIndeterminate = false;
+                vm.Closeable = true;
                 vm.StatusText = "Startup failed: " + ex.ToString();
-                // 필요하면 로그 + 재시도 버튼 등을 추가
+
+                //로그기록
+                var log = OPLogger.CreateLogger("App");
+                log.LogInformation($"\"Startup failed: \" + {ex.ToString()}");
             });
         }
     }
@@ -149,6 +156,7 @@ public partial class App : Application
         {
             vm.Progress = progress;
             vm.StatusText = status;
+
         });
     }
 }

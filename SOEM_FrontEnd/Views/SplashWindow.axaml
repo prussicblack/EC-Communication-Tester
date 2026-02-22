@@ -16,11 +16,25 @@
 	
 	
 	<StackPanel Margin="20" Spacing="12">
-		<TextBlock Text="Loading..." FontSize="20"/>
-		<TextBlock Text="{Binding StatusText}" FontSize="14" TextWrapping="Wrap"/>
+
+        <TextBlock Text="Loading..." FontSize="20"/>
+        <ScrollViewer Height="50" VerticalScrollBarVisibility="Auto">
+		<!--<TextBlock Text="{Binding StatusText}" FontSize="14" TextWrapping="Wrap" />-->
+        <TextBox Text="{Binding StatusText}"
+                 IsReadOnly="True"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 FontSize="14"
+                 BorderThickness="0"
+                 Background="Transparent"
+                 IsHitTestVisible="True" />
+
+        </ScrollViewer>
 		<ProgressBar Minimum="0" Maximum="1"
 					 Value="{Binding Progress}"
 					 IsIndeterminate="{Binding IsIndeterminate}"
 					 Height="14"/>
+
+		<Button Content="Close" Command="{Binding Close}" HorizontalAlignment="Center" IsEnabled="{Binding Closeable}"/>
 	</StackPanel>
 </Window>

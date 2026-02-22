@@ -26,7 +26,7 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
 
         bool Home();
 
-        int AxisID { get; }
+        //int AxisID { get; }
         bool IsServoOn { get; }
 
         bool IsHome { get; }

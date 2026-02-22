@@ -1,10 +1,14 @@
-﻿using System;
+﻿using Avalonia.Controls.ApplicationLifetimes;
+using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.Windows.Input;
+using Avalonia;
 
 namespace SOEM_FrontEnd.ViewModels
 {
@@ -29,6 +33,45 @@ namespace SOEM_FrontEnd.ViewModels
         {
             get { return _isIndeterminate; }
             set { if (_isIndeterminate == value) return; _isIndeterminate = value; OnPropertyChanged(); }
+        }
+
+        private bool _Closeable = false;
+
+        public bool Closeable
+        {
+            get
+            {
+                return _Closeable;
+            }
+
+            set
+            {
+                if (_Closeable == value) return;
+                _Closeable = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public ICommand Close { get; private set; }
+
+        public LoadingViewModel()
+        {
+            Close = new RelayCommand(HandleClose);
+        }
+
+        private void HandleClose()
+        {
+            IApplicationLifetime lifetime = Application.Current.ApplicationLifetime;
+
+            IClassicDesktopStyleApplicationLifetime desktop =
+                lifetime as IClassicDesktopStyleApplicationLifetime;
+            
+            if (desktop != null)
+            {
+                desktop.Shutdown();
+                return;
+            }
+
         }
 
         //public event PropertyChangedEventHandler? PropertyChanged;

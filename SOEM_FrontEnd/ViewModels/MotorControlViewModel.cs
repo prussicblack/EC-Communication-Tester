@@ -164,7 +164,7 @@ public partial class MotorControlViewModel : ViewModelBase
         // 초기 표기값 동기화
         if (_motor != null)
         {
-            AxisName = "Axis " + _motor.AxisID;
+            //AxisName = "Axis " + _motor.AxisID;
             RefreshFromMotor();
         }
 

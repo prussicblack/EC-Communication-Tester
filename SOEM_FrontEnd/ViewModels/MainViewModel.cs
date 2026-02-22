@@ -611,6 +611,12 @@ public partial class MainViewModel : ViewModelBase
     //Save/Load시 귀찮아서 해당 클릭시 대신 써주도록 만든 메소드.
     private void SelectedSdoTextBoxWrite(SDOFlatObject SelectedSDO)
     {
+        if (SelectedSDO == null)
+        {
+            WriteValueText = "";
+            return;
+        }
+
         //1010인 경우(save)
         if (SelectedSDO.Index == 0x1010)
         {

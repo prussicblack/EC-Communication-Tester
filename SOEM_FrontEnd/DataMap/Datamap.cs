@@ -122,15 +122,27 @@ namespace SOEM_FrontEnd.DataMap
 
         }
 
-        private SDOReadStatus _status;
-        public SDOReadStatus Status
+        private SDOReadStatus _Readstatus;
+        public SDOReadStatus ReadStatus
         {
-            get { return _status; }
+            get { return _Readstatus; }
             set
             {
-                if (_status == value) return;
-                _status = value;
-                OnPropertyChanged(nameof(Status));
+                if (_Readstatus == value) return;
+                _Readstatus = value;
+                OnPropertyChanged(nameof(ReadStatus));
+            }
+        }
+
+        private SDOWriteStatus _Writestatus;
+        public SDOWriteStatus WriteStatus
+        {
+            get { return _Writestatus; }
+            set
+            {
+                if (_Writestatus == value) return;
+                _Writestatus = value;
+                OnPropertyChanged(nameof(WriteStatus));
             }
         }
 
@@ -218,123 +230,7 @@ namespace SOEM_FrontEnd.DataMap
     }
 
 
-    /*
-    public sealed class SDOUIBinder
-    {
-        private readonly FlatIndex _flatIndex;
-
-        public SDOUIBinder(FlatIndex flatIndex)
-        {
-            _flatIndex = flatIndex;
-        }
-
-        //SDOPoint업데이트시 얘도 같이 업데이트 해야됨.
-        public void OnPointUpdated(SDOKey key, SDOPoint p)
-        {
-            SDOFlatObject row;
-            if (!_flatIndex.TryGet(key, out row)) return;
-
-            // UI 갱신은 반드시 UIThread에서
-            Dispatcher.UIThread.Post(() =>
-            {
-                row.Status = p.Status;
-                row.LastErrorText = p.Error ?? "";
-
-                if (p.Status == SDOReadStatus.Ok)
-                {
-                    row.CurrentValueText = FormatValueText(p, row);
-                }
-                else if (p.Status == SDOReadStatus.Abort)
-                {
-                    row.CurrentValueText = "ABORT 0x" + p.AbortCode.ToString("X8");
-                }
-                else if (p.Status == SDOReadStatus.Timeout)
-                {
-                    row.CurrentValueText = "TIMEOUT";
-                }
-                else if (p.Status == SDOReadStatus.Error)
-                {
-                    row.CurrentValueText = "ERROR: " + (p.Error ?? "");
-                }
-                else
-                {
-                    row.CurrentValueText = "";
-                }
-            });
-        }
-
-        private static string FormatValueText(SDOPoint p, SDOFlatObject row)
-        {
-            var raw = p.LastRaw;
-            if (raw == null || raw.Length == 0) return "";
-
-            // 타입 우선순위: “행 정의(DataType)”이 있으면 그걸 우선, 없으면 p.DataType
-            string dt = row.DataType;
-            if (string.IsNullOrWhiteSpace(dt)) dt = p.DataType;
-
-            // EtherCAT CoE SDO는 리틀엔디안이 일반적
-            // 여기서는 최소한의 실무 타입만 처리하고, 나머지는 HEX로 표시
-            dt = (dt ?? "").Trim().ToUpperInvariant();
-
-            try
-            {
-                if (dt == "BOOLEAN" || dt == "BOOL")
-                    return (raw[0] != 0) ? "TRUE" : "FALSE";
-
-                if (dt == "INT8" || dt == "INTEGER8" || dt == "SINT8")
-                    return unchecked((sbyte)raw[0]).ToString();
-
-                if (dt == "UINT8" || dt == "UNSIGNED8" || dt == "USINT8")
-                    return raw[0].ToString();
-
-                if (dt == "INT16" || dt == "INTEGER16" || dt == "SINT16")
-                {
-                    if (raw.Length < 2) return BytesToHex(raw);
-                    short v = BitConverter.ToInt16(raw, 0);
-                    return v.ToString();
-                }
-
-                if (dt == "UINT16" || dt == "UNSIGNED16" || dt == "USINT16")
-                {
-                    if (raw.Length < 2) return BytesToHex(raw);
-                    ushort v = BitConverter.ToUInt16(raw, 0);
-                    return v.ToString();
-                }
-
-                if (dt == "INT32" || dt == "INTEGER32" || dt == "SINT32")
-                {
-                    if (raw.Length < 4) return BytesToHex(raw);
-                    int v = BitConverter.ToInt32(raw, 0);
-                    return v.ToString();
-                }
-
-                if (dt == "UINT32" || dt == "UNSIGNED32")
-                {
-                    if (raw.Length < 4) return BytesToHex(raw);
-                    uint v = BitConverter.ToUInt32(raw, 0);
-                    return v.ToString();
-                }
-
-                // 문자열/가변은 장치마다 다르니 우선 HEX
-                return BytesToHex(raw);
-            }
-            catch
-            {
-                return BytesToHex(raw);
-            }
-        }
-
-        private static string BytesToHex(byte[] raw)
-        {
-            // 예: "01 02 0A"
-            return BitConverter.ToString(raw).Replace("-", " ");
-        }
-    }
-    */
-    //여기가 끝.
-
-
-    public struct SDOKey : IEquatable<SDOKey>
+  public struct SDOKey : IEquatable<SDOKey>
     {
         public int SlaveNo { get; }
         public ushort Index { get; }
@@ -373,19 +269,33 @@ namespace SOEM_FrontEnd.DataMap
         Error
     }
 
+    public enum SDOWriteStatus
+    {
+        None,
+        Ok,
+        Abort,
+        Timeout,
+        Error
+    }
+
+
     public sealed class SDOPoint
     {
-        public byte[] LastRaw;
+        public volatile byte[] LastRaw;
 
         public string DataType;
 
         public DateTime LastUpdateUtc;
         public long Seq;
 
-        public SDOReadStatus Status;
-        public uint AbortCode;
+        public volatile SDOReadStatus ReadStatus;
+        public volatile uint AbortCode;
 
-        public string Error;
+        public volatile string Error;
+
+        //읽기상태 기록
+        public volatile SDOWriteStatus WriteStatus;
+
     }
 
     public sealed class SDOStore
@@ -509,7 +419,10 @@ namespace SOEM_FrontEnd.DataMap
             SDOPoint p = new SDOPoint
             {
                 DataType = dataType,
-                Status = SDOReadStatus.None,
+
+                ReadStatus = SDOReadStatus.None,
+                WriteStatus = SDOWriteStatus.None,
+
                 LastUpdateUtc = DateTime.MinValue,
                 Seq = 0,
                 AbortCode = 0,
@@ -554,7 +467,7 @@ namespace SOEM_FrontEnd.DataMap
             return flags;
         }
 
-        public void UpdateOk(SDOKey key, byte[] raw)
+        public void UpdateOk(SDOKey key, byte[] raw, bool isRead)
         {
             if (raw == null) return;
 
@@ -571,13 +484,28 @@ namespace SOEM_FrontEnd.DataMap
                     _dic[key] = p;
                 }
 
-                _seq++;
-                p.Seq = _seq;
-                p.LastUpdateUtc = DateTime.UtcNow;
-                p.LastRaw = copy;
-                p.Status = SDOReadStatus.Ok;
-                p.AbortCode = 0;
-                p.Error = null;
+                if (isRead == true)
+                {
+                    _seq++;
+                    p.Seq = _seq;
+                    p.LastUpdateUtc = DateTime.UtcNow;
+                    p.LastRaw = copy;
+                    p.ReadStatus = SDOReadStatus.Ok;
+
+                    p.AbortCode = 0;
+                    p.Error = null;
+                }
+                else
+                {
+                    _seq++;
+                    p.Seq = _seq;
+                    p.LastUpdateUtc = DateTime.UtcNow;
+                    p.LastRaw = copy;
+                    p.WriteStatus = SDOWriteStatus.Ok;
+
+                    p.AbortCode = 0;
+                    p.Error = null;
+                }
             }
 
             // Row 갱신은 UIThread에서 하는 게 안전하므로, 이벤트로 던짐
@@ -591,12 +519,12 @@ namespace SOEM_FrontEnd.DataMap
             // Row 갱신(leaf만)
             if (row != null)
             {
-                ApplyPointToRowOnUIThread(p, row);
+                ApplyPointToRowOnUIThread(p, row, isRead);
             }
 
         }
 
-        public void UpdateError(SDOKey key, string error, uint abortCode)
+        public void UpdateError(SDOKey key, string error, uint abortCode, bool isRead)
         {
             SDOPoint p;
             lock (_lock)
@@ -607,13 +535,29 @@ namespace SOEM_FrontEnd.DataMap
                     _dic[key] = p;
                 }
 
-                _seq++;
-                p.Seq = _seq;
-                p.LastUpdateUtc = DateTime.UtcNow;
-                p.LastRaw = null;
-                p.Status = SDOReadStatus.Error; // abortCode가 실제 Abort code로 들어오면 Abort로 바꿔도 됨
-                p.AbortCode = abortCode;
-                p.Error = error;
+                if (isRead == true)
+                {
+                    _seq++;
+                    p.Seq = _seq;
+                    p.LastUpdateUtc = DateTime.UtcNow;
+                    p.LastRaw = null;
+                    p.ReadStatus = SDOReadStatus.Error; // abortCode가 실제 Abort code로 들어오면 Abort로 바꿔도 됨
+
+                    p.AbortCode = abortCode;
+                    p.Error = error;
+                }
+                else
+                {
+                    _seq++;
+                    p.Seq = _seq;
+                    p.LastUpdateUtc = DateTime.UtcNow;
+                    p.LastRaw = null;
+                    p.WriteStatus = SDOWriteStatus.Error; // abortCode가 실제 Abort code로 들어오면 Abort로 바꿔도 됨
+
+                    p.AbortCode = abortCode;
+                    p.Error = error;
+
+                }
             }
 
             SDOFlatObject row;
@@ -624,7 +568,7 @@ namespace SOEM_FrontEnd.DataMap
 
             if (row != null)
             {
-                ApplyPointToRowOnUIThread(p, row);
+                ApplyPointToRowOnUIThread(p, row, isRead);
             }
         }
 
@@ -655,49 +599,95 @@ namespace SOEM_FrontEnd.DataMap
             }
         }
 
-        private void ApplyPointToRowOnUIThread(SDOPoint p, SDOFlatObject row)
+        private void ApplyPointToRowOnUIThread(SDOPoint p, SDOFlatObject row, bool isread)
         {
             // UI 갱신은 반드시 UIThread에서
             Dispatcher.UIThread.Post(() =>
             {
-                row.Status = p.Status;
-                row.LastErrorText = p.Error ?? "";
-
-                if (p.Status == SDOReadStatus.Ok)
+                if (isread == true)
                 {
-                    //Raw Hex값
-                    row.CurrentValueRawHexText = FormatValueText(p, row);
+                    row.ReadStatus = p.ReadStatus;
+                    row.LastErrorText = p.Error ?? "";
 
-                    //타입에 따라 변환된값.
-                    row.CurrentValueText = FormatValueTextByType(p, row);
-                }
-                else if (p.Status == SDOReadStatus.Abort)
-                {
-                    //에러값 Value 에 기록금지.
-                    //row.CurrentValueText = "ABORT 0x" + p.AbortCode.ToString("X8");
-                    //Console.WriteLine(row.CurrentValueRawHexText);
+                    if (p.ReadStatus == SDOReadStatus.Ok)
+                    {
+                        //Raw Hex값
+                        row.CurrentValueRawHexText = FormatValueText(p, row);
 
-                    _log.LogInformation(row.CurrentValueRawHexText);
-                }
-                else if (p.Status == SDOReadStatus.Timeout)
-                {
-                    //에러값 Value 에 기록금지.
-                    //row.CurrentValueText = "TIMEOUT";
-                    //Console.WriteLine(row.CurrentValueRawHexText);
-                    _log.LogInformation(row.CurrentValueRawHexText);
+                        //타입에 따라 변환된값.
+                        row.CurrentValueText = FormatValueTextByType(p, row);
+                    }
+                    else if (p.ReadStatus == SDOReadStatus.Abort)
+                    {
+                        //에러값 Value 에 기록금지.
+                        //row.CurrentValueText = "ABORT 0x" + p.AbortCode.ToString("X8");
+                        //Console.WriteLine(row.CurrentValueRawHexText);
 
-                }
-                else if (p.Status == SDOReadStatus.Error)
-                {
-                    //에러값 Value 에 기록금지.
-                    //row.CurrentValueText = "ERROR: " + (p.Error ?? "");
-                    //Console.WriteLine(row.CurrentValueRawHexText);
-                    _log.LogInformation(row.CurrentValueRawHexText);
+                        _log.LogInformation(row.CurrentValueRawHexText);
+                    }
+                    else if (p.ReadStatus == SDOReadStatus.Timeout)
+                    {
+                        //에러값 Value 에 기록금지.
+                        //row.CurrentValueText = "TIMEOUT";
+                        //Console.WriteLine(row.CurrentValueRawHexText);
+                        _log.LogInformation(row.CurrentValueRawHexText);
 
+                    }
+                    else if (p.ReadStatus == SDOReadStatus.Error)
+                    {
+                        //에러값 Value 에 기록금지.
+                        //row.CurrentValueText = "ERROR: " + (p.Error ?? "");
+                        //Console.WriteLine(row.CurrentValueRawHexText);
+                        _log.LogInformation(row.CurrentValueRawHexText);
+
+                    }
+                    else
+                    {
+                        row.CurrentValueRawHexText = "";
+                    }
                 }
                 else
                 {
-                    row.CurrentValueRawHexText = "";
+                    row.WriteStatus = p.WriteStatus;
+                    row.LastErrorText = p.Error ?? "";
+
+                    if (p.WriteStatus == SDOWriteStatus.Ok)
+                    {
+                        //Raw Hex값
+                        row.CurrentValueRawHexText = FormatValueText(p, row);
+
+                        //타입에 따라 변환된값.
+                        row.CurrentValueText = FormatValueTextByType(p, row);
+                    }
+                    else if (p.WriteStatus == SDOWriteStatus.Abort)
+                    {
+                        //에러값 Value 에 기록금지.
+                        //row.CurrentValueText = "ABORT 0x" + p.AbortCode.ToString("X8");
+                        //Console.WriteLine(row.CurrentValueRawHexText);
+
+                        _log.LogInformation(row.CurrentValueRawHexText);
+                    }
+                    else if (p.WriteStatus == SDOWriteStatus.Timeout)
+                    {
+                        //에러값 Value 에 기록금지.
+                        //row.CurrentValueText = "TIMEOUT";
+                        //Console.WriteLine(row.CurrentValueRawHexText);
+                        _log.LogInformation(row.CurrentValueRawHexText);
+
+                    }
+                    else if (p.WriteStatus == SDOWriteStatus.Error)
+                    {
+                        //에러값 Value 에 기록금지.
+                        //row.CurrentValueText = "ERROR: " + (p.Error ?? "");
+                        //Console.WriteLine(row.CurrentValueRawHexText);
+                        _log.LogInformation(row.CurrentValueRawHexText);
+
+                    }
+                    else
+                    {
+                        row.CurrentValueRawHexText = "";
+                    }
+
                 }
             });
         }
@@ -972,7 +962,7 @@ namespace SOEM_FrontEnd.DataMap
         public int SlaveNo { get; private set; }
 
         private readonly object _pdoLock = new object();
-        private byte[] _lastPdoInputImage; // 최신 프레임
+        //private byte[] _lastPdoInputImage; // 최신 프레임
 
         private readonly SDOStore _sdo;
 
@@ -1060,10 +1050,10 @@ namespace SOEM_FrontEnd.DataMap
             _sdo = new SDOStore(dev, SlaveNo);
         }
 
-        public void UpdateSdo(ushort index, byte sub, byte[] raw)
-        {
-            _sdo.UpdateOk(new SDOKey(SlaveNo, index, sub), raw);
-        }
+        //public void UpdateSdo(ushort index, byte sub, byte[] raw)
+        //{
+        //    _sdo.UpdateOk(new SDOKey(SlaveNo, index, sub), raw);
+        //}
 
         public SDOPoint TryGetSdo(ushort index, byte sub)
         {
@@ -1084,36 +1074,36 @@ namespace SOEM_FrontEnd.DataMap
 
         //PDO(임시) 나중에 변경 및 제거.
         // 수집 스레드가 호출
-        public void UpdatePdoFrame(byte[] inputImage)
-        {
-            if (inputImage == null) return;
+        //public void UpdatePdoFrame(byte[] inputImage)
+        //{
+        //    if (inputImage == null) return;
 
-            // 복사 여부는 정책에 따라: 여기서는 단순 복사
-            var copy = new byte[inputImage.Length];
+        //    // 복사 여부는 정책에 따라: 여기서는 단순 복사
+        //    var copy = new byte[inputImage.Length];
 
-            Buffer.BlockCopy(inputImage, 0, copy, 0, inputImage.Length);
+        //    Buffer.BlockCopy(inputImage, 0, copy, 0, inputImage.Length);
 
-            lock (_pdoLock)
-            {
-                _lastPdoInputImage = copy;
-            }
-        }
+        //    lock (_pdoLock)
+        //    {
+        //        _lastPdoInputImage = copy;
+        //    }
+        //}
 
-        // UI/IPC가 호출: 특정 entry의 raw bytes만 복사해서 반환
-        public byte[] TryReadPdoEntryBytes(int byteOffset, int byteLength)
-        {
-            lock (_pdoLock)
-            {
-                if (_lastPdoInputImage == null) return null;
-                if (byteOffset < 0) return null;
-                if (byteLength <= 0) return null;
-                if (byteOffset + byteLength > _lastPdoInputImage.Length) return null;
+        //// UI/IPC가 호출: 특정 entry의 raw bytes만 복사해서 반환
+        //public byte[] TryReadPdoEntryBytes(int byteOffset, int byteLength)
+        //{
+        //    lock (_pdoLock)
+        //    {
+        //        if (_lastPdoInputImage == null) return null;
+        //        if (byteOffset < 0) return null;
+        //        if (byteLength <= 0) return null;
+        //        if (byteOffset + byteLength > _lastPdoInputImage.Length) return null;
 
-                var buf = new byte[byteLength];
-                Buffer.BlockCopy(_lastPdoInputImage, byteOffset, buf, 0, byteLength);
-                return buf;
-            }
-        }
+        //        var buf = new byte[byteLength];
+        //        Buffer.BlockCopy(_lastPdoInputImage, byteOffset, buf, 0, byteLength);
+        //        return buf;
+        //    }
+        //}
     }
 
 

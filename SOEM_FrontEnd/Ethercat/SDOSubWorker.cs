@@ -323,11 +323,11 @@ namespace SOEM_FrontEnd.Ethercat
             try
             {
                 // wi.MaxLen이 coalesce 결과(최대)라서 job.MaxLen보다 신뢰도가 높음
-                ok = ExecuteReadAndWriteMap(wi.Key, wi.MaxLen);
+                ok = ExecuteReadMap(wi.Key, wi.MaxLen);
             }
             catch (Exception ex)
             {
-                SafeUpdateError(wi.Key, "SDO read worker exception: " + ex.Message);
+                SafeUpdateError(wi.Key, "SDO read worker exception: " + ex.Message, true);
                 ok = false;
             }
 
@@ -347,10 +347,10 @@ namespace SOEM_FrontEnd.Ethercat
             if (job.Data == null)
                 return false;
 
-            return ExecuteWriteAndUpdateMap(job.Key, job.Data);
+            return ExecuteWriteMap(job.Key, job.Data);
         }
 
-        private bool ExecuteWriteAndUpdateMap(SDOKey key, byte[] data)
+        private bool ExecuteWriteMap(SDOKey key, byte[] data)
         {
             // 예: soem_sdo_write(slave, index, sub, buf, len) 같은 wrapper
             int rc = SOEMNative.soem_sdo_write((ushort)key.SlaveNo, key.Index, key.SubIndex, data, (uint)data.Length);
@@ -358,15 +358,15 @@ namespace SOEM_FrontEnd.Ethercat
             if (rc == 0)
             {
                 // 즉시 UI에 "쓴 값" 반영(빠른 피드백)
-                //_dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, data);
+                _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, data, false);
 
                 // 원하면: write 성공 후 실제 반영값 확인을 위해 read를 추가로 enqueue
-                // EnqueueReadInternal(key, data.Length, null);
+                //EnqueueReadInternal(key, data.Length, null);
 
                 return true;
             }
 
-            SafeUpdateError(key, "SDO write failed (rc=" + rc + ")");
+            SafeUpdateError(key, "SDO write failed (rc=" + rc + ")", false);
             return false;
         }
 
@@ -375,7 +375,7 @@ namespace SOEM_FrontEnd.Ethercat
         /// <summary>
         /// 실제 SDO read 수행 + Map(SDOStore)에 결과 기록
         /// </summary>
-        private bool ExecuteReadAndWriteMap(SDOKey key, int maxLen)
+        private bool ExecuteReadMap(SDOKey key, int maxLen)
         {
             byte[] buf = new byte[maxLen];
             uint len = (uint)maxLen;
@@ -396,12 +396,12 @@ namespace SOEM_FrontEnd.Ethercat
                     //
                     //_store.UpdateOk(key, trimmed);
 
-                    _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, trimmed);
+                    _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, trimmed, true);
                 }
                 else
                 {
                     //_store.UpdateOk(key, buf);
-                    _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, buf);
+                    _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, buf, true);
 
                 }
 
@@ -409,7 +409,7 @@ namespace SOEM_FrontEnd.Ethercat
             }
 
             string msg = BuildSoemErrorMessage(key, rc);
-            SafeUpdateError(key, msg);
+            SafeUpdateError(key, msg, true);
             return false;
         }
 
@@ -446,13 +446,20 @@ namespace SOEM_FrontEnd.Ethercat
             return string.Format("SDO read failed. rc={0}, key={1}", rc, key.ToString());
         }
 
-        private void SafeUpdateError(SDOKey key, string error)
+        private void SafeUpdateError(SDOKey key, string error, bool isRead)
         {
 
             //_store.UpdateError(key, error, abortCode: 0);
-            _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateError(key, error, abortCode: 0);
+            _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateError(key, error, abortCode: 0, isRead);
 
         }
+
+        private void SafePendingUpdateError(SDOKey key, string error)
+        {
+            _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateError(key, error, abortCode: 0, true);
+            _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateError(key, error, abortCode: 0, false);
+        }
+
 
         private void DrainPendingOnStop()
         {
@@ -472,7 +479,7 @@ namespace SOEM_FrontEnd.Ethercat
             for (int i = 0; i < items.Count; i++)
             {
                 var wi = items[i];
-                SafeUpdateError(wi.Key, message);
+                SafePendingUpdateError(wi.Key, message);
 
                 if (wi.Waiters != null)
                 {

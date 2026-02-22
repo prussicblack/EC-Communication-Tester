@@ -169,9 +169,6 @@
                   <DataGridTextColumn Header="PDO"
                                       Binding="{Binding Flags.PDOMapping}"/>
 
-                  <!-- Status -->
-                  <DataGridTextColumn Header="ReadStatus"
-                                      Binding="{Binding Status}"/>
 
                   <!--Current Value-->
                   <DataGridTextColumn Header="Value"
@@ -180,6 +177,12 @@
                   <DataGridTextColumn Header="RawValue"
                                       Binding="{Binding CurrentValueRawHexText}"/>
 
+                  <!-- Status -->
+                  <DataGridTextColumn Header="ReadStatus"
+                                      Binding="{Binding ReadStatus}"/>
+
+                  <DataGridTextColumn Header="WriteStatus"
+                                      Binding="{Binding WriteStatus}"/>
 
                   <DataGridTextColumn Header="Error"
                                       Binding="{Binding LastErrorText}"/>
