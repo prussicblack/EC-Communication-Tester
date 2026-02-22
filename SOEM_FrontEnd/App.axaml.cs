@@ -119,7 +119,7 @@ public partial class App : Application
 
                 Report(vm, 1.00, "Done.");
 
-                throw new Exception("Test");
+                //throw new Exception("Test");
             });
 
             //await Dispatcher.UIThread.InvokeAsync(() =>
