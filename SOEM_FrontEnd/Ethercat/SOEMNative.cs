@@ -7,6 +7,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SOEM_FrontEnd.Util.Logging;
 
 
 namespace SOEM_FrontEnd.Model
@@ -134,12 +136,21 @@ namespace SOEM_FrontEnd.Model
 
         public bool IsOpen { get; private set; }
 
+        private readonly ILogger _log;
+
+        public EcClient()
+        {
+            _log = OPLogger.CreateLogger("SOEM_FrontEnd");
+        }
+
         public void Open(string ifname, int opTimeoutMs = 2000)
         {
             int rc = SOEMNative.soem_open(ifname);
             if (rc != 0)
             {
-                Console.WriteLine("SOEM init failed (ecx_init).");
+                //Console.WriteLine("SOEM init failed (ecx_init).");
+                _log.LogInformation("SOEM init failed (ecx_init).");
+
                 //throw new InvalidOperationException("SOEM init failed (ecx_init).");
             }
 
@@ -148,7 +159,10 @@ namespace SOEM_FrontEnd.Model
             {
                 SOEMNative.soem_close(); 
                 //throw new InvalidOperationException("config_init failed.");
-                Console.WriteLine("config_init failed.");
+                //Console.WriteLine("config_init failed.");
+                _log.LogInformation("config_init failed.");
+
+
             }
 
             // SAFE_OP → (옵션) OP
@@ -168,7 +182,9 @@ namespace SOEM_FrontEnd.Model
             int rc = SOEMNative.soem_get_slave_info(index, out info);
             if (rc != 1)
             {
-                Console.WriteLine($"Failed to get slave info for index {index}.");
+                //Console.WriteLine($"Failed to get slave info for index {index}.");
+
+                _log.LogInformation($"Failed to get slave info for index {index}.");
 
                 //throw new InvalidOperationException($"Failed to get slave info for index {index}.");
             }
@@ -187,7 +203,9 @@ namespace SOEM_FrontEnd.Model
             int rc = SOEMNative.soem_config_map_only();
             if (rc < 0)
             {
-                Console.WriteLine($"PDO map rebuild failed.");
+                //Console.WriteLine($"PDO map rebuild failed.");
+
+                _log.LogInformation($"PDO map rebuild failed.");
 
                 return false;
                 //throw new InvalidOperationException("PDO map rebuild failed.");
@@ -200,7 +218,9 @@ namespace SOEM_FrontEnd.Model
             int rc = SOEMNative.soem_set_state(state, timeoutMs);
             if (rc != 0)
             {
-                Console.WriteLine($"State transition failed -> 0x{state:X}.");
+                //Console.WriteLine($"State transition failed -> 0x{state:X}.");
+                _log.LogInformation($"State transition failed -> 0x{state:X}.");
+
                 //throw new InvalidOperationException($"State transition failed -> 0x{state:X}.");
                 return false;
             }
@@ -218,7 +238,9 @@ namespace SOEM_FrontEnd.Model
             int rc = SOEMNative.soem_sdo_read(slave, index, subIndex, buf, ref len);
             if (rc != 0)
             {
-                Console.WriteLine($"SDO read 0x{index:X4}:{subIndex} failed.");
+                //Console.WriteLine($"SDO read 0x{index:X4}:{subIndex} failed.");
+                _log.LogInformation($"SDO read 0x{index:X4}:{subIndex} failed.");
+
 
                 var info = GetLastErrorInfo();
                 var sb = new StringBuilder();
@@ -246,7 +268,9 @@ namespace SOEM_FrontEnd.Model
             int rc = SOEMNative.soem_sdo_write(slave, index, subIndex, arr, (uint)arr.Length);
             if (rc != 0)
             {
-                Console.WriteLine($"SDO write 0x{index:X4}:{subIndex} failed.");
+                //Console.WriteLine($"SDO write 0x{index:X4}:{subIndex} failed.");
+
+                _log.LogInformation($"SDO write 0x{index:X4}:{subIndex} failed.");
 
                 var info = GetLastErrorInfo();
                 var sb = new StringBuilder();

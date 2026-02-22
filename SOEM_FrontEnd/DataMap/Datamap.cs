@@ -1,8 +1,11 @@
 ﻿using Avalonia;
 using Avalonia.Threading;
+using Microsoft.Extensions.Logging;
+using Serilog;
 using SOEM_FrontEnd.Ethercat.ESI;
 using SOEM_FrontEnd.Model;
 using SOEM_FrontEnd.Util;
+using SOEM_FrontEnd.Util.Logging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -13,6 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using static SOEM_FrontEnd.Ethercat.ESI.ESIXMLData;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace SOEM_FrontEnd.DataMap
 {
@@ -400,9 +404,13 @@ namespace SOEM_FrontEnd.DataMap
         // (선택) 업데이트를 UI단에서 처리하고 싶으면 이벤트로 넘김
         public event Action<SDOKey, SDOPoint, SDOFlatObject> PointUpdated;
 
+        private readonly ILogger _log;
+
 
         public SDOStore(ESIDevice Device, int Slaveno) 
         {
+            _log = OPLogger.CreateLogger("SOEM_FrontEnd");
+
             if (Device == null) throw new ArgumentNullException(nameof(Device));
 
             // 1) datatype name -> ESIDataType
@@ -471,6 +479,8 @@ namespace SOEM_FrontEnd.DataMap
                         flags: mergedFlags);
                 }
             }
+
+
         }
 
         private void AddGroupRow(int slaveno, ushort index, string indexName, string dataType, ushort bitSize, Flags flags)
@@ -665,20 +675,25 @@ namespace SOEM_FrontEnd.DataMap
                 {
                     //에러값 Value 에 기록금지.
                     //row.CurrentValueText = "ABORT 0x" + p.AbortCode.ToString("X8");
-                    Console.WriteLine(row.CurrentValueRawHexText);
+                    //Console.WriteLine(row.CurrentValueRawHexText);
+
+                    _log.LogInformation(row.CurrentValueRawHexText);
                 }
                 else if (p.Status == SDOReadStatus.Timeout)
                 {
                     //에러값 Value 에 기록금지.
                     //row.CurrentValueText = "TIMEOUT";
-                    Console.WriteLine(row.CurrentValueRawHexText);
+                    //Console.WriteLine(row.CurrentValueRawHexText);
+                    _log.LogInformation(row.CurrentValueRawHexText);
 
                 }
                 else if (p.Status == SDOReadStatus.Error)
                 {
                     //에러값 Value 에 기록금지.
                     //row.CurrentValueText = "ERROR: " + (p.Error ?? "");
-                    Console.WriteLine(row.CurrentValueRawHexText);
+                    //Console.WriteLine(row.CurrentValueRawHexText);
+                    _log.LogInformation(row.CurrentValueRawHexText);
+
                 }
                 else
                 {
@@ -1012,21 +1027,30 @@ namespace SOEM_FrontEnd.DataMap
             }
         }
 
+        private readonly Microsoft.Extensions.Logging.ILogger _log;
+
         public SlaveStore(int slaveNo, SoemSlaveInfo SlaveInfo)
         {
+            _log = OPLogger.CreateLogger("SOEM_FrontEnd");
+
             SlaveNo = slaveNo;
+
             //_deviceInfo 생성. 생성 전에 미리 ESI를 읽어둬야 함.
             ESIDevice? dev = ESICatalog.GetDeviceData(SlaveInfo.product, SlaveInfo.vendor, SlaveInfo.revision);
             if (dev == null)
             {
                 if (_deviceInfo == null)
                 {
-                    Console.WriteLine($"_deviceInfo is Null");
+                    //Console.WriteLine($"_deviceInfo is Null");
+                    _log.LogInformation($"_deviceInfo is Null");
+
                     return;
                 }
                 _deviceInfo.ESIDeviceInfo = null;
 
-                Console.WriteLine($"{SlaveInfo.name} is ESI Nothing");
+                //Console.WriteLine($"{SlaveInfo.name} is ESI Nothing");
+                _log.LogInformation($"{SlaveInfo.name} is ESI Nothing");
+
                 return;
             }
             _deviceInfo = new DeviceESIInfo();
@@ -1100,6 +1124,14 @@ namespace SOEM_FrontEnd.DataMap
 
         private readonly object _lock = new object();
 
+        private readonly ILogger _log;
+
+        public Datamap()
+        {
+            _log = OPLogger.CreateLogger("SOEM_FrontEnd");
+        }
+
+
         public int SlaveCount
         {
             get 
@@ -1125,7 +1157,9 @@ namespace SOEM_FrontEnd.DataMap
                 if (_initialized)
                 {
                     //throw new InvalidOperationException("Already initialized.");
-                    Console.WriteLine("Already initialized. ReInitializing"); //재 이니셜라이징 되었다고 콘솔로그만.
+                    //Console.WriteLine("Already initialized. ReInitializing"); //재 이니셜라이징 되었다고 콘솔로그만.
+                    _log.LogInformation("Already initialized. ReInitializing");
+
                 }
 
                 _slaves = new SlaveStore[slaveInfos.Count];
@@ -1153,10 +1187,12 @@ namespace SOEM_FrontEnd.DataMap
             lock (_lock)
             {
                 if (!_initialized) 
-                { 
-                    throw new InvalidOperationException("Not initialized.");
+                {
+                    throw new InvalidOperationException("Not initialized."); //냅둬야되나?
 
                     //Console.WriteLine("Not initialized.");
+
+                    _log.LogInformation("Not initialized.");
                 }
 
                 return _slaves[slaveNo];

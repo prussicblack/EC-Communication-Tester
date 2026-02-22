@@ -5,6 +5,8 @@ using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
 using SOEM_FrontEnd.Model;
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+using SOEM_FrontEnd.Util.Logging;
 
 namespace SOEM_FrontEnd.Automation
 {
@@ -38,13 +40,19 @@ namespace SOEM_FrontEnd.Automation
         private readonly EcClient _ECClient;
 
         private PDORTWorker worker;
-        
-        
+
+        private readonly ILogger _log;
+
+
         public StateMachine(EcClient EC)
         {
+            //로그 초기화
+            _log = OPLogger.CreateLogger("SOEM_FrontEnd");
+
             _ECClient = EC;
 
             m_eCurrentSequence = eStateSequenceName.Init;
+
         }
 
 
@@ -111,8 +119,8 @@ namespace SOEM_FrontEnd.Automation
                     {
                         //
                         store.BaseProfile = new NormalOProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
-                        Console.WriteLine($"Slave {i} - NormalIO");
-
+                        //Console.WriteLine($"Slave {i} - NormalIO");
+                        _log.LogInformation("Slave {{i}} - NormalIO");
                         break;
                     }
                     case DeviceMode.NormalPPMode: //어쨋건 체크는 해야지...나중에 전용 방어코드가 들어가긴 하겠는데.
@@ -129,20 +137,24 @@ namespace SOEM_FrontEnd.Automation
                         //Mapping구조는, 
                         //RX 0x1C12 -> 0x1600, 0x1601... -> 0x6040(Control Word)
                         //Tx 0x1C13 -> 0x1A00, 0x1A01... -> 0x6041(State Word)
-                        bool is402 = DriveProfile402Check(i, out List<uint>txAllMapList, out List<uint>rxAllMapList);
+                        bool is402 = DriveProfile402Check(i, out List<uint> txAllMapList, out List<uint> rxAllMapList);
 
                         if (is402 == true)
                         {
-                            NormalMotorWithPPMode ppmode = new NormalMotorWithPPMode(rxSize: outBytes, txSize: inBytes, i, _ECClient);
+                            NormalMotorWithPPMode ppmode =
+                                new NormalMotorWithPPMode(rxSize: outBytes, txSize: inBytes, i, _ECClient);
                             ppmode.SetPdoMapping(rxAllMapList, txAllMapList);
                             store.BaseProfile = ppmode;
 
-                            Console.WriteLine($"Slave {i} - 402Drive Profile. PPMode Set");
+                            //Console.WriteLine($"Slave {i} - 402Drive Profile. PPMode Set");
+                            _log.LogInformation("Slave {{i}} - 402Drive Profile. PPMode Set");
+
                         }
                         else
                         {
                             store.BaseProfile = new NormalOProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
-                            Console.WriteLine($"Slave {i} - 402Drive Profile Set Fail NormalIO set.");
+                            //Console.WriteLine($"Slave {i} - 402Drive Profile Set Fail NormalIO set.");
+                            _log.LogInformation("Slave {{i}} - 402Drive Profile Set Fail NormalIO set.");
 
                         }
 
@@ -156,26 +168,36 @@ namespace SOEM_FrontEnd.Automation
                 {
                     bool result = (store.BaseProfile as IEthercatStateTransition).PrepareSafeOp(5000);
 
+
                     if (result == false)
                     {
                         //로그기록.
                         //어차피 걍 SafeOP까지 올릴거임.
-                        Console.WriteLine($"{i} - PrepareSafeOp Fail");
+                        //Console.WriteLine($"{i} - PrepareSafeOp Fail");
+
+                        _log.LogInformation($"{i} - PrepareSafeOp Fail");
+                    }
+                    else
+                    {
+
+                        _log.LogInformation($"{i} - PrepareSafeOp Success");
+
                     }
                 }
-
-
 
             }
 
             ret = _ECClient.EnsureState(EcClient.EC_STATE_SAFE_OP, 2000); //safeop이행.
+
             if (ret == false)
             {
-                Console.WriteLine("EnsureSafeOp Fail");
+                //Console.WriteLine("EnsureSafeOp Fail");
+                _log.LogInformation($"EnsureSafeOp Fail");
 
                 return false;
             }
 
+            _log.LogInformation($"EnsureSafeOp Success");
             m_eCurrentSequence = eStateSequenceName.SafeOp;
 
             return true;
@@ -203,7 +225,12 @@ namespace SOEM_FrontEnd.Automation
                         {
                             //로그기록.
                             //어차피 걍 OP까지 올릴거임.
-                            Console.WriteLine("PrepareOp Macro Fail");
+                            //Console.WriteLine("PrepareOp Macro Fail");
+                            _log.LogInformation($"PrepareOp Fail");
+                        }
+                        else
+                        {
+                            _log.LogInformation($"PrepareOp Success");
                         }
                     }
 
@@ -230,7 +257,9 @@ namespace SOEM_FrontEnd.Automation
                 bool ret = _ECClient.EnsureState(EcClient.EC_STATE_OPERATIONAL, 5000);
                 if (ret == false)
                 {
-                    Console.WriteLine("EnsureOp Fail");
+                    //Console.WriteLine("EnsureOp Fail");
+                    _log.LogInformation($"EnsureOp Fail");
+
                     worker?.Stop();
 
                     worker = null;
@@ -248,7 +277,8 @@ namespace SOEM_FrontEnd.Automation
 
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine(ex.Message);
+                //Console.WriteLine(ex.Message);
+                _log.LogError(ex.Message);
 
                 // 전체 슬레이브 상태 갱신
                 SOEMNative.soem_readstate();
@@ -258,7 +288,9 @@ namespace SOEM_FrontEnd.Automation
                 {
                     ushort st = SOEMNative.soem_slave_state(i);
                     ushort al = SOEMNative.soem_slave_al_status(i);
-                    Console.WriteLine($"Slave {i}: state=0x{st:X}, AL=0x{al:X4}");
+                    //Console.WriteLine($"Slave {i}: state=0x{st:X}, AL=0x{al:X4}");
+                    _log.LogError($"Slave {i}: state=0x{st:X}, AL=0x{al:X4}");
+
                 }
 
                 throw; // 디버깅 끝나면 다시 던지거나, 여기서만 처리

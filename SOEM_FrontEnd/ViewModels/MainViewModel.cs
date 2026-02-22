@@ -148,6 +148,9 @@ public partial class MainViewModel : ViewModelBase
             OnPropertyChanged(nameof(SelectedSDO));
 
             UpdateSdoSelectionState();
+
+            //1010 1011일때 저장문구 기록용.
+            SelectedSdoTextBoxWrite(SelectedSDO);
         }
     }
 
@@ -310,6 +313,9 @@ public partial class MainViewModel : ViewModelBase
     public MainViewModel()
     {
 
+        //로그 초기화
+        _log = OPLogger.CreateLogger("SOEM_FrontEnd");
+
         ECClient = new EcClient();
 
         StateMachine = new StateMachine(ECClient);
@@ -344,8 +350,6 @@ public partial class MainViewModel : ViewModelBase
 
         OPLogger.SetUiSink(_sink);
 
-        //로그 초기화
-        _log = OPLogger.CreateLogger("SOEM_FrontEnd");
         //로그 기록
         _log.LogInformation("MainViewModel Created");
 
@@ -604,6 +608,34 @@ public partial class MainViewModel : ViewModelBase
     }
 
 
+    //Save/Load시 귀찮아서 해당 클릭시 대신 써주도록 만든 메소드.
+    private void SelectedSdoTextBoxWrite(SDOFlatObject SelectedSDO)
+    {
+        //1010인 경우(save)
+        if (SelectedSDO.Index == 0x1010)
+        {
+            //SubIndex0은 하부 수량을 나타내므로 적용 금지.
+            if (SelectedSDO.SubIndex != 0)
+            {
+                WriteValueText = "0x65766173";
+                return;
+            }
+
+        }
+        //1011의 경우(load)
+        if (SelectedSDO.Index == 0x1011)
+        {
+            //SubIndex0은 하부 수량을 나타내므로 적용 금지.
+            if (SelectedSDO.SubIndex != 0)
+            {
+                WriteValueText = "0x64616F6C";
+                return;
+            }
+        }
+
+        WriteValueText = "";
+        return;
+    }
 
 
     private void UpdateSdoSelectionState()
@@ -664,6 +696,8 @@ public partial class MainViewModel : ViewModelBase
         foreach (var (ifname, desc) in PcapIfEnumerator.GetAll())
         {
             //Console.WriteLine($"{ifname}  |  {desc}");
+            _log.LogInformation($"{ifname}  |  {desc}");
+
             string buf = $"{desc} - {ifname}";
             NICList.Add(buf);
 
@@ -744,11 +778,14 @@ public partial class MainViewModel : ViewModelBase
                 {
                     SlaveInfoData.Add(info);
                     SlavesListUI.Add($"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
-                    Console.WriteLine($"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+                    //Console.WriteLine($"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+                    _log.LogInformation($"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+
                 }
                 else
                 {
-                    Console.WriteLine($"#{i} -> failed to query");
+                    //Console.WriteLine($"#{i} -> failed to query");
+                    _log.LogInformation($"#{i} -> failed to query");
                 }
             }
 
@@ -820,7 +857,8 @@ public partial class MainViewModel : ViewModelBase
                 SlaveInfoData.Add(info);
                 SlavesListUI.Add(
                     $"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
-                Console.WriteLine(
+                //Console.WriteLine($"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+                _log.LogInformation(
                     $"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
 
             }
@@ -842,12 +880,14 @@ public partial class MainViewModel : ViewModelBase
     {
         // 1) SM2(RxPDO) 비활성화: 0x1C12:00 = 0
         ECClient.SdoWriteU8(slave, 0x1C12, 0x00, 0);
-        Console.WriteLine("SM2(RxPDO) 비활성화");
+        //Console.WriteLine("SM2(RxPDO) 비활성화");
+        _log.LogInformation("SM2(RxPDO) 비활성화");
 
 
         // 2) Index의 매핑 제거.
         ECClient.SdoWriteU8(slave, 0x1601, 0x00, 0);
-        Console.WriteLine("Index 매핑 제거");
+        //Console.WriteLine("Index 매핑 제거");
+        _log.LogInformation("Index 매핑 제거");
 
         // 3) RxMap의 Entry 를 써넣기.
         //byte sub = 1;
@@ -927,12 +967,14 @@ public partial class MainViewModel : ViewModelBase
     {
         // 1) SM2(RxPDO) 비활성화: 0x1C12:00 = 0
         ECClient.SdoWriteU8(slave, 0x1C12,0x00,0);
-        Console.WriteLine("SM2(RxPDO) 비활성화");
+        //Console.WriteLine("SM2(RxPDO) 비활성화");
+        _log.LogInformation("SM2(RxPDO) 비활성화");
 
 
         // 2) Index의 매핑 제거.
         ECClient.SdoWriteU8(slave, RxMap.Index, 0x00, 0);
-        Console.WriteLine("Index 매핑 제거");
+        //Console.WriteLine("Index 매핑 제거");
+        _log.LogInformation("Index 매핑 제거");
 
         // 3) RxMap의 Entry 를 써넣기.
         //byte sub = 1;
@@ -1002,12 +1044,15 @@ public partial class MainViewModel : ViewModelBase
 
         // 1) SM3(TxPDO) 비활성화: 0x1C13:00 = 0
         ECClient.SdoWriteU8(slave, 0x1C13, 0x00, 0);
-        Console.WriteLine("SM3(TxPDO) 비활성화");
+        //Console.WriteLine("SM3(TxPDO) 비활성화");
+        _log.LogInformation("SM3(TxPDO) 비활성화");
+
 
         // 2) 0x1A00, 0x1A01 기존 매핑 제거 (sub0 = 0)
         //    (장비에 따라 1A00만 쓰고 있을 수도 있는데, ESI에 Exclude=1A00 나와 있으니 둘 다 정리)
         ECClient.SdoWriteU8(slave, TxMap.Index, 0x00, 0); //ESI상 0x1A01 0x1A00 둘중 하나.
-        Console.WriteLine("Index 매핑 제거");
+        //Console.WriteLine("Index 매핑 제거");
+        _log.LogInformation("Index 매핑 제거");
 
         // 3) 0x1A01에 새 엔트리들 작성
         // sub1: 0x6041:00, 16bit
@@ -1017,24 +1062,27 @@ public partial class MainViewModel : ViewModelBase
             uint map = ECClient.MakeMapWord(entrie.Index, entrie.SubIndex, entrie.BitLength);
             ECClient.SdoWriteU32(slave, TxMap.Index, sub, map);
 
-            Console.WriteLine($"TxMap Remapping {slave}-{TxMap.Index}-{sub}");
+            //Console.WriteLine($"TxMap Remapping {slave}-{TxMap.Index}-{sub}");
+            _log.LogInformation($"TxMap Remapping {slave}-{TxMap.Index}-{sub}");
 
             sub++;
         }
 
-        Console.WriteLine($"TxMap Remap Complete");
+        //Console.WriteLine($"TxMap Remap Complete");
+        _log.LogInformation($"TxMap Remap Complete");
 
         //엔트리 갯수 기록
         byte count = (byte)(sub - 1);
         ECClient.SdoWriteU8(slave, TxMap.Index, 0x00, count);
-        Console.WriteLine($"TxMap Entree Count Write");
+        //Console.WriteLine($"TxMap Entree Count Write");
+        _log.LogInformation($"TxMap Entree Count Write");
 
 
         // 4) SM3(TxPDO assign)에 1A01만 다시 연결
         ECClient.SdoWriteU8(slave, 0x1C13, 0x00, 1);        // PDO 개수 = 1
         ECClient.SdoWriteU16(slave, 0x1C13, 0x01, TxMap.Index);  // 1번째 PDO = 0x1A01
-        Console.WriteLine($"TxMap Connect");
-
+        //Console.WriteLine($"TxMap Connect");
+        _log.LogInformation($"TxMap Connect");
     }
 
 }

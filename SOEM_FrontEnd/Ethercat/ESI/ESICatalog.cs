@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using SOEM_FrontEnd.Util.Logging;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -23,8 +26,16 @@ namespace SOEM_FrontEnd.Ethercat.ESI
 
         private static List<ESIDevice> _ESIDevice = new List<ESIDevice>();
 
+        private static ILogger _log = NullLogger.Instance;
+
+
         public static void Initialize(string Path)
         {
+            if (OPLogger.IsConfigured)
+                _log = OPLogger.CreateLogger("SOEM_FrontEnd");
+            else
+                _log = NullLogger.Instance;
+
             _ESIDevice = LoadAllDevices(Path);
         }
 
@@ -54,7 +65,9 @@ namespace SOEM_FrontEnd.Ethercat.ESI
                 catch (Exception ex)
                 {
                     // 필요하면 로그만 찍고 계속 진행
-                    Console.WriteLine($"ESI parse failed: {file} : {ex.Message}");
+                    //Console.WriteLine($"ESI parse failed: {file} : {ex.Message}");
+                    _log.LogInformation("Not initialized.");
+                    _log.LogError(ex.ToString());
                 }
             }
 

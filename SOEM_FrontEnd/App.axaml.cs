@@ -4,6 +4,7 @@ using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
+using Serilog;
 using SOEM_FrontEnd.Ethercat.ESI;
 using SOEM_FrontEnd.Util.Logging;
 using SOEM_FrontEnd.ViewModels;
@@ -135,7 +136,7 @@ public partial class App : Application
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 vm.IsIndeterminate = false;
-                vm.StatusText = "Startup failed: " + ex.Message;
+                vm.StatusText = "Startup failed: " + ex.ToString();
                 // 필요하면 로그 + 재시도 버튼 등을 추가
             });
         }
