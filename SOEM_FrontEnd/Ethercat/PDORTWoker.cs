@@ -122,6 +122,9 @@ namespace SOEM_FrontEnd.Ethercat
                         SOEMNative.soem_read_bytes(slave, 0, inBuf, inBuf.Length);
                         inBuf.AsSpan().CopyTo(pdo.InputWriteSpan);
                     }
+
+                    _binds[j].Pdo.OnAfterPdoReceived();
+
                 }
 
                 loop++;
@@ -130,9 +133,6 @@ namespace SOEM_FrontEnd.Ethercat
                 {
                     for (int k = 0; k < _binds.Count; k++)
                     {
-                        //_binds[k].Pdo.PublishSnapshots();
-                        _binds[k].Pdo.OnAfterPdoReceived();
-
                         _binds[k].Pdo.PublishSnapshots(); //스냅샷이 뒤로 와야됨.
                     }
                 }

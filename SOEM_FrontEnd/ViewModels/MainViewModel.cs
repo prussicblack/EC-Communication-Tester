@@ -765,13 +765,75 @@ public partial class MainViewModel : ViewModelBase
 
     }
 
-
-
-    private int test = 0;
+    
     private void HandleTest()
     {
+        //UI테스트용.
+        List<SoemSlaveInfo> testInfoList = new List<SoemSlaveInfo>();
 
-        _log.LogInformation($"Log start Test.{test}");
+        //0번은 Master용. Dummy삽입.
+        SoemSlaveInfo masterInfo = new SoemSlaveInfo();
+        testInfoList.Add(masterInfo);
+
+        //DM3E-556. dummy
+        SoemSlaveInfo testInfo1 = new SoemSlaveInfo()
+        {
+            alias = 0,// Station Alias
+            configadr = 0x1001,// Station Address
+            vendor = 0x4321,// eep_man
+            product = 0x8100,// eep_id
+            revision = 0x1,// 리비전
+
+            name ="DM3E-556"
+        };
+        
+        testInfoList.Add(testInfo1);
+
+
+        //DM3E-556. dummy
+        SoemSlaveInfo testInfo2 = new SoemSlaveInfo()
+        {
+            alias = 0,// Station Alias
+            configadr = 0x1002,// Station Address
+            vendor = 0xfa00000,// eep_man
+            product = 0x1002,// eep_id
+            revision = 0x10001,// 리비전
+
+            name = "Ezi-SERVO2 EtherCAT"
+        };
+
+        testInfoList.Add(testInfo2);
+
+        for (int i = 0; i < testInfoList.Count; i++)
+        {
+            if (i == 0) //0은 마스터로 사용.
+            {
+                SlaveInfoData.Add(new SoemSlaveInfo());
+
+                SlavesListUI.Add($"{i} - Master - {"UI Test IF"}");
+            }
+            else
+            {
+                //Dummy삽입.
+                SoemSlaveInfo info = testInfoList[i];
+
+                SlaveInfoData.Add(info);
+                SlavesListUI.Add(
+                    $"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+                Console.WriteLine(
+                    $"{i} - Slave - {info.name}, Alias = {info.alias}, StationAddress = 0x{info.configadr.ToString("X")}, VendorCode = 0x{info.vendor.ToString("X")}, ProductCode = 0x{info.product.ToString("X")}, Revision=0x{info.revision.ToString("X")}");
+
+            }
+        }
+
+        Datamap.Instance.Init(testInfoList);
+
+
+        //SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance);
+        //SdoWorker.Start();
+
+
+        _log.LogInformation($"Log Test.");
         return;
 
     }
