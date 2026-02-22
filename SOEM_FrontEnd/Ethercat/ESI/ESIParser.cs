@@ -211,60 +211,94 @@ namespace SOEM_FrontEnd.Ethercat.ESI
 
         private static List<ESIDataType> ParseDataTypes(XElement DataTypesElements, XNamespace ns)
         {
-            List<ESIDataType> ret = new List<ESIDataType>();
-
+            var ret = new List<ESIDataType>();
 
             foreach (var DataTypesElement in DataTypesElements.Elements(ns + "DataType"))
             {
+                var Name = DataTypesElement.Element(ns + "Name");
+                var BitSize = DataTypesElement.Element(ns + "BitSize");
+                var BaseType = DataTypesElement.Element(ns + "BaseType");
+                var SubItems = DataTypesElement.Elements(ns + "SubItem");
 
-                var Name = DataTypesElement.Element("Name");
-                var BitSize = DataTypesElement.Element("BitSize");
-                var BaseType = DataTypesElement.Element("BaseType");
-                var SubItems = DataTypesElement.Elements("SubItem");
+                var SubItemTypes = new List<ESISubDataType>();
 
-                List<ESISubDataType> SubItemTypes = new List<ESISubDataType>();
+                //SubIdx 자동 할당용 상태 (DataType 단위)
+                var used = new HashSet<int>();   // 이미 사용/예약된 SubIdx
+                int lastAssigned = -1;           // 직전 확정 SubIdx
 
-
-                if (SubItems != null)
+                // 명시된 SubIdx들을 예약
+                foreach (var si in SubItems)
                 {
-
-                    foreach (var subItem in SubItems)
+                    var sidxEl = si.Element(ns + "SubIdx");
+                    if (sidxEl != null)
                     {
-                        ESISubDataType SubItemType = new ESISubDataType();
-
-                        Flags Subflags = new Flags();
-
-                        var SubIndex = subItem.Element("SubIdx");
-                        var SubIndexName = subItem.Element("Name");
-                        var SubBitSize = subItem.Element("BitSize");
-                        var SubBitOffSet = subItem.Element("BitOffs");
-                        var SubType = subItem.Element("Type");
-
-                        var SubFlagsElem = subItem.Element("Flags");
-
-                        if (SubFlagsElem != null)
-                        {
-                            Subflags = ParseFlags(SubFlagsElem, ns);
-                        }
-
-                        SubItemType.SubIndex = (byte)(SubIndex != null ? ParseUint(SubIndex.Value) : 0);
-                        SubItemType.Name = SubIndexName.Value ?? "";
-                        SubItemType.BitSize = (ushort)ParseUint(SubBitSize.Value);
-                        SubItemType.BitOffs = (ushort)ParseUint(SubBitOffSet.Value);
-                        SubItemType.Type = SubType.Value ?? "";
-                        SubItemType.Flag = Subflags;
-                        SubItemTypes.Add(SubItemType);
+                        used.Add((int)ParseUint(sidxEl.Value));
                     }
                 }
 
-                ESIDataType DeviceDataType = new ESIDataType();
+                //SubIdx가 없을 때 호출될 로컬 함수
+                byte SubIndexNothing()
+                {
+                    int cand;
 
-                DeviceDataType.Name = Name.Value ?? "";
-                DeviceDataType.BitSize = (ushort)ParseUint(BitSize.Value);
+                    // 직전 확정이 있으면 +1, 없으면 0부터(필요시 1부터로 바꿔도 됨)
+                    if (lastAssigned >= 0) cand = lastAssigned + 1;
+                    else cand = 0;
 
-                DeviceDataType.BaseType = (string)BaseType ?? "";
+                    // 충돌 회피
+                    while (used.Contains(cand)) cand++;
 
+                    if (cand < 0 || cand > 255)
+                        throw new FormatException("SubIdx auto-assignment overflow (>255).");
+
+                    used.Add(cand);
+                    lastAssigned = cand;
+                    return (byte)cand;
+                }
+
+                // 실제 파싱부
+                foreach (var subItem in SubItems)
+                {
+                    var SubIndex = subItem.Element(ns + "SubIdx");
+                    var SubIndexName = subItem.Element(ns + "Name");
+                    var SubBitSize = subItem.Element(ns + "BitSize");
+                    var SubBitOffSet = subItem.Element(ns + "BitOffs");
+                    var SubType = subItem.Element(ns + "Type");
+                    var SubFlagsElem = subItem.Element(ns + "Flags");
+
+                    var subFlags = new Flags();
+                    if (SubFlagsElem != null)
+                        subFlags = ParseFlags(SubFlagsElem, ns);
+
+                    var sub = new ESISubDataType();
+
+                    
+                    byte assignedIdx = (byte)(SubIndex != null ? ParseUint(SubIndex.Value) : SubIndexNothing()); //기존 null이면 0 처리로 문제발생.(Fastech 드라이브에서)
+                    sub.SubIndex = assignedIdx;
+
+                    // lastAssigned를 "명시값"에도 반영
+                    if (SubIndex != null)
+                    {
+                        int explicitIdx = (int)ParseUint(SubIndex.Value);
+                        if (!used.Contains(explicitIdx)) used.Add(explicitIdx);
+                        lastAssigned = explicitIdx;
+                    }
+
+                    sub.Name = SubIndexName != null ? SubIndexName.Value : "";
+                    sub.BitSize = (ushort)(SubBitSize != null ? ParseUint(SubBitSize.Value) : 0);
+                    sub.BitOffs = (ushort)(SubBitOffSet != null ? ParseUint(SubBitOffSet.Value) : 0);
+                    sub.Type = SubType != null ? SubType.Value : "";
+                    sub.Flag = subFlags;
+
+                    SubItemTypes.Add(sub);
+                }
+
+                var DeviceDataType = new ESIDataType();
+                DeviceDataType.Name = Name != null ? Name.Value : "";
+                DeviceDataType.BitSize = (ushort)(BitSize != null ? ParseUint(BitSize.Value) : 0);
+                DeviceDataType.BaseType = BaseType != null ? BaseType.Value : "";
                 DeviceDataType.SubType = SubItemTypes;
+
                 ret.Add(DeviceDataType);
             }
 

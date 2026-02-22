@@ -138,7 +138,6 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             public string DataType { get; set; } = "";
             public ushort BitSize { get; set; } = 0;
             public Flags Flags { get; set; } = new();
-            //public List<ESISDOSubObject> SubObjects { get; set; } = new(); //없는거 같은데..?
         }
 
         public sealed class Flags

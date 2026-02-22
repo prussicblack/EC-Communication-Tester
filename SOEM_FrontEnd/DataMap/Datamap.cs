@@ -461,7 +461,9 @@ namespace SOEM_FrontEnd.DataMap
 
                     Flags mergedFlags = MergeFlags(obj.Flags, sub.Flag);
 
-                    AddLeaf(Slaveno, obj.Index, sub.SubIndex,
+                    AddLeaf(Slaveno, 
+                        obj.Index, 
+                        sub.SubIndex, 
                         indexName: obj.Name,
                         subName: subName,
                         dataType: subType,
