@@ -21,6 +21,9 @@ namespace SOEM_FrontEnd.Ethercat
 
         private Thread _thread;
         private volatile bool _running;
+        
+        public int MailboxLimitPerCycle { get; set; } = 4;
+
 
         public TimeSpan Period { get; set; } = TimeSpan.FromMilliseconds(1);
         public int ReceiveTimeoutUs { get; set; } = 2000;
@@ -110,6 +113,12 @@ namespace SOEM_FrontEnd.Ethercat
                 // 2) send/recv
                 _ec.SendProcessData();
                 _ec.ReceiveProcessData(ReceiveTimeoutUs);
+                
+                //Mailbox handler 처리.
+                // Mailbox cyclic handler pump (XoE support)
+                if (MailboxLimitPerCycle > 0)
+                    SOEMNative.soem_mbxhandler(0, MailboxLimitPerCycle);
+
 
                 // ---- AfterReceive: SOEM inputs → Tx(입력 PDO) ----
                 // 3) inputs: SOEM inputs -> TxWriteSpan

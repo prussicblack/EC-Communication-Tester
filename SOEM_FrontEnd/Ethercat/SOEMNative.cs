@@ -121,6 +121,14 @@ namespace SOEM_FrontEnd.Model
 
         [DllImport("soem_wrap.dll", CallingConvention = CallingConvention.Cdecl,CharSet = CharSet.Ansi)]
         internal static extern int soem_elist2string(StringBuilder outBuf, int outBufLen);
+        
+        //Mailbox Handler추가.
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int soem_enable_mbx_cyclic_for_coe();
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int soem_mbxhandler(int group, int limit);
+
 
     }
 
@@ -165,6 +173,7 @@ namespace SOEM_FrontEnd.Model
 
             }
 
+            SOEMNative.soem_enable_mbx_cyclic_for_coe();
             // SAFE_OP → (옵션) OP
             //EnsureState(EC_STATE_SAFE_OP, 2000);
             //if (mapPdo)

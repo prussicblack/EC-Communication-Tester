@@ -416,3 +416,29 @@ EXP int CALL soem_elist2string(char *outBuf, int outBufLen)
 
    return (int)strlen(outBuf);
 }
+
+//Mailbox Handler추가.
+EXP int CALL soem_enable_mbx_cyclic_for_coe(void)
+{
+   if (!g_inited) return -2;
+
+   int added = 0;
+   for (int si = 1; si <= g_ctx.slavecount; ++si)
+   {
+      ec_slavet *slave = &g_ctx.slavelist[si];
+      if (slave->CoEdetails > 0)
+      {
+         ecx_slavembxcyclic(&g_ctx, si);
+         added++;
+      }
+   }
+   return added; // 등록한 slave 수
+}
+
+EXP int CALL soem_mbxhandler(int group, int limit)
+{
+   if (!g_inited) return -2;
+   if (limit <= 0) limit = 1;
+   ecx_mbxhandler(&g_ctx, group, limit);
+   return 0;
+}
