@@ -262,15 +262,38 @@
 
                       <!-- 부모 VM(MainViewModel)의 HasMotorControl로 표시/숨김 결정 -->
                       <ContentControl IsVisible="{Binding HasMotorControl}">
-                          <!-- 실제 MotorControl은 MotorControlVm을 DataContext로 -->
                           <views:MotorControl DataContext="{Binding MotorControlVm}" />
                       </ContentControl>
 
-                      <TextBlock
-                          IsVisible="{Binding HasNoMotorControl}"
-                          Text="이 슬레이브는 IMotorCommands(BaseProfile) 프로파일이 없어 MotorControl을 표시하지 않습니다."
-                          Margin="10"
-                          FontSize="14" />
+                      <ContentControl IsVisible="{Binding HasIoControl}">
+                          <Grid Margin="10"
+                                ColumnDefinitions="*,*"
+                                RowDefinitions="Auto,*"
+                                ColumnSpacing="10"
+                                RowSpacing="6">
+
+                              <TextBlock Grid.Row="0" Grid.Column="0" Text="Outputs (RxPDO)" FontWeight="Bold" />
+                              <TextBlock Grid.Row="0" Grid.Column="1" Text="Inputs (TxPDO)" FontWeight="Bold" />
+
+                              <Border Grid.Row="1" Grid.Column="0"
+                                      IsVisible="{Binding HasIoOutput}"
+                                      BorderThickness="1" CornerRadius="6" Padding="8">
+                                  <views:IOControl DataContext="{Binding IoOutputVm}" />
+                              </Border>
+
+                              <Border Grid.Row="1" Grid.Column="1"
+                                      IsVisible="{Binding HasIoInput}"
+                                      BorderThickness="1" CornerRadius="6" Padding="8">
+                                  <views:IOControl DataContext="{Binding IoInputVm}" />
+                              </Border>
+                          </Grid>
+                      </ContentControl>
+
+
+                      <TextBlock IsVisible="{Binding HasNoControl}"
+                                 Text="이 슬레이브는 Control UI(IMotorCommands 또는 일반 IO)를 표시할 프로파일이 없습니다."
+                                 Margin="10"
+                                 FontSize="14" />
 
                       <views:PdoHexDumpView Grid.Row="1" DataContext="{Binding PdoHexDumpVm}"/>
 

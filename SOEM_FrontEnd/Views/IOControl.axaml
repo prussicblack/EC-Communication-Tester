@@ -6,15 +6,18 @@
              xmlns:util="clr-namespace:SOEM_FrontEnd.Util"
              mc:Ignorable="d"  d:DesignWidth="550" d:DesignHeight="350"
              x:Class="SOEM_FrontEnd.Views.IOControl"
-             x:DataType="vm:IOControlViewModel">
+             x:Name="Root"
+             x:DataType="vm:IOControlViewModel"
+             x:CompileBindings="True">
     <UserControl.Resources>
         <util:BoolToBrushConverter x:Key="BitBrush"
                                    FalseBrush="Red"
                                     TrueBrush="Green"/>
     </UserControl.Resources>
 
+
     <ItemsControl ItemsSource="{Binding Bits}">
-        <ItemsControl.ItemsPanel>
+        <!--<ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
                 <UniformGrid Columns="{Binding Columns}" />
             </ItemsPanelTemplate>
@@ -29,6 +32,45 @@
                         BorderBrush="Black"
                         Background="{Binding IsOn, Converter={StaticResource BoolToBrushConverter}}" />
             </DataTemplate>
+        </ItemsControl.ItemTemplate>-->
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <UniformGrid Columns="{Binding Columns}" />
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+
+        <ItemsControl.ItemTemplate>
+            <DataTemplate>
+                <Grid Width="32" Height="24">
+
+                    <!-- 상태 표시 -->
+                    <Border Width="14"
+                            Height="14"
+                            BorderThickness="1"
+                            BorderBrush="Black"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top"
+                            Background="{Binding IsOn, Converter={StaticResource BitBrush}}" />
+
+                    <!-- 번호 -->
+                    <TextBlock Text="{Binding DisplayIndex}"
+                               FontSize="10"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Bottom" />
+
+                    <!-- 클릭 오버레이: Output(=IsWritable=true)일 때만 존재 -->
+                    <Button IsVisible="{Binding IsWritable}"
+                            Command="{Binding ToggleCommand}"
+                            CommandParameter="{Binding}"
+                            Focusable="False"
+                            Opacity="0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"/>
+                </Grid>
+            </DataTemplate>
         </ItemsControl.ItemTemplate>
+
     </ItemsControl>
 </UserControl>

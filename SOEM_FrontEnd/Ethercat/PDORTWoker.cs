@@ -116,8 +116,8 @@ namespace SOEM_FrontEnd.Ethercat
                 
                 //Mailbox handler 처리.
                 // Mailbox cyclic handler pump (XoE support)
-                if (MailboxLimitPerCycle > 0)
-                    SOEMNative.soem_mbxhandler(0, MailboxLimitPerCycle);
+                //if (MailboxLimitPerCycle > 0)
+                //    SOEMNative.soem_mbxhandler(0, MailboxLimitPerCycle);
 
 
                 // ---- AfterReceive: SOEM inputs → Tx(입력 PDO) ----

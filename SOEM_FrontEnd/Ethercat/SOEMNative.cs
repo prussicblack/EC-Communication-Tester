@@ -173,7 +173,9 @@ namespace SOEM_FrontEnd.Model
 
             }
 
-            SOEMNative.soem_enable_mbx_cyclic_for_coe();
+            //이거 거니깐 SDO못읽어내는 문제가 있네..
+            //SOEMNative.soem_enable_mbx_cyclic_for_coe(); 
+
             // SAFE_OP → (옵션) OP
             //EnsureState(EC_STATE_SAFE_OP, 2000);
             //if (mapPdo)

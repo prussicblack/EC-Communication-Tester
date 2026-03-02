@@ -382,6 +382,9 @@ namespace SOEM_FrontEnd.Ethercat
 
             int rc = SOEMNative.soem_sdo_read((ushort)key.SlaveNo, key.Index, key.SubIndex, buf, ref len);
 
+            //SOEMNative.soem_get_last_error_info(out SoemErrorInfo testerr);
+            var elist = EcClient.GetSoemErrorString();
+
             if (rc == 0)
             {
                 int actual = (int)len;

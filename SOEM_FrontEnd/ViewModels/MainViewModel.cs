@@ -217,29 +217,143 @@ public partial class MainViewModel : ViewModelBase
     public bool HasMotorControl => MotorControlVm != null;
     public bool HasNoMotorControl => MotorControlVm == null;
 
+    //IO컨트롤용 프로퍼티 추가.
+    private IOControlViewModel _ioOutputVm;
+    private IOControlViewModel _ioInputVm;
+    private IPDOView _selectedPdoView;
+
+    public IOControlViewModel IoOutputVm
+    {
+        get => _ioOutputVm;
+        private set
+        {
+            if (SetProperty(ref _ioOutputVm, value))
+            {
+                OnPropertyChanged(nameof(HasIoControl));
+                OnPropertyChanged(nameof(HasNoControl));
+                OnPropertyChanged(nameof(HasIoOutput));
+            }
+        }
+    }
+
+    public IOControlViewModel IoInputVm
+    {
+        get => _ioInputVm;
+        private set
+        {
+            if (SetProperty(ref _ioInputVm, value))
+            {
+                OnPropertyChanged(nameof(HasIoControl));
+                OnPropertyChanged(nameof(HasNoControl));
+                OnPropertyChanged(nameof(HasIoInput));
+            }
+        }
+    }
+
+
+    public bool HasIoControl
+    {
+        get { return HasIoOutput || HasIoInput; }
+    }
+
+    public bool HasNoControl
+    {
+        get { return (MotorControlVm == null) && !HasIoControl; }
+    }
+
+    public bool HasIoOutput
+    {
+        get { return IoOutputVm != null; }
+    }
+
+    public bool HasIoInput
+    {
+        get { return IoInputVm != null; }
+    }
+
+
+
     private void UpdateControlProfile()
     {
         var store = SelectedSlaveData;
         if (store == null)
         {
             MotorControlVm = null;
+            IoOutputVm = null;
+            IoInputVm = null;
+            _selectedPdoView = null;
+            PdoHexDumpVm.Attach(null);
             return;
         }
 
+        IPDOView pdoView = store.BaseProfile as IPDOView;
+        _selectedPdoView = pdoView;
+        PdoHexDumpVm.Attach(pdoView);
+
+        //모터 우선확인.
         var motor = store.BaseProfile as IMotorCommands;
-        if (motor == null)
+        if (motor != null)
         {
-            MotorControlVm = null;
+            if (MotorControlVm == null)
+                MotorControlVm = new MotorControlViewModel();
+
+            MotorControlVm.Attach(motor);
+            IoOutputVm = null;
+            IoInputVm = null;
             return;
         }
 
-        if (MotorControlVm == null)
-            MotorControlVm = new MotorControlViewModel();
+        //모터 아니면...
+        MotorControlVm = null;
 
-        MotorControlVm.Attach(motor);
+        if (pdoView == null)
+        {
+            IoOutputVm = null;
+            IoInputVm = null;
+            return;
+        }
 
-        PdoHexDumpVm.Attach(SelectedSlaveData != null ? (SelectedSlaveData.BaseProfile as IPDOView) : null);
+        int outBytes = pdoView.OutputSnapshot.Length;
+        int inBytes = pdoView.InputSnapshot.Length;
 
+        const int columns = 16;
+
+        if (outBytes > 0)
+        {
+            int bits = outBytes * 8;
+            if (IoOutputVm == null) IoOutputVm = new IOControlViewModel(bits, columns, "Outputs (RxPDO)", true);
+            else IoOutputVm.Reset(bits, columns);
+        }
+        else IoOutputVm = null;
+
+        if (inBytes > 0)
+        {
+            int bits = inBytes * 8;
+            if (IoInputVm == null) IoInputVm = new IOControlViewModel(bits, columns, "Inputs (TxPDO)", false);
+            else IoInputVm.Reset(bits, columns);
+        }
+
+        else IoInputVm = null;
+
+        IPDOAccess pdoAccess = store.BaseProfile as IPDOAccess;
+
+        // ... IoOutputVm / IoInputVm 생성/Reset 끝난 다음에
+
+        if (IoOutputVm != null)
+        {
+            IoOutputVm.Attach(pdoAccess);
+        }
+
+        // Input은 써야 하는 게 아니면 굳이 안 붙여도 됨(원하면 null로 detach)
+        if (IoInputVm != null)
+            IoInputVm.Attach(null);
+
+        //if (MotorControlVm == null)
+        //    MotorControlVm = new MotorControlViewModel();
+
+        //MotorControlVm.Attach(motor);
+
+        //PdoHexDumpVm.Attach(SelectedSlaveData != null ? (SelectedSlaveData.BaseProfile as IPDOView) : null);
 
     }
 
@@ -361,6 +475,16 @@ public partial class MainViewModel : ViewModelBase
             // MotorControl이 떠있을 때만 돌려도 되고, 항상 돌려도 됨
             if (MotorControlVm != null)
                 MotorControlVm.UiTick();
+
+            if (_selectedPdoView != null)
+            {
+                if (IoOutputVm != null)
+                    IoOutputVm.UpdateFromBytes(_selectedPdoView.OutputSnapshot.Span);
+
+                if (IoInputVm != null)
+                    IoInputVm.UpdateFromBytes(_selectedPdoView.InputSnapshot.Span);
+            }
+
         };
         _uiTimer.Start();
     }
