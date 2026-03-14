@@ -180,6 +180,8 @@ namespace SOEM_FrontEnd.Ethercat
 
         public void BindSdoHotRefs(SlaveStore slave)
         {
+            if (slave == null)
+                return;
 
             //Dic으로 구성된 데이터 구조라 RT에서 읽기가 안정적이지 않음.
             _sdo6060 = slave.TryGetSdo(0x6060, 0x00);
@@ -193,12 +195,12 @@ namespace SOEM_FrontEnd.Ethercat
         public bool TryResolve402()
         {
             _off6040cw = TryGetByteOffset(_rxMapTable, 0x6040, 0x00);
-            _off6041sw = TryGetByteOffset(_txMapTable, 0x6041, 0x00);
+            _off607Atp = TryGetByteOffset(_rxMapTable, 0x607A, 0x00);
 
             _off6041sw = TryGetByteOffset(_txMapTable, 0x6041, 0x00);
             _off6064ap = TryGetByteOffset(_txMapTable, 0x6064, 0x00);
 
-            return _off6040cw >= 0 && _off6041sw >= 0;
+            return _off6040cw >= 0 && _off607Atp >= 0 && _off6041sw >= 0;
         }
 
         private static int TryGetByteOffset(Dictionary<OdKey, PdoField> dict, ushort idx, byte sub)
@@ -251,24 +253,32 @@ namespace SOEM_FrontEnd.Ethercat
             return true;
         }
 
-        private bool TryQueueWriteU32(ushort index, uint value)
+        private static void MarkWritePending(SDOPoint point)
+        {
+            if (point == null)
+                return;
+
+            point.WriteStatus = SDOWriteStatus.Pending;
+            point.AbortCode = 0;
+            point.Error = null;
+        }
+
+        private bool TryQueueWriteU32(ushort index, uint value, SDOPoint point)
         {
             if (_sdoWorker == null)
                 return false;
+
+            if (point == null)
+                return false;
+
+            MarkWritePending(point);
 
             BinaryPrimitives.WriteUInt32LittleEndian(_u32WriteBuffer.AsSpan(0, 4), value);
             _sdoWorker.EnqueueWrite(_SlaveNo, index, 0x00, _u32WriteBuffer);
             return true;
         }
 
-        private bool TryQueueRead(ushort index, int maxLen)
-        {
-            if (_sdoWorker == null)
-                return false;
 
-            _sdoWorker.EnqueueRead(_SlaveNo, index, 0x00, maxLen);
-            return true;
-        }
 
         private static bool TryReadHotU32(SDOPoint point, out uint value)
         {
@@ -355,13 +365,17 @@ namespace SOEM_FrontEnd.Ethercat
         private bool _waitFaultClear;
         private int _faultResetHold;     // 안전용: 최대 몇 cycle까지만 1 유지 (예: 3)
 
+        private bool _haltActive;
+
         private volatile bool _reqMoveAbs;
         private volatile int _moveAbsTarget;
 
-        private MoveAbsState _moveAbsState = MoveAbsState.Idle;
+        private volatile bool _reqStop;
 
         private volatile bool _reqFaultReset;
         private volatile bool _reqEnable;
+
+        private MoveAbsState _moveAbsState = MoveAbsState.Idle;
 
         private enum MoveAbsState
         {
@@ -369,18 +383,12 @@ namespace SOEM_FrontEnd.Ethercat
 
             QueueWrite6081,
             WaitWrite6081,
-            QueueRead6081,
-            WaitRead6081,
 
             QueueWrite6083,
             WaitWrite6083,
-            QueueRead6083,
-            WaitRead6083,
 
             QueueWrite6084,
             WaitWrite6084,
-            QueueRead6084,
-            WaitRead6084,
 
             QueuePdoStart,
             WaitSetPointAck,
@@ -432,7 +440,8 @@ namespace SOEM_FrontEnd.Ethercat
             bool swOperationEnabled = HasSW(sw, StatusWordBit.OperationEnabled);
             bool swFault = HasSW(sw, StatusWordBit.Fault);
 
-            bool swSetPointAck = HasSW(sw, StatusWordBit.SetPointAcknowledge); // 네 enum 이름에 맞춰
+            bool swSetPointAck = HasSW(sw, StatusWordBit.SetPointAcknowledge); 
+
             bool swTargetReached = HasSW(sw, StatusWordBit.TargetReached);
 
             // 3) 다음 cycle에 보낼 Controlword 계산
@@ -483,7 +492,33 @@ namespace SOEM_FrontEnd.Ethercat
                 cw = ClearCW(cw, ControlWordBit.FaultReset);
             }
 
-            ProcessMoveAbsStateMachine(ref cw, swSetPointAck, swTargetReached, swFault);
+            // Stop 요청 처리
+            if (_reqStop)
+            {
+                _reqStop = false;
+
+                _reqMoveAbs = false;
+                _haltActive = true;
+
+                if (_moveAbsState != MoveAbsState.Idle)
+                {
+                    _moveAbsState = MoveAbsState.Idle;
+                }
+
+                cw = ClearCW(cw, ControlWordBit.NewSetPoint);
+            }
+
+            // 현재 Halt 상태 반영
+            if (_haltActive)
+            {
+                cw = SetCW(cw, ControlWordBit.Halt);
+            }
+            else
+            {
+                cw = ClearCW(cw, ControlWordBit.Halt);
+            }
+
+            ProcessMoveAbsStateMachine(ref cw, swSetPointAck, swTargetReached, swFault, swOperationEnabled);
 
             // 6) 최종 CW를 RxPDO(Output)에 기록
             if ((uint)_off6040cw + 2u > (uint)Output.Length)
@@ -525,9 +560,8 @@ namespace SOEM_FrontEnd.Ethercat
             // ===== 기존 CW에서 "유지해도 되는 비트"만 가져오기 =====
             // 여기 리스트는 네 프로젝트 정책에 따라 조절.
             // 보통 PP에서는 Relative/ChangeNow/Halt 정도는 유지해도 OK.
-            ushort keepMask = (ushort)(ControlWordBit.Relative | ControlWordBit.ChangeSetImmediately);
+            ushort keepMask = (ushort)(ControlWordBit.Relative | ControlWordBit.ChangeSetImmediately | ControlWordBit.Halt);
 
-            // keepMask |= CWMask(ControlWordBit.Halt); // 네 enum에 있으면(필요시)
 
             ushort cw = (ushort)(cwBase | (prevCw & keepMask));
 
@@ -538,7 +572,7 @@ namespace SOEM_FrontEnd.Ethercat
             return cw;
         }
 
-        private void ProcessMoveAbsStateMachine(ref ushort cw, bool swSetPointAck, bool swTargetReached, bool swFault)
+        private void ProcessMoveAbsStateMachine(ref ushort cw, bool swSetPointAck, bool swTargetReached, bool swFault, bool swOperationEnabled)
         {
             uint readValue;
 
@@ -574,7 +608,7 @@ namespace SOEM_FrontEnd.Ethercat
 
                 case MoveAbsState.QueueWrite6081:
                     {
-                        if (TryQueueWriteU32(0x6081, _profileVelocity) == false)
+                        if (TryQueueWriteU32(0x6081, _profileVelocity, _sdo6081) == false)
                         {
                             _moveAbsState = MoveAbsState.Fault;
                             break;
@@ -595,46 +629,13 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
-                        _moveAbsState = MoveAbsState.QueueRead6081;
-                        break;
-                    }
-
-                case MoveAbsState.QueueRead6081:
-                    {
-                        if (TryQueueRead(0x6081, 4) == false)
-                        {
-                            _moveAbsState = MoveAbsState.Fault;
-                            break;
-                        }
-
-                        _moveAbsState = MoveAbsState.WaitRead6081;
-                        break;
-                    }
-
-                case MoveAbsState.WaitRead6081:
-                    {
-                        if (_sdo6081.ReadStatus == SDOReadStatus.Pending || _sdo6081.ReadStatus == SDOReadStatus.None)
-                            break;
-
-                        if (_sdo6081.ReadStatus != SDOReadStatus.Ok)
-                        {
-                            _moveAbsState = MoveAbsState.Fault;
-                            break;
-                        }
-
-                        if (TryReadHotU32(_sdo6081, out readValue) == false || readValue != _profileVelocity)
-                        {
-                            _moveAbsState = MoveAbsState.Fault;
-                            break;
-                        }
-
                         _moveAbsState = MoveAbsState.QueueWrite6083;
                         break;
                     }
 
                 case MoveAbsState.QueueWrite6083:
                     {
-                        if (TryQueueWriteU32(0x6083, _profileAcceleration) == false)
+                        if (TryQueueWriteU32(0x6083, _profileAcceleration, _sdo6083) == false)
                         {
                             _moveAbsState = MoveAbsState.Fault;
                             break;
@@ -655,46 +656,15 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
-                        _moveAbsState = MoveAbsState.QueueRead6083;
-                        break;
-                    }
-
-                case MoveAbsState.QueueRead6083:
-                    {
-                        if (TryQueueRead(0x6083, 4) == false)
-                        {
-                            _moveAbsState = MoveAbsState.Fault;
-                            break;
-                        }
-
-                        _moveAbsState = MoveAbsState.WaitRead6083;
-                        break;
-                    }
-
-                case MoveAbsState.WaitRead6083:
-                    {
-                        if (_sdo6083.ReadStatus == SDOReadStatus.Pending || _sdo6083.ReadStatus == SDOReadStatus.None)
-                            break;
-
-                        if (_sdo6083.ReadStatus != SDOReadStatus.Ok)
-                        {
-                            _moveAbsState = MoveAbsState.Fault;
-                            break;
-                        }
-
-                        if (TryReadHotU32(_sdo6083, out readValue) == false || readValue != _profileAcceleration)
-                        {
-                            _moveAbsState = MoveAbsState.Fault;
-                            break;
-                        }
-
                         _moveAbsState = MoveAbsState.QueueWrite6084;
                         break;
                     }
 
+            
+
                 case MoveAbsState.QueueWrite6084:
                     {
-                        if (TryQueueWriteU32(0x6084, _profileDeceleration) == false)
+                        if (TryQueueWriteU32(0x6084, _profileDeceleration, _sdo6084) == false)
                         {
                             _moveAbsState = MoveAbsState.Fault;
                             break;
@@ -715,45 +685,23 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
-                        _moveAbsState = MoveAbsState.QueueRead6084;
-                        break;
-                    }
-
-                case MoveAbsState.QueueRead6084:
-                    {
-                        if (TryQueueRead(0x6084, 4) == false)
-                        {
-                            _moveAbsState = MoveAbsState.Fault;
-                            break;
-                        }
-
-                        _moveAbsState = MoveAbsState.WaitRead6084;
-                        break;
-                    }
-
-                case MoveAbsState.WaitRead6084:
-                    {
-                        if (_sdo6084.ReadStatus == SDOReadStatus.Pending || _sdo6084.ReadStatus == SDOReadStatus.None)
-                            break;
-
-                        if (_sdo6084.ReadStatus != SDOReadStatus.Ok)
-                        {
-                            _moveAbsState = MoveAbsState.Fault;
-                            break;
-                        }
-
-                        if (TryReadHotU32(_sdo6084, out readValue) == false || readValue != _profileDeceleration)
-                        {
-                            _moveAbsState = MoveAbsState.Fault;
-                            break;
-                        }
-
                         _moveAbsState = MoveAbsState.QueuePdoStart;
                         break;
                     }
 
                 case MoveAbsState.QueuePdoStart:
                     {
+                        if (swFault)
+                        {
+                            _moveAbsState = MoveAbsState.Fault;
+                            break;
+                        }
+
+                        if (swOperationEnabled == false)
+                        {
+                            break;
+                        }
+
                         if (_off607Atp < 0 || (uint)_off607Atp + 4u > (uint)Output.Length)
                         {
                             _moveAbsState = MoveAbsState.Fault;
@@ -763,6 +711,7 @@ namespace SOEM_FrontEnd.Ethercat
                         BinaryPrimitives.WriteInt32LittleEndian(Output.Slice(_off607Atp, 4), _moveAbsTarget);
 
                         cw = ClearCW(cw, ControlWordBit.Relative);
+                        cw = ClearCW(cw, ControlWordBit.Halt);
                         cw = SetCW(cw, ControlWordBit.NewSetPoint);
 
                         _moveAbsState = MoveAbsState.WaitSetPointAck;
@@ -830,12 +779,16 @@ namespace SOEM_FrontEnd.Ethercat
         //IMotorCommand 구현부.
         public bool MoveABS(int position)
         {
+            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+                return false;
+
             if (_moveAbsState != MoveAbsState.Idle)
                 return false;
 
             if (_reqMoveAbs)
                 return false;
 
+            _haltActive = false;   // Stop 상태 해제
             _moveAbsTarget = position;
             _reqMoveAbs = true;
             return true;
@@ -848,7 +801,8 @@ namespace SOEM_FrontEnd.Ethercat
 
         public bool Stop()
         {
-            throw new NotImplementedException();
+            _reqStop = true;
+            return true;
         }
 
         public bool JogPlus()

@@ -232,7 +232,7 @@ namespace SOEM_FrontEnd.Ethercat
 
             var key = new SDOKey(slaveNo, index, subIndex);
 
-            SafeUpdatePending(key, false);
+            //SafeUpdatePending(key, false); PDO 스레드가 접근할 수 있으니 Lock/Dic조회가 부담된다.
 
             // Write는 보통 coalesce 하지 않는게 안전(사용자 의도 순서 보존)
             _queue.Add(new SdoJob
@@ -255,7 +255,7 @@ namespace SOEM_FrontEnd.Ethercat
             var waiters = new List<TaskCompletionSource<bool>>();
             waiters.Add(tcs);
 
-            SafeUpdatePending(key, false);
+            //SafeUpdatePending(key, false); PDO 스레드가 접근할 수 있으니 Lock/Dic조회가 부담된다.
 
             _queue.Add(new SdoJob
             {
