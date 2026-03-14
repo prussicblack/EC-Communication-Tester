@@ -159,6 +159,8 @@ namespace SOEM_FrontEnd.Ethercat
 
             if (needEnqueue)
             {
+                SafeUpdatePending(key, true);
+
                 _queue.Add(new SdoJob   // 여기서만 실제 큐 증가
                 {
                     Op = SdoOp.Read,
@@ -209,6 +211,8 @@ namespace SOEM_FrontEnd.Ethercat
 
             if (needEnqueue)
             {
+                SafeUpdatePending(key, true);
+
                 _queue.Add(new SdoJob
                 {
                     Op = SdoOp.Read,
@@ -227,6 +231,8 @@ namespace SOEM_FrontEnd.Ethercat
             if (data == null) throw new ArgumentNullException(nameof(data));
 
             var key = new SDOKey(slaveNo, index, subIndex);
+
+            SafeUpdatePending(key, false);
 
             // Write는 보통 coalesce 하지 않는게 안전(사용자 의도 순서 보존)
             _queue.Add(new SdoJob
@@ -249,6 +255,8 @@ namespace SOEM_FrontEnd.Ethercat
             var waiters = new List<TaskCompletionSource<bool>>();
             waiters.Add(tcs);
 
+            SafeUpdatePending(key, false);
+
             _queue.Add(new SdoJob
             {
                 Op = SdoOp.Write,
@@ -261,6 +269,10 @@ namespace SOEM_FrontEnd.Ethercat
             return tcs.Task;
         }
 
+        private void SafeUpdatePending(SDOKey key, bool isRead)
+        {
+            _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdatePending(key, isRead);
+        }
 
         private void ThreadMain()
         {

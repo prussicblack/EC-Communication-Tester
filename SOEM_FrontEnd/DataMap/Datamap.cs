@@ -263,6 +263,7 @@ namespace SOEM_FrontEnd.DataMap
     public enum SDOReadStatus
     {
         None,
+        Pending,
         Ok,
         Abort,
         Timeout,
@@ -272,6 +273,7 @@ namespace SOEM_FrontEnd.DataMap
     public enum SDOWriteStatus
     {
         None,
+        Pending,
         Ok,
         Abort,
         Timeout,
@@ -571,6 +573,49 @@ namespace SOEM_FrontEnd.DataMap
                 ApplyPointToRowOnUIThread(p, row, isRead);
             }
         }
+
+        public void UpdatePending(SDOKey key, bool isRead)
+        {
+            SDOPoint p;
+            lock (_lock)
+            {
+                if (!_dic.TryGetValue(key, out p))
+                {
+                    p = new SDOPoint();
+                    _dic[key] = p;
+                }
+
+                _seq++;
+                p.Seq = _seq;
+                p.LastUpdateUtc = DateTime.UtcNow;
+                p.AbortCode = 0;
+                p.Error = null;
+
+                if (isRead == true)
+                {
+                    p.ReadStatus = SDOReadStatus.Pending;
+                }
+                else
+                {
+                    p.WriteStatus = SDOWriteStatus.Pending;
+                }
+            }
+
+            SDOFlatObject row;
+            _leafRowByKey.TryGetValue(key, out row);
+
+            Action<SDOKey, SDOPoint, SDOFlatObject> handler = PointUpdated;
+            if (handler != null)
+            {
+                handler(key, p, row);
+            }
+
+            if (row != null)
+            {
+                ApplyPointToRowOnUIThread(p, row, isRead);
+            }
+        }
+
 
         public IReadOnlyList<SDOKey> GetAllSDOKeyList()
         {

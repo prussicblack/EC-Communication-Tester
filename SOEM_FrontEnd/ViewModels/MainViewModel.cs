@@ -925,6 +925,7 @@ public partial class MainViewModel : ViewModelBase
 
         SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance);
         SdoWorker.Start();
+        StateMachine.AttachSdoWorker(SdoWorker);
 
         return;
 

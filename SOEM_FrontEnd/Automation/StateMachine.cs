@@ -43,6 +43,8 @@ namespace SOEM_FrontEnd.Automation
 
         private readonly ILogger _log;
 
+        private SDOSubWorker _sdoWorker;
+
 
         public StateMachine(EcClient EC)
         {
@@ -55,6 +57,24 @@ namespace SOEM_FrontEnd.Automation
 
         }
 
+        public void AttachSdoWorker(SDOSubWorker sdoWorker)
+        {
+            _sdoWorker = sdoWorker;
+
+            int count = Datamap.Instance.SlaveCount;
+            for (int i = 1; i < count; i++)
+            {
+                SlaveStore store = Datamap.Instance.GetSlave(i);
+                if (store == null)
+                    continue;
+
+                NormalMotorWithPPMode motor = store.BaseProfile as NormalMotorWithPPMode;
+                if (motor != null)
+                {
+                    motor.AttachSdoWorker(sdoWorker);
+                }
+            }
+        }
 
 
         public bool MoveToInit()
@@ -141,14 +161,19 @@ namespace SOEM_FrontEnd.Automation
 
                         if (is402 == true)
                         {
-                            NormalMotorWithPPMode ppmode =
-                                new NormalMotorWithPPMode(rxSize: outBytes, txSize: inBytes, i, _ECClient);
+                            NormalMotorWithPPMode ppmode = new NormalMotorWithPPMode(rxSize: outBytes, txSize: inBytes, i, _ECClient);
+                            
+                            if (_sdoWorker != null)
+                            {
+                                ppmode.AttachSdoWorker(_sdoWorker);
+                            }
+
+                                
                             ppmode.SetPdoMapping(rxAllMapList, txAllMapList);
                             store.BaseProfile = ppmode;
 
                             //Console.WriteLine($"Slave {i} - 402Drive Profile. PPMode Set");
                             _log.LogInformation("Slave {{i}} - 402Drive Profile. PPMode Set");
-
                         }
                         else
                         {
