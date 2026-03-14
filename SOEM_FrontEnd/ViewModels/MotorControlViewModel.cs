@@ -58,25 +58,25 @@ public partial class MotorControlViewModel : ViewModelBase
         set => SetProperty(ref _currentVelocity, value);
     }
 
-    private string _speedText = "1000";
-    public string SpeedText
+    private string _speed = "1000";
+    public string Speed
     {
-        get => _speedText;
-        set => SetProperty(ref _speedText, value);
+        get => _speed;
+        set => SetProperty(ref _speed, value);
     }
 
-    private string _accelTimeText = "100";
-    public string AccelTimeText
+    private string _accelText = "100";
+    public string AccelText
     {
-        get => _accelTimeText;
-        set => SetProperty(ref _accelTimeText, value);
+        get => _accelText;
+        set => SetProperty(ref _accelText, value);
     }
 
-    private string _decelTimeText = "100";
-    public string DecelTimeText
+    private string _decelText = "100";
+    public string DecelText
     {
-        get => _decelTimeText;
-        set => SetProperty(ref _decelTimeText, value);
+        get => _decelText;
+        set => SetProperty(ref _decelText, value);
     }
 
     private string _incDistanceText = "100";
@@ -119,6 +119,8 @@ public partial class MotorControlViewModel : ViewModelBase
     public ICommand CmdStartRepeat { get; }
     public ICommand CmdStopRepeat { get; }
 
+    public ICommand CmdMoveStop { get; }
+
     public MotorControlViewModel()
     {
         // NOTE:
@@ -135,11 +137,15 @@ public partial class MotorControlViewModel : ViewModelBase
         CmdHome = new RelayCommand(DoHome);
 
         CmdMoveAbs = new RelayCommand(DoMoveAbs);
+
+        CmdMoveStop = new RelayCommand(DoMoveStop);
+
         CmdMoveToStart = new RelayCommand(DoMoveToStart);
         CmdMoveToEnd = new RelayCommand(DoMoveToEnd);
 
         CmdStartRepeat = new RelayCommand(() => { /* TODO */ });
         CmdStopRepeat = new RelayCommand(() => { /* TODO */ });
+
     }
 
     public void UiTick()
@@ -263,6 +269,20 @@ public partial class MotorControlViewModel : ViewModelBase
         RefreshFromMotor();
     }
 
+    private void DoMoveStop()
+    {
+        if (_motor == null)
+        {
+            IsInPosition = true;
+            return;
+        }
+
+        _motor.Stop();
+        RefreshFromMotor();
+
+
+    }
+
     private void DoMoveAbs()
     {
         if (!int.TryParse(AbsPositionText, out var pos))
@@ -274,6 +294,8 @@ public partial class MotorControlViewModel : ViewModelBase
             IsInPosition = true;
             return;
         }
+
+        _motor.SetProfile(uint.Parse(Speed) , uint.Parse(AccelText), uint.Parse(DecelText));
 
         _motor.MoveABS(pos);
         RefreshFromMotor();
@@ -291,6 +313,8 @@ public partial class MotorControlViewModel : ViewModelBase
             return;
         }
 
+        _motor.SetProfile(uint.Parse(Speed), uint.Parse(AccelText), uint.Parse(DecelText));
+
         _motor.MoveABS(pos);
         RefreshFromMotor();
     }
@@ -306,6 +330,8 @@ public partial class MotorControlViewModel : ViewModelBase
             IsInPosition = true;
             return;
         }
+
+        _motor.SetProfile(uint.Parse(Speed), uint.Parse(AccelText), uint.Parse(DecelText));
 
         _motor.MoveABS(pos);
         RefreshFromMotor();

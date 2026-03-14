@@ -116,7 +116,7 @@
 						<StackPanel Orientation="Horizontal" Spacing="5">
 							<TextBlock Width="70" Text="Speed"/>
 							<TextBox Width="110" Height="28"
-									 Text="{Binding SpeedText, UpdateSourceTrigger=PropertyChanged}"
+									 Text="{Binding Speed, UpdateSourceTrigger=PropertyChanged}"
 									 HorizontalContentAlignment="Right"/>
 							<TextBlock Text="pls"/>
 						</StackPanel>
@@ -124,7 +124,7 @@
 						<StackPanel Orientation="Horizontal" Spacing="5">
 							<TextBlock Width="70" Text="Acc"/>
 							<TextBox Width="110" Height="26"
-									 Text="{Binding AccelTimeText}"
+									 Text="{Binding AccelText}"
 									 HorizontalContentAlignment="Right"/>
 							<!--<TextBlock Text="ms"/>-->
 						</StackPanel>
@@ -132,7 +132,7 @@
 						<StackPanel Orientation="Horizontal" Spacing="5">
 							<TextBlock Width="70" Text="Dec"/>
 							<TextBox Width="110" Height="26"
-									 Text="{Binding DecelTimeText, UpdateSourceTrigger=PropertyChanged}"
+									 Text="{Binding DecelText, UpdateSourceTrigger=PropertyChanged}"
 									 HorizontalContentAlignment="Right"/>
 							<!--<TextBlock Text="ms"/>-->
 						</StackPanel>
@@ -193,11 +193,19 @@
 							<Button Content="Servo OFF" Command="{Binding CmdServoOff}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 							<Button Content="Alarm Clear" Foreground="Red" Command="{Binding CmdAlarmClear}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 							<Button Content="HOME" Command="{Binding CmdHome}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-							<Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-							<Button Height="32" Content="" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
-							<Button Height="32" Content="Move Start Pos" Command="{Binding CmdMoveToStart}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-							<Button Height="32" Content="Move End Pos" Command="{Binding CmdMoveToEnd}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-							<Button Height="32" Content="Repeat" Command="{Binding CmdStartRepeat}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<!--<Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>-->
+                            <Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+                            <Button Height="32" Content="STOP" Command="{Binding CmdMoveStop}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
+							<!--<Button Height="32" Content="Move Start Pos" Command="{Binding CmdMoveToStart}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>-->
+							<!--<Button Height="32" Content="Move End Pos" Command="{Binding CmdMoveToEnd}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>-->
+							<!--<Button Height="32" Content="Repeat" Command="{Binding CmdStartRepeat}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>-->
+
+							<Button Height="32" Content="Move Start Pos" Command="{Binding CmdMoveToStart}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                            <Button Height="32" Content="Move End Pos" Command="{Binding CmdMoveToEnd}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                            <Button Height="32" Content="Repeat" Command="{Binding CmdStartRepeat}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+
 							<Button Height="32" Content="Repeat Stop" Command="{Binding CmdStopRepeat}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 							<Border Margin="0,3,0,0" Padding="4" CornerRadius="3"/>
 						</UniformGrid>
