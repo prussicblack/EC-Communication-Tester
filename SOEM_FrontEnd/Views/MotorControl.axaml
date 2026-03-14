@@ -178,8 +178,8 @@
 
 						<!--조그버튼에 떼면 정지하는 로직 있어야됨. 누르고 있는동안에만 이동할것.-->
 						<UniformGrid Grid.Row="0" Columns="2">
-							<Button Content="◀ JOG-" Command="{Binding CmdMoveIncMinus}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-							<Button Content="+JOG ▶" Command="{Binding CmdMoveIncPlus}"  VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Content="◀ JOG-" Command="{Binding CmdMoveJogMinus}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<Button Content="+JOG ▶" Command="{Binding CmdMoveJogPlus}"  VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 						</UniformGrid>
 
 						<UniformGrid Grid.Row="1" Columns="2">

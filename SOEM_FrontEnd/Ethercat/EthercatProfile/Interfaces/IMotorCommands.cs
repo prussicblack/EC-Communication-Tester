@@ -18,9 +18,10 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
 
         bool Stop();
 
+        bool QuickStop();
+
         bool JogPlus();
         bool JogMinus();
-        bool JogStop();
 
         bool AlarmClear();
         bool ServoOn();
@@ -31,6 +32,8 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
         //int AxisID { get; }
         bool IsServoOn { get; }
 
+        bool IsInPosition { get; }
+        
         bool IsHome { get; }
 
         bool IsError { get; }

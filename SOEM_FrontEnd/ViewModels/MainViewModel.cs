@@ -258,7 +258,7 @@ public partial class MainViewModel : ViewModelBase
 
     public bool HasNoControl
     {
-        get { return (MotorControlVm == null) && !HasIoControl; }
+        get { return IsSlaveSelected && (MotorControlVm == null) && !HasIoControl; }
     }
 
     public bool HasIoOutput

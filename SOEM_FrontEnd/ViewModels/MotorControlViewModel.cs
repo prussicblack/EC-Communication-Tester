@@ -120,6 +120,9 @@ public partial class MotorControlViewModel : ViewModelBase
     public ICommand CmdStopRepeat { get; }
 
     public ICommand CmdMoveStop { get; }
+    
+    public ICommand CmdMoveJogMinus { get; }
+    public ICommand CmdMoveJogPlus { get; }
 
     public MotorControlViewModel()
     {
@@ -143,6 +146,9 @@ public partial class MotorControlViewModel : ViewModelBase
         CmdMoveToStart = new RelayCommand(DoMoveToStart);
         CmdMoveToEnd = new RelayCommand(DoMoveToEnd);
 
+        CmdMoveJogMinus = new RelayCommand(DoMoveJogMinus);
+        CmdMoveJogPlus = new RelayCommand(DoMoveJogPlus);
+
         CmdStartRepeat = new RelayCommand(() => { /* TODO */ });
         CmdStopRepeat = new RelayCommand(() => { /* TODO */ });
 
@@ -154,10 +160,10 @@ public partial class MotorControlViewModel : ViewModelBase
         if (_motor == null) return;
 
         CurrentPosition = _motor.ActualPosition;
-        //IsServoOn = _motor.IsServoOn;
-        //HasError = _motor.IsError;
+        IsServoOn = _motor.IsServoOn;
+        HasError = _motor.IsError;
         //IsHomed = _motor.IsHome;
-        //IsInPosition = _motor.IsInPosition;
+        IsInPosition = _motor.IsInPosition;
 
 
     }
@@ -249,6 +255,8 @@ public partial class MotorControlViewModel : ViewModelBase
             return;
         }
 
+        _motor.SetProfile(uint.Parse(Speed), uint.Parse(AccelText), uint.Parse(DecelText));
+
         _motor.MoveINC(-inc);
         RefreshFromMotor();
     }
@@ -264,11 +272,42 @@ public partial class MotorControlViewModel : ViewModelBase
             IsInPosition = true;
             return;
         }
+        
+        _motor.SetProfile(uint.Parse(Speed), uint.Parse(AccelText), uint.Parse(DecelText));
 
         _motor.MoveINC(inc);
         RefreshFromMotor();
     }
 
+
+    private void DoMoveJogPlus()
+    {
+        if (_motor == null)
+        {
+            return;
+        }
+
+        _motor.SetProfile(uint.Parse(Speed), uint.Parse(AccelText), uint.Parse(DecelText));
+
+        _motor.JogPlus();
+        RefreshFromMotor();
+    }
+
+    private void DoMoveJogMinus()
+    {
+        if (_motor == null)
+        {
+            return;
+        }
+
+        _motor.SetProfile(uint.Parse(Speed), uint.Parse(AccelText), uint.Parse(DecelText));
+
+        _motor.JogMinus();
+        RefreshFromMotor();
+    }
+    
+    
+    
     private void DoMoveStop()
     {
         if (_motor == null)

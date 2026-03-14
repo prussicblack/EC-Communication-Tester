@@ -71,11 +71,13 @@ namespace SOEM_FrontEnd.Ethercat
         //IMotorCommands 구현부.
         //public int AxisID => throw new NotImplementedException();
 
-        public bool IsServoOn => getIsServoOn();
+        public bool IsServoOn => _isServoOn;
 
-        public bool IsHome { get; private set; }
+        public bool IsHome => false;
 
-        public bool IsError => throw new NotImplementedException();
+        public bool IsError => _isError;
+
+        public bool IsInPosition => _isTargetReached;
 
         public int ActualPosition => getActualPosition();
 
@@ -86,10 +88,6 @@ namespace SOEM_FrontEnd.Ethercat
             _profileDeceleration = deceleration;
         }
 
-        private bool getIsServoOn()
-        {
-            return false;
-        }
 
         private int getActualPosition()
         {
@@ -367,17 +365,25 @@ namespace SOEM_FrontEnd.Ethercat
 
         private bool _haltActive;
 
-        private volatile bool _reqMoveAbs;
-        private volatile int _moveAbsTarget;
+        private volatile bool _reqMove;
+        private volatile int _moveTarget;
 
         private volatile bool _reqStop;
 
         private volatile bool _reqFaultReset;
         private volatile bool _reqEnable;
+        private volatile bool _IsAbsMove;
 
-        private MoveAbsState _moveAbsState = MoveAbsState.Idle;
+        private MoveState _moveState = MoveState.Idle;
 
-        private enum MoveAbsState
+        private bool _isServoOn;
+        private bool _isError;
+        private bool _isTargetReached;
+        private bool _isSetPointAck;
+        private ushort _statusWordCache;
+
+
+        private enum MoveState
         {
             Idle = 0,
 
@@ -423,6 +429,9 @@ namespace SOEM_FrontEnd.Ethercat
             // Statusword 0x6041 (u16)
             ushort sw = BinaryPrimitives.ReadUInt16LittleEndian(Input.Slice(_off6041sw, 2));
 
+
+
+
             //기존 ControlWord.
             ushort prevCw = BinaryPrimitives.ReadUInt16LittleEndian(Output.Slice(_off6040cw, 2));
 
@@ -443,6 +452,11 @@ namespace SOEM_FrontEnd.Ethercat
             bool swSetPointAck = HasSW(sw, StatusWordBit.SetPointAcknowledge); 
 
             bool swTargetReached = HasSW(sw, StatusWordBit.TargetReached);
+
+            _isServoOn = swOperationEnabled && !swFault;
+            _isError = swFault;
+            _isSetPointAck = swSetPointAck;
+            _isTargetReached = swTargetReached;
 
             // 3) 다음 cycle에 보낼 Controlword 계산
             ushort cw = Base402Controlword(sw, prevCw, _reqEnable);
@@ -497,12 +511,12 @@ namespace SOEM_FrontEnd.Ethercat
             {
                 _reqStop = false;
 
-                _reqMoveAbs = false;
+                _reqMove = false;
                 _haltActive = true;
 
-                if (_moveAbsState != MoveAbsState.Idle)
+                if (_moveState != MoveState.Idle)
                 {
-                    _moveAbsState = MoveAbsState.Idle;
+                    _moveState = MoveState.Idle;
                 }
 
                 cw = ClearCW(cw, ControlWordBit.NewSetPoint);
@@ -576,124 +590,132 @@ namespace SOEM_FrontEnd.Ethercat
         {
             uint readValue;
 
-            if (swFault && _moveAbsState != MoveAbsState.Idle)
+            if (swFault && _moveState != MoveState.Idle)
             {
-                _moveAbsState = MoveAbsState.Fault;
+                _moveState = MoveState.Fault;
             }
 
-            switch (_moveAbsState)
+            switch (_moveState)
             {
-                case MoveAbsState.Idle:
+                case MoveState.Idle:
                     {
-                        if (_reqMoveAbs == false)
+                        if (_reqMove == false)
                             break;
 
-                        _reqMoveAbs = false;
+                        _reqMove = false;
 
                         if (_sdoWorker == null)
                         {
-                            _moveAbsState = MoveAbsState.Fault;
+                            _moveState = MoveState.Fault;
                             break;
                         }
 
                         if (_sdo6081 == null || _sdo6083 == null || _sdo6084 == null)
                         {
-                            _moveAbsState = MoveAbsState.Fault;
+                            _moveState = MoveState.Fault;
                             break;
                         }
 
-                        _moveAbsState = MoveAbsState.QueueWrite6081;
+                        if (_isServoOn == true & _isError == false)
+                        {
+                            _moveState = MoveState.QueueWrite6081;
+                        }
+                        else
+                        {
+                            _moveState = MoveState.Fault;
+                        }
+
                         break;
                     }
 
-                case MoveAbsState.QueueWrite6081:
+                case MoveState.QueueWrite6081:
                     {
                         if (TryQueueWriteU32(0x6081, _profileVelocity, _sdo6081) == false)
                         {
-                            _moveAbsState = MoveAbsState.Fault;
+                            _moveState = MoveState.Fault;
                             break;
                         }
 
-                        _moveAbsState = MoveAbsState.WaitWrite6081;
+                        _moveState = MoveState.WaitWrite6081;
                         break;
                     }
 
-                case MoveAbsState.WaitWrite6081:
+                case MoveState.WaitWrite6081:
                     {
                         if (_sdo6081.WriteStatus == SDOWriteStatus.Pending || _sdo6081.WriteStatus == SDOWriteStatus.None)
                             break;
 
                         if (_sdo6081.WriteStatus != SDOWriteStatus.Ok)
                         {
-                            _moveAbsState = MoveAbsState.Fault;
+                            _moveState = MoveState.Fault;
                             break;
                         }
 
-                        _moveAbsState = MoveAbsState.QueueWrite6083;
+                        _moveState = MoveState.QueueWrite6083;
                         break;
                     }
 
-                case MoveAbsState.QueueWrite6083:
+                case MoveState.QueueWrite6083:
                     {
                         if (TryQueueWriteU32(0x6083, _profileAcceleration, _sdo6083) == false)
                         {
-                            _moveAbsState = MoveAbsState.Fault;
+                            _moveState = MoveState.Fault;
                             break;
                         }
 
-                        _moveAbsState = MoveAbsState.WaitWrite6083;
+                        _moveState = MoveState.WaitWrite6083;
                         break;
                     }
 
-                case MoveAbsState.WaitWrite6083:
+                case MoveState.WaitWrite6083:
                     {
                         if (_sdo6083.WriteStatus == SDOWriteStatus.Pending || _sdo6083.WriteStatus == SDOWriteStatus.None)
                             break;
 
                         if (_sdo6083.WriteStatus != SDOWriteStatus.Ok)
                         {
-                            _moveAbsState = MoveAbsState.Fault;
+                            _moveState = MoveState.Fault;
                             break;
                         }
 
-                        _moveAbsState = MoveAbsState.QueueWrite6084;
+                        _moveState = MoveState.QueueWrite6084;
                         break;
                     }
 
             
 
-                case MoveAbsState.QueueWrite6084:
+                case MoveState.QueueWrite6084:
                     {
                         if (TryQueueWriteU32(0x6084, _profileDeceleration, _sdo6084) == false)
                         {
-                            _moveAbsState = MoveAbsState.Fault;
+                            _moveState = MoveState.Fault;
                             break;
                         }
 
-                        _moveAbsState = MoveAbsState.WaitWrite6084;
+                        _moveState = MoveState.WaitWrite6084;
                         break;
                     }
 
-                case MoveAbsState.WaitWrite6084:
+                case MoveState.WaitWrite6084:
                     {
                         if (_sdo6084.WriteStatus == SDOWriteStatus.Pending || _sdo6084.WriteStatus == SDOWriteStatus.None)
                             break;
 
                         if (_sdo6084.WriteStatus != SDOWriteStatus.Ok)
                         {
-                            _moveAbsState = MoveAbsState.Fault;
+                            _moveState = MoveState.Fault;
                             break;
                         }
 
-                        _moveAbsState = MoveAbsState.QueuePdoStart;
+                        _moveState = MoveState.QueuePdoStart;
                         break;
                     }
 
-                case MoveAbsState.QueuePdoStart:
+                case MoveState.QueuePdoStart:
                     {
                         if (swFault)
                         {
-                            _moveAbsState = MoveAbsState.Fault;
+                            _moveState = MoveState.Fault;
                             break;
                         }
 
@@ -704,71 +726,105 @@ namespace SOEM_FrontEnd.Ethercat
 
                         if (_off607Atp < 0 || (uint)_off607Atp + 4u > (uint)Output.Length)
                         {
-                            _moveAbsState = MoveAbsState.Fault;
+                            _moveState = MoveState.Fault;
                             break;
                         }
 
-                        BinaryPrimitives.WriteInt32LittleEndian(Output.Slice(_off607Atp, 4), _moveAbsTarget);
+                        BinaryPrimitives.WriteInt32LittleEndian(Output.Slice(_off607Atp, 4), _moveTarget);
 
-                        cw = ClearCW(cw, ControlWordBit.Relative);
+                        if (_IsAbsMove == true)
+                        {
+                            cw = ClearCW(cw, ControlWordBit.Relative);
+                        }
+                        else
+                        {
+                            cw = SetCW(cw, ControlWordBit.Relative);
+                        }
+
                         cw = ClearCW(cw, ControlWordBit.Halt);
                         cw = SetCW(cw, ControlWordBit.NewSetPoint);
 
-                        _moveAbsState = MoveAbsState.WaitSetPointAck;
+                        _moveState = MoveState.WaitSetPointAck;
                         break;
                     }
 
-                case MoveAbsState.WaitSetPointAck:
+                case MoveState.WaitSetPointAck:
                     {
-                        cw = ClearCW(cw, ControlWordBit.Relative);
+
+                        if (_IsAbsMove == true)
+                        {
+                            cw = ClearCW(cw, ControlWordBit.Relative);
+                        }
+                        else
+                        {
+                            cw = SetCW(cw, ControlWordBit.Relative);
+                        }
                         cw = SetCW(cw, ControlWordBit.NewSetPoint);
 
                         if (swSetPointAck)
                         {
-                            _moveAbsState = MoveAbsState.WaitSetPointAckClear;
+                            _moveState = MoveState.WaitSetPointAckClear;
                         }
 
                         break;
                     }
 
-                case MoveAbsState.WaitSetPointAckClear:
+                case MoveState.WaitSetPointAckClear:
                     {
-                        cw = ClearCW(cw, ControlWordBit.Relative);
+
+                        if (_IsAbsMove == true)
+                        {
+                            cw = ClearCW(cw, ControlWordBit.Relative);
+                        }
+                        else
+                        {
+                            cw = SetCW(cw, ControlWordBit.Relative);
+                        }
+                        
                         cw = ClearCW(cw, ControlWordBit.NewSetPoint);
 
                         if (!swSetPointAck)
                         {
-                            _moveAbsState = MoveAbsState.WaitTargetReached;
+                            _moveState = MoveState.WaitTargetReached;
                         }
 
                         break;
                     }
 
-                case MoveAbsState.WaitTargetReached:
+                case MoveState.WaitTargetReached:
                     {
-                        cw = ClearCW(cw, ControlWordBit.Relative);
+
+                        if (_IsAbsMove == true)
+                        {
+                            cw = ClearCW(cw, ControlWordBit.Relative);
+                        }
+                        else
+                        {
+                            cw = SetCW(cw, ControlWordBit.Relative);
+                        }
+                        
                         cw = ClearCW(cw, ControlWordBit.NewSetPoint);
 
                         if (swTargetReached)
                         {
-                            _moveAbsState = MoveAbsState.Done;
+                            _moveState = MoveState.Done;
                         }
 
                         break;
                     }
 
-                case MoveAbsState.Done:
+                case MoveState.Done:
                     {
                         cw = ClearCW(cw, ControlWordBit.NewSetPoint);
-                        _moveAbsState = MoveAbsState.Idle;
+                        _moveState = MoveState.Idle;
                         break;
                     }
 
-                case MoveAbsState.Fault:
+                case MoveState.Fault:
                 default:
                     {
                         cw = ClearCW(cw, ControlWordBit.NewSetPoint);
-                        _moveAbsState = MoveAbsState.Idle;
+                        _moveState = MoveState.Idle;
                         break;
                     }
             }
@@ -782,21 +838,47 @@ namespace SOEM_FrontEnd.Ethercat
             if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
                 return false;
 
-            if (_moveAbsState != MoveAbsState.Idle)
+            if (_moveState != MoveState.Idle)
                 return false;
 
-            if (_reqMoveAbs)
+            if (_reqMove)
                 return false;
 
             _haltActive = false;   // Stop 상태 해제
-            _moveAbsTarget = position;
-            _reqMoveAbs = true;
+            _moveTarget = position;
+            _IsAbsMove = true;
+
+            //마지막에 위에것이 확정되었다는 의미로...
+            _reqMove = true;
+            
             return true;
         }
 
         public bool MoveINC(int position)
         {
-            throw new NotImplementedException();
+            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+                return false;
+
+            if (_moveState != MoveState.Idle)
+                return false;
+
+            if (_reqMove)
+                return false;
+
+            _haltActive = false;   // Stop 상태 해제
+            _moveTarget = position;
+            _IsAbsMove = false;
+
+            //마지막에 위에것이 확정되었다는 의미로...
+            _reqMove = true;
+
+            return true;
+        }
+
+        public bool QuickStop()
+        {
+            //나중에 빠른정지 추가.
+            return Stop();
         }
 
         public bool Stop()
@@ -816,8 +898,8 @@ namespace SOEM_FrontEnd.Ethercat
         }
 
         public bool JogStop()
-        {
-            throw new NotImplementedException();
+        { 
+            return Stop();
         }
 
         public bool AlarmClear()
@@ -828,8 +910,13 @@ namespace SOEM_FrontEnd.Ethercat
 
         public bool ServoOn()
         {
-            _reqEnable = true; 
+            if (_isError == true)
+            {
+                return false;
+            }
+            _reqEnable = true;
             return true;
+
         }
 
         public bool ServoOff()
