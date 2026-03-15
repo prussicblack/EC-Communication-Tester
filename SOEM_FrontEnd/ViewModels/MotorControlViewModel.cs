@@ -121,8 +121,8 @@ public partial class MotorControlViewModel : ViewModelBase
 
     public ICommand CmdMoveStop { get; }
     
-    public ICommand CmdMoveJogMinus { get; }
-    public ICommand CmdMoveJogPlus { get; }
+    //public ICommand CmdMoveJogMinus { get; }
+    //public ICommand CmdMoveJogPlus { get; }
 
     public MotorControlViewModel()
     {
@@ -146,8 +146,8 @@ public partial class MotorControlViewModel : ViewModelBase
         CmdMoveToStart = new RelayCommand(DoMoveToStart);
         CmdMoveToEnd = new RelayCommand(DoMoveToEnd);
 
-        CmdMoveJogMinus = new RelayCommand(DoMoveJogMinus);
-        CmdMoveJogPlus = new RelayCommand(DoMoveJogPlus);
+        //CmdMoveJogMinus = new RelayCommand(DoMoveJogMinus);
+        //CmdMoveJogPlus = new RelayCommand(DoMoveJogPlus);
 
         CmdStartRepeat = new RelayCommand(() => { /* TODO */ });
         CmdStopRepeat = new RelayCommand(() => { /* TODO */ });
@@ -280,7 +280,7 @@ public partial class MotorControlViewModel : ViewModelBase
     }
 
 
-    private void DoMoveJogPlus()
+    public void JogPlusPressed()
     {
         if (_motor == null)
         {
@@ -293,7 +293,7 @@ public partial class MotorControlViewModel : ViewModelBase
         RefreshFromMotor();
     }
 
-    private void DoMoveJogMinus()
+    public void JogMinusPressed()
     {
         if (_motor == null)
         {
@@ -305,9 +305,16 @@ public partial class MotorControlViewModel : ViewModelBase
         _motor.JogMinus();
         RefreshFromMotor();
     }
-    
-    
-    
+
+    public void JogReleased()
+    {
+        if (_motor == null)
+            return;
+
+        _motor.Stop();
+    }
+
+
     private void DoMoveStop()
     {
         if (_motor == null)

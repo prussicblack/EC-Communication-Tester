@@ -83,9 +83,15 @@ namespace SOEM_FrontEnd.Ethercat
 
         public void SetProfile(uint velocity, uint acceleration, uint deceleration)
         {
-            _profileVelocity = velocity;
-            _profileAcceleration = acceleration;
-            _profileDeceleration = deceleration;
+            if (_profileVelocity != velocity ||
+                _profileAcceleration != acceleration ||
+                _profileDeceleration != deceleration)
+            {
+                _profileVelocity = velocity;
+                _profileAcceleration = acceleration;
+                _profileDeceleration = deceleration;
+                _profileDirty = true;
+            }
         }
 
 
@@ -382,6 +388,16 @@ namespace SOEM_FrontEnd.Ethercat
         private bool _isSetPointAck;
         private ushort _statusWordCache;
 
+        //Jog용으로..
+        private volatile bool _jogActive;
+        private volatile int _jogDirection;   // +1 / -1
+        private int _jogStepPulse;
+
+        private volatile bool _profileDirty = true;
+        private uint _appliedProfileVelocity;
+        private uint _appliedProfileAcceleration;
+        private uint _appliedProfileDeceleration;
+
 
         private enum MoveState
         {
@@ -532,6 +548,23 @@ namespace SOEM_FrontEnd.Ethercat
                 cw = ClearCW(cw, ControlWordBit.Halt);
             }
 
+            // Jog 요청 처리
+            if (_jogActive)
+            {
+                if (_moveState == MoveState.Idle && _reqMove == false)
+                {
+                    int direction = _jogDirection;
+
+                    if (direction != 0)
+                    {
+                        _haltActive = false;
+                        _IsAbsMove = false;
+                        _moveTarget = direction > 0 ? _jogStepPulse : -_jogStepPulse;
+                        _reqMove = true;
+                    }
+                }
+            }
+
             ProcessMoveAbsStateMachine(ref cw, swSetPointAck, swTargetReached, swFault, swOperationEnabled);
 
             // 6) 최종 CW를 RxPDO(Output)에 기록
@@ -618,7 +651,10 @@ namespace SOEM_FrontEnd.Ethercat
 
                         if (_isServoOn == true & _isError == false)
                         {
-                            _moveState = MoveState.QueueWrite6081;
+                            if (_profileDirty)
+                                _moveState = MoveState.QueueWrite6081;
+                            else
+                                _moveState = MoveState.QueuePdoStart;
                         }
                         else
                         {
@@ -694,6 +730,7 @@ namespace SOEM_FrontEnd.Ethercat
 
                         _moveState = MoveState.WaitWrite6084;
                         break;
+                        
                     }
 
                 case MoveState.WaitWrite6084:
@@ -706,6 +743,11 @@ namespace SOEM_FrontEnd.Ethercat
                             _moveState = MoveState.Fault;
                             break;
                         }
+
+                        _appliedProfileVelocity = _profileVelocity;
+                        _appliedProfileAcceleration = _profileAcceleration;
+                        _appliedProfileDeceleration = _profileDeceleration;
+                        _profileDirty = false;
 
                         _moveState = MoveState.QueuePdoStart;
                         break;
@@ -739,6 +781,15 @@ namespace SOEM_FrontEnd.Ethercat
                         else
                         {
                             cw = SetCW(cw, ControlWordBit.Relative);
+                        }
+
+                        if (_jogActive)
+                        {
+                            cw = SetCW(cw, ControlWordBit.ChangeSetImmediately);
+                        }
+                        else
+                        {
+                            cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
                         }
 
                         cw = ClearCW(cw, ControlWordBit.Halt);
@@ -780,12 +831,28 @@ namespace SOEM_FrontEnd.Ethercat
                         {
                             cw = SetCW(cw, ControlWordBit.Relative);
                         }
-                        
+
+                        if (_jogActive)
+                        {
+                            cw = SetCW(cw, ControlWordBit.ChangeSetImmediately);
+                        }
+                        else
+                        {
+                            cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
+                        }
+
                         cw = ClearCW(cw, ControlWordBit.NewSetPoint);
 
                         if (!swSetPointAck)
                         {
-                            _moveState = MoveState.WaitTargetReached;
+                            if (_jogActive)
+                            {
+                                _moveState = MoveState.Done;
+                            }
+                            else
+                            {
+                                _moveState = MoveState.WaitTargetReached;
+                            }
                         }
 
                         break;
@@ -883,23 +950,59 @@ namespace SOEM_FrontEnd.Ethercat
 
         public bool Stop()
         {
+            //_reqStop = true;
+
+            _jogActive = false;
+            _jogDirection = 0;
             _reqStop = true;
             return true;
         }
 
         public bool JogPlus()
         {
-            throw new NotImplementedException();
+            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+                return false;
+
+            if (_isServoOn == false || _isError == true)
+                return false;
+
+            //stepPulse = speedPulsePerSec * (loopPeriodSec * leadLoopCount) 주의 발행주기가 8루프보단 길어야 되서 10으로 처리. 10/1000 은 10ms위치에 목적point발행.
+            _jogStepPulse = (int)(_profileVelocity * 10 / 1000);
+
+            if (_jogStepPulse < 1)
+                _jogStepPulse = 1;
+
+            _jogDirection = 1;
+            _jogActive = true;
+            _haltActive = false;
+            return true;
         }
 
         public bool JogMinus()
         {
-            throw new NotImplementedException();
+            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+                return false;
+
+            if (_isServoOn == false || _isError == true)
+                return false;
+
+            _jogStepPulse = (int)(_profileVelocity * 10 / 1000);
+
+            if (_jogStepPulse < 1)
+                _jogStepPulse = 1;
+
+            _jogDirection = -1;
+            _jogActive = true;
+            _haltActive = false;
+            return true;
         }
 
         public bool JogStop()
-        { 
-            return Stop();
+        {
+            _jogActive = false;
+            _jogDirection = 0;
+            _reqStop = true;
+            return true;
         }
 
         public bool AlarmClear()
@@ -921,7 +1024,9 @@ namespace SOEM_FrontEnd.Ethercat
 
         public bool ServoOff()
         {
-            _reqEnable = false; 
+            _jogActive = false;
+            _jogDirection = 0;
+            _reqEnable = false;
             return true;
         }
 
