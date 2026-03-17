@@ -443,6 +443,40 @@ namespace SOEM_FrontEnd.Automation
         }
 
 
+        //통계 수집부.
+        public void PollPdoStats()
+        {
+            if (worker == null)
+            {
+                return;
+            }
+
+            PdoRtStats stats = worker.GetStatsSnapshot();
+
+            string line =
+                $"[PDO] loop={stats.LoopCount} " +
+                $"dt(us) last={stats.LastDtUs:F1} min={stats.MinDtUs:F1} max={stats.MaxDtUs:F1} avg={stats.AvgDtUs:F1} " +
+                $" / jitter(us) last={stats.LastJitterUs:F1} min={stats.MinJitterUs:F1} max={stats.MaxJitterUs:F1} avgAbs={stats.AvgAbsJitterUs:F1} " +
+                $" / late={stats.LateCycleCount} " +
+                $" / send(last/min/max/err)={stats.LastSendRc}/{stats.MinSendRc}/{stats.MaxSendRc}/{stats.SendErrorCount} " +
+                $" / recv(last/min/max/err)={stats.LastReceiveRc}/{stats.MinReceiveRc}/{stats.MaxReceiveRc}/{stats.ReceiveErrorCount}";
+
+            _log.LogInformation(line);
+            
+        }
+
+        public void ResetStats()
+        {
+            if (worker == null)
+            {
+                return;
+            }
+            
+            worker.ResetStats();
+            
+        }
+
+
     }
 
 

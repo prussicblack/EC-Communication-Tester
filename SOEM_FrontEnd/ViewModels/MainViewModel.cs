@@ -409,6 +409,8 @@ public partial class MainViewModel : ViewModelBase
     public ICommand CMD_MoveToSafeOp { get; private set; }
     public ICommand CMD_MoveToOp { get; private set; }
 
+    public ICommand CMD_ResetStat { get; private set; }
+
 
     //UI단에 표기되는 로그.
     public ObservableCollection<string> UiLogs { get; } = new();
@@ -423,6 +425,7 @@ public partial class MainViewModel : ViewModelBase
     //UI갱신용 DispatcherTimer.
     private DispatcherTimer _uiTimer;
 
+    private DispatcherTimer _uiTimerLow;
 
     public MainViewModel()
     {
@@ -449,6 +452,8 @@ public partial class MainViewModel : ViewModelBase
         CMD_MoveToPreOp = new RelayCommand(HandleMoveToPreOp);
         CMD_MoveToSafeOp = new RelayCommand(HandleMoveToSafeOp);
         CMD_MoveToOp = new RelayCommand(HandleMoveToOp);
+
+        CMD_ResetStat = new RelayCommand(HandleResetStat);
 
         //UI로그 연결을 위한 코드.
         _sink = new AvaloniaUiLogSink(line =>
@@ -487,7 +492,22 @@ public partial class MainViewModel : ViewModelBase
 
         };
         _uiTimer.Start();
+
+        
+        //임시 로그타이머. 나중에 Automation으로 옮길것.
+        _uiTimerLow = new DispatcherTimer();
+        _uiTimerLow.Interval = TimeSpan.FromMilliseconds(1000); // 갱신주기. 1초
+        _uiTimerLow.Tick += (_, __) =>
+        {
+            StateMachine.PollPdoStats();
+
+        };
+        _uiTimerLow.Start();
+
     }
+
+
+
 
     public void Dispose()
     {
@@ -523,6 +543,11 @@ public partial class MainViewModel : ViewModelBase
     {
         StateMachine.MoveToInit();
 
+    }
+
+    private void HandleResetStat()
+    {
+        StateMachine.ResetStats();
     }
 
     private void HandleReadSelectedSDO()
@@ -1216,4 +1241,7 @@ public partial class MainViewModel : ViewModelBase
         _log.LogInformation($"TxMap Connect");
     }
 
+    
+    
+    
 }

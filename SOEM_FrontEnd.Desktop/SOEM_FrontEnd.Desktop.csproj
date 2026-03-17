@@ -5,10 +5,10 @@
     One for Windows with net8.0-windows TFM, one for MacOS with net8.0-macos and one with net8.0 TFM for Linux.-->
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>AnyCPU;x64</Platforms>
-    <PublishAot>False</PublishAot>
+    <PublishAot>True</PublishAot>
   </PropertyGroup>
 
   <ItemGroup>

@@ -100,7 +100,7 @@
                               </StackPanel>
                           </Border>
 
-
+                          <Button Grid.Row="3" Grid.Column="0" Content="Reset Stats" Command="{Binding CMD_ResetStat}"/>
 
                       </Grid>
                   </TabItem>
