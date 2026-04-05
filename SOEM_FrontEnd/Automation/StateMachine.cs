@@ -1,12 +1,14 @@
-﻿using SOEM_FrontEnd.DataMap;
+﻿using Avalonia.Media;
+using Microsoft.Extensions.Logging;
+using SOEM_FrontEnd.DataMap;
 using SOEM_FrontEnd.Ethercat;
 using SOEM_FrontEnd.Ethercat.EthercatProfile;
 using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
 using SOEM_FrontEnd.Model;
+using SOEM_FrontEnd.Util.Logging;
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using SOEM_FrontEnd.Util.Logging;
+using System.Threading;
 
 namespace SOEM_FrontEnd.Automation
 {
@@ -35,7 +37,6 @@ namespace SOEM_FrontEnd.Automation
 
     public sealed class StateMachine
     {
-        public eStateSequenceName m_eCurrentSequence = eStateSequenceName.None;
 
         private readonly EcClient _ECClient;
 
@@ -44,6 +45,54 @@ namespace SOEM_FrontEnd.Automation
         private readonly ILogger _log;
 
         private SDOSubWorker _sdoWorker;
+
+        private readonly object _stateLock = new object();
+
+        private Thread _automationThread;
+        private AutoResetEvent _automationSignal;
+        private bool _automationRunning;
+
+        private eStateSequenceName _targetSequence;
+
+
+        public eStateSequenceName m_eCurrentSequence = eStateSequenceName.None;
+
+        public event Action<eStateSequenceName> CurrentSequenceChanged;
+
+
+        public eStateSequenceName CurrentSequence
+        {
+            get
+            {
+                return m_eCurrentSequence;
+            }
+        }
+
+        public string CurrentSequenceText
+        {
+            get
+            {
+                switch (m_eCurrentSequence)
+                {
+                    case eStateSequenceName.Init:
+                        return "INIT";
+
+                    case eStateSequenceName.PreOp:
+                        return "PRE-OP";
+
+                    case eStateSequenceName.SafeOp:
+                        return "SAFE-OP";
+
+                    case eStateSequenceName.Op:
+                        return "OP";
+
+                    case eStateSequenceName.None:
+                    default:
+                        return "NONE";
+                }
+            }
+        }
+
 
 
         public StateMachine(EcClient EC)
@@ -55,7 +104,187 @@ namespace SOEM_FrontEnd.Automation
 
             m_eCurrentSequence = eStateSequenceName.Init;
 
+            _targetSequence = eStateSequenceName.Init;
+
+            StartAutomationThread();
+
         }
+
+        private void StartAutomationThread()
+        {
+            if (_automationThread != null && _automationThread.IsAlive)
+                return;
+
+            _automationSignal = new AutoResetEvent(false);
+            _automationRunning = true;
+
+            _automationThread = new Thread(AutomationThreadMain);
+            _automationThread.IsBackground = true;
+            _automationThread.Name = "Automation-StateMachine";
+            _automationThread.Start();
+        }
+
+        public void Shutdown()
+        {
+            _automationRunning = false;
+
+            if (_automationSignal != null)
+                _automationSignal.Set();
+
+            if (_automationThread != null && _automationThread.IsAlive)
+                _automationThread.Join(2000);
+
+            if (_automationSignal != null)
+            {
+                _automationSignal.Dispose();
+                _automationSignal = null;
+            }
+
+            _automationThread = null;
+        }
+
+        private bool RequestState(eStateSequenceName targetState)
+        {
+            lock (_stateLock)
+            {
+                _targetSequence = targetState;
+            }
+
+            if (_automationSignal != null)
+                _automationSignal.Set();
+
+            return true;
+        }
+
+        private void AutomationThreadMain()
+        {
+            while (_automationRunning)
+            {
+                _automationSignal.WaitOne();
+
+                if (_automationRunning == false)
+                    break;
+
+                while (_automationRunning)
+                {
+                    eStateSequenceName currentState = GetCurrentState();
+                    eStateSequenceName targetState = GetTargetState();
+
+                    if (currentState == targetState)
+                        break;
+
+                    bool ok = ExecuteNextStep(currentState, targetState);
+                    if (ok == false)
+                    {
+                        _log.LogWarning("Automation transition failed. Current={Current}, Target={Target}", currentState, targetState);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private eStateSequenceName GetCurrentState()
+        {
+            lock (_stateLock)
+            {
+                return m_eCurrentSequence;
+            }
+        }
+
+        private eStateSequenceName GetTargetState()
+        {
+            lock (_stateLock)
+            {
+                return _targetSequence;
+            }
+        }
+
+        private void SetCurrentState(eStateSequenceName state)
+        {
+            bool changed = false;
+
+            lock (_stateLock)
+            {
+                if (m_eCurrentSequence != state)
+                {
+                    m_eCurrentSequence = state;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                Action<eStateSequenceName> handler = CurrentSequenceChanged;
+                if (handler != null)
+                    handler(state);
+            }
+        }
+
+        private bool ExecuteNextStep(eStateSequenceName currentState, eStateSequenceName targetState)
+        {
+            switch (currentState)
+            {
+                case eStateSequenceName.Init:
+                    switch (targetState)
+                    {
+                        case eStateSequenceName.Init:
+                            return true;
+
+                        case eStateSequenceName.PreOp:
+                        case eStateSequenceName.SafeOp:
+                        case eStateSequenceName.Op:
+                            return MoveToPreOPCore();
+                    }
+                    break;
+
+                case eStateSequenceName.PreOp:
+                    switch (targetState)
+                    {
+                        case eStateSequenceName.Init:
+                            return MoveToInitCore();
+
+                        case eStateSequenceName.PreOp:
+                            return true;
+
+                        case eStateSequenceName.SafeOp:
+                        case eStateSequenceName.Op:
+                            return MoveToSafeOPCore();
+                    }
+                    break;
+
+                case eStateSequenceName.SafeOp:
+                    switch (targetState)
+                    {
+                        case eStateSequenceName.Init:
+                        case eStateSequenceName.PreOp:
+                            return MoveToPreOPCore();
+
+                        case eStateSequenceName.SafeOp:
+                            return true;
+
+                        case eStateSequenceName.Op:
+                            return MoveToOperateCore();
+                    }
+                    break;
+
+                case eStateSequenceName.Op:
+                    switch (targetState)
+                    {
+                        case eStateSequenceName.Init:
+                        case eStateSequenceName.PreOp:
+                        case eStateSequenceName.SafeOp:
+                            return MoveToSafeOPCore();
+
+                        case eStateSequenceName.Op:
+                            return true;
+                    }
+                    break;
+            }
+
+            return false;
+        }
+
+
 
         public void AttachSdoWorker(SDOSubWorker sdoWorker)
         {
@@ -76,8 +305,28 @@ namespace SOEM_FrontEnd.Automation
             }
         }
 
-
         public bool MoveToInit()
+        {
+            return RequestState(eStateSequenceName.Init);
+        }
+
+        public bool MoveToPreOP()
+        {
+            return RequestState(eStateSequenceName.PreOp);
+        }
+
+        public bool MoveToSafeOP()
+        {
+            return RequestState(eStateSequenceName.SafeOp);
+        }
+
+        public bool MoveToOperate()
+        {
+            return RequestState(eStateSequenceName.Op);
+        }
+
+
+        private bool MoveToInitCore()
         {
             bool ret = _ECClient.EnsureState(EcClient.EC_STATE_INIT, 2000);
 
@@ -86,14 +335,16 @@ namespace SOEM_FrontEnd.Automation
                 return false;
             }
 
-            m_eCurrentSequence = eStateSequenceName.Init;
+            SetCurrentState(eStateSequenceName.Init);
+
+            _log.LogInformation("Device init Mode OK");
 
             return true;
 
         }
 
 
-        public bool MoveToPreOP()
+        private bool MoveToPreOPCore()
         {
             bool ret = _ECClient.EnsureState(EcClient.EC_STATE_PRE_OP, 2000);
 
@@ -105,12 +356,15 @@ namespace SOEM_FrontEnd.Automation
             //새로운 매핑 필요하면 여기서 진행되어야 함.
 
 
-            m_eCurrentSequence = eStateSequenceName.PreOp;
+            SetCurrentState(eStateSequenceName.PreOp);
+
+            _log.LogInformation("Device PreOP OK");
+
 
             return true; 
         }
 
-        public bool MoveToSafeOP()
+        private bool MoveToSafeOPCore()
         {
             bool ret;
 
@@ -223,12 +477,12 @@ namespace SOEM_FrontEnd.Automation
             }
 
             _log.LogInformation($"EnsureSafeOp Success");
-            m_eCurrentSequence = eStateSequenceName.SafeOp;
+            SetCurrentState(eStateSequenceName.SafeOp);
 
             return true;
         }
 
-        public bool MoveToOperate()
+        private bool MoveToOperateCore()
         {
 
             try
@@ -292,11 +546,13 @@ namespace SOEM_FrontEnd.Automation
                     return false;
                 }
 
-                m_eCurrentSequence = eStateSequenceName.Op;
-                
+                SetCurrentState(eStateSequenceName.Op);
+
 
                 //Worker시작.
                 worker.Start();
+                
+                return true;
 
             }
 
@@ -321,8 +577,37 @@ namespace SOEM_FrontEnd.Automation
                 throw; // 디버깅 끝나면 다시 던지거나, 여기서만 처리
             }
 
-            return true;
         }
+
+        private SDOPoint ReadPointByWorker(ushort slave, ushort index, byte subIndex, int maxLen = 64)
+        {
+            if (_sdoWorker == null)
+                return null;
+
+            bool ok = _sdoWorker.EnqueueReadAsync(slave, index, subIndex, maxLen)
+                .GetAwaiter()
+                .GetResult();
+
+            if (ok == false)
+                return null;
+
+            SlaveStore slaveStore = Datamap.Instance.GetSlave(slave);
+            if (slaveStore == null)
+                return null;
+
+            SDOPoint point = slaveStore.TryGetSdo(index, subIndex);
+            if (point == null)
+                return null;
+
+            if (point.ReadStatus != SDOReadStatus.Ok)
+                return null;
+
+            if (point.LastRaw == null)
+                return null;
+
+            return point;
+        }
+
 
 
         private bool DriveProfile402Check(ushort slave, out List<uint> txAllMapList, out List<uint> rxAllMapList)
@@ -344,15 +629,16 @@ namespace SOEM_FrontEnd.Automation
             txAllMapList = new List<uint>();
             rxAllMapList = new List<uint>();
 
+            //수정 포인트!! SDO 여기서 직접 읽어오지 말것. SDO Worker거쳐서 읽어오는게 맞을거 같아.
+            //int rxmapcount = _ECClient.SdoReadI8(slave, 0x1C12, 0); //0번 서브인덱스, 총 엔트리 갯수.
 
-            int rxmapcount = _ECClient.SdoReadI8(slave, 0x1C12, 0); //0번 서브인덱스, 총 엔트리 갯수.
-
+            SDOPoint point = ReadPointByWorker(slave, 0x1C12, 0x00, 1);
+            if (point == null)
+                return false;
+            int rxmapcount = point.LastRaw[0];
             if (rxmapcount <= 0)
-            {
-                rxmapcount = _ECClient.SdoReadU16(slave, 0x1C12, 0); //설마 이걸 쓰진 않겠지..-0-
-                if (rxmapcount == 0) 
-                    return false;
-            }
+                return false;
+
 
             List<ushort> rxentrylist = new List<ushort>();
 
@@ -360,70 +646,92 @@ namespace SOEM_FrontEnd.Automation
 
             for (int i = 1; i <= rxmapcount; i++)
             {
-                ushort listelement = _ECClient.SdoReadU16(slave, 0x1c12, (byte)i);
-                rxentrylist.Add(listelement);
-            }
+                SDOPoint entryPoint = ReadPointByWorker(slave, 0x1C12, (byte)i, 2);
+                if (entryPoint == null || entryPoint.LastRaw.Length < 2)
+                    return false;
 
-            if (rxentrylist.Count <= 0 )
-                return false;
+                ushort listElement = (ushort)(entryPoint.LastRaw[0] | (entryPoint.LastRaw[1] << 8));
+                rxentrylist.Add(listElement);
+            }
 
 
             for (int i = 0; i < rxentrylist.Count; i++)
             {
-                ushort elementcount = _ECClient.SdoReadU8(slave, rxentrylist[i], 0);
+                SDOPoint mapCountPoint = ReadPointByWorker(slave, rxentrylist[i], 0x00, 1);
+                if (mapCountPoint == null)
+                    return false;
 
-                for (byte j = 1; j <= elementcount; j++)
+                int elementCount = mapCountPoint.LastRaw[0];
+
+                for (byte j = 1; j <= elementCount; j++)
                 {
-                    uint map = _ECClient.SdoReadU32(slave, rxentrylist[i], j);
-                    rxallmap.Add(map);
+                    SDOPoint mapPoint = ReadPointByWorker(slave, rxentrylist[i], j, 4);
+                    if (mapPoint == null || mapPoint.LastRaw.Length < 4)
+                        return false;
+
+                    uint map = (uint)(
+                        mapPoint.LastRaw[0] |
+                        (mapPoint.LastRaw[1] << 8) |
+                        (mapPoint.LastRaw[2] << 16) |
+                        (mapPoint.LastRaw[3] << 24));
+
+                    rxAllMapList.Add(map);
                 }
             }
+            //0번 서브인덱스, 총 엔트리 갯수.
+            SDOPoint txCountPoint = ReadPointByWorker(slave, 0x1C13, 0x00, 1);
+            if (txCountPoint == null)
+                return false;
 
-            int txmapcount = _ECClient.SdoReadI8(slave, 0x1C13, 0); //0번 서브인덱스, 총 엔트리 갯수.
-
+            int txmapcount = txCountPoint.LastRaw[0];
             if (txmapcount <= 0)
-            {
-                txmapcount = _ECClient.SdoReadU16(slave, 0x1C13, 0); //설마 이걸 쓰진 않겠지..-0-
-                if (txmapcount == 0)
-                    return false;
-            }
+                return false;
 
             List<ushort> txentrylist = new List<ushort>();
-
-            List<uint> txallmap = new List<uint>();
+            
 
             for (int i = 1; i <= txmapcount; i++)
             {
-                ushort listelement = _ECClient.SdoReadU16(slave, 0x1c13,(byte)i);
-                txentrylist.Add(listelement);
+                SDOPoint entryPoint = ReadPointByWorker(slave, 0x1C13, (byte)i, 2);
+                if (entryPoint == null || entryPoint.LastRaw.Length < 2)
+                    return false;
+
+                ushort listElement = (ushort)(entryPoint.LastRaw[0] | (entryPoint.LastRaw[1] << 8));
+                txentrylist.Add(listElement);
             }
-
-
-            if (txentrylist.Count <= 0 )
-                return false;
 
             for (int i = 0; i < txentrylist.Count; i++)
             {
-                ushort elementcount = _ECClient.SdoReadU8(slave, txentrylist[i], 0);
+                SDOPoint mapCountPoint = ReadPointByWorker(slave, txentrylist[i], 0x00, 1);
+                if (mapCountPoint == null)
+                    return false;
 
-                for (byte j = 1; j <= elementcount; j++)
+                int elementCount = mapCountPoint.LastRaw[0];
+
+                for (byte j = 1; j <= elementCount; j++)
                 {
-                    uint map = _ECClient.SdoReadU32(slave, txentrylist[i], j);
-                    txallmap.Add(map);
+                    SDOPoint mapPoint = ReadPointByWorker(slave, txentrylist[i], j, 4);
+                    if (mapPoint == null || mapPoint.LastRaw.Length < 4)
+                        return false;
+
+                    uint map = (uint)(
+                        mapPoint.LastRaw[0] |
+                        (mapPoint.LastRaw[1] << 8) |
+                        (mapPoint.LastRaw[2] << 16) |
+                        (mapPoint.LastRaw[3] << 24));
+
+                    txAllMapList.Add(map);
                 }
             }
 
 
 
             //allmap을 분해해서 클래스로 만들어서 넣을것.
-            bool has6040 = HasIndexSub(rxallmap, 0x6040, 0x00);
+            bool has6040 = HasIndexSub(rxAllMapList, 0x6040, 0x00);
 
-            bool has6041 = HasIndexSub(txallmap, 0x6041, 0x00);
+            bool has6041 = HasIndexSub(txAllMapList, 0x6041, 0x00);
 
             bool is402 = has6040 && has6041;
-
-            txAllMapList = txallmap;
-            rxAllMapList = rxallmap;
 
             return is402;
         }

@@ -402,6 +402,44 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
+    private string _MasterEcStateText = "NONE";
+    public string MasterEcStateText
+    {
+        get
+        {
+            return _MasterEcStateText;
+        }
+        set
+        {
+            if (_MasterEcStateText == value)
+                return;
+
+            _MasterEcStateText = value;
+            OnPropertyChanged(nameof(MasterEcStateText));
+        }
+    }
+
+    private string _MasterEcStateColor = "Gray";
+    public string MasterEcStateColor
+    {
+        get
+        {
+            return _MasterEcStateColor;
+        }
+        set
+        {
+            if (_MasterEcStateColor == value)
+                return;
+
+            _MasterEcStateColor = value;
+            OnPropertyChanged(nameof(MasterEcStateColor));
+        }
+    }
+    
+    
+
+
+
     public SDOSubWorker SdoWorker { get; private set; }
 
     public ICommand CMD_MoveToInit { get; private set; }
@@ -443,6 +481,8 @@ public partial class MainViewModel : ViewModelBase
 
         UpdateNicList();
 
+
+        
         CMD_ReadAllSdoCommand = new RelayCommand(HandleReadAllSDO);
         CMD_ReadSelectedSdoCommand = new RelayCommand(HandleReadSelectedSDO);
         CMD_WriteSelectedSdoCommand = new RelayCommand(HandleSelectedWriteSDO);
@@ -504,23 +544,73 @@ public partial class MainViewModel : ViewModelBase
         };
         _uiTimerLow.Start();
 
+        StateMachine.CurrentSequenceChanged += OnCurrentSequenceChanged;
+        UpdateMasterEcStateUi(StateMachine.CurrentSequence);
     }
-
-
 
 
     public void Dispose()
     {
         // 창 닫힐 때 sink 해제/정리
+        if (StateMachine != null)
+        {
+            StateMachine.CurrentSequenceChanged -= OnCurrentSequenceChanged;
+            StateMachine.Shutdown();
+        }
+
         OPLogger.SetUiSink(null);
         _sink.Dispose();
     }
 
+    private void UpdateMasterEcStateUi(eStateSequenceName state)
+    {
+        switch (state)
+        {
+            case eStateSequenceName.Init:
+                MasterEcStateText = "INIT";
+                MasterEcStateColor = "Gray";
+                break;
 
+            case eStateSequenceName.PreOp:
+                MasterEcStateText = "PRE-OP";
+                MasterEcStateColor = "DarkOrange";
+                break;
+
+            case eStateSequenceName.SafeOp:
+                MasterEcStateText = "SAFE-OP";
+                MasterEcStateColor = "Goldenrod";
+                break;
+
+            case eStateSequenceName.Op:
+                MasterEcStateText = "OP";
+                MasterEcStateColor = "LimeGreen";
+                break;
+
+            case eStateSequenceName.None:
+            default:
+                MasterEcStateText = "NONE";
+                MasterEcStateColor = "IndianRed";
+                break;
+        }
+    }
+
+
+    private void OnCurrentSequenceChanged(eStateSequenceName state)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            UpdateMasterEcStateUi(state);
+            OnPropertyChanged(nameof(SelectedSlaveData));
+            UpdateControlProfile();
+        });
+    }
 
     private void HandleMoveToOp()
     {
-        StateMachine.MoveToOperate();
+        bool ok = StateMachine.MoveToOperate();
+        if (!ok)
+            return;
+
     }
 
     private void HandleMoveToSafeOp()
@@ -529,6 +619,7 @@ public partial class MainViewModel : ViewModelBase
         if (!ok)
             return;
 
+        
         // BaseProfile들이 SafeOP 전환 과정에서 채워지므로, 선택된 Slave UI 갱신
         OnPropertyChanged(nameof(SelectedSlaveData));
         UpdateControlProfile();
@@ -536,12 +627,17 @@ public partial class MainViewModel : ViewModelBase
 
     private void HandleMoveToPreOp()
     {
-        StateMachine.MoveToPreOP();
+        bool ok = StateMachine.MoveToPreOP();
+        if (!ok)
+            return;
+
     }
 
     private void HandleMoveToInit()
     {
-        StateMachine.MoveToInit();
+        bool ok = StateMachine.MoveToInit();
+        if (!ok)
+            return;
 
     }
 

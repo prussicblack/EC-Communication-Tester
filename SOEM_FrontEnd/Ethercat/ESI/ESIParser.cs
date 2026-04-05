@@ -310,7 +310,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
         {
             var FlagsAccess = FlagsElement.Element("Access");
 
-            var WriteRestrictions = FlagsAccess.Attribute("WriteRestrictions");
+            var WriteRestrictions = FlagsAccess?.Attribute("WriteRestrictions");
 
             var FlagsCategory = FlagsElement.Element("Category");
             var FlagsPdoMapping = FlagsElement.Element("PdoMapping");
