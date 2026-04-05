@@ -113,6 +113,24 @@ namespace SOEM_FrontEnd.Ethercat
             _ECClient = ECClient;
         }
 
+        private bool WriteSdoByWorker(ushort index, byte subIndex, byte[] raw)
+        {
+            if (_sdoWorker == null)
+                return false;
+
+            if (_sdoWorker.IsRunning == false)
+                return false;
+
+            if (raw == null || raw.Length == 0)
+                return false;
+
+            bool ok = _sdoWorker.EnqueueWriteAsync(_SlaveNo, index, subIndex, raw)
+                .GetAwaiter()
+                .GetResult();
+
+            return ok;
+        }
+
 
         bool IEthercatStateTransition.PrepareSafeOp(int timeoutMs)
         {
@@ -127,7 +145,8 @@ namespace SOEM_FrontEnd.Ethercat
             //PP모드 전환 전 PP모드 변환.
             //_ECClient.SetModePP(_SlaveNo);
 
-            _ECClient.SdoWriteI8(_SlaveNo, 0x6060, 0x00, 1); //PPMode 1
+            //sdoworker로 변경.
+            //_ECClient.SdoWriteI8(_SlaveNo, 0x6060, 0x00, 1); //PPMode 1
 
             //초기 프로파일 입력.
             //외부에서 설정 가능하도록 처리할것.
@@ -142,6 +161,18 @@ namespace SOEM_FrontEnd.Ethercat
             //핫패스 생성.
             //SlaveStore가 Dic으로 저장되어있기 때문에, 매번 호출하게되면 Dic을 조회해서 찾게됨.
             //이 경우 시간이 오래걸리는 문제로 미리 주소를 찍어놓고 호출하게됨.
+
+            byte[] raw = new byte[1];
+            raw[0] = 1;
+
+            bool ok = WriteSdoByWorker(0x6060, 0x00, raw);
+            if (ok == false)
+                return false;
+
+            SlaveStore slaveStore = Datamap.Instance.GetSlave(_SlaveNo);
+            if (slaveStore == null)
+                return false;
+
             BindSdoHotRefs(Datamap.Instance.GetSlave(_SlaveNo));
 
             return true;

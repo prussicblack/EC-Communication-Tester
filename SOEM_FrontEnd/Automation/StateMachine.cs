@@ -68,31 +68,6 @@ namespace SOEM_FrontEnd.Automation
             }
         }
 
-        public string CurrentSequenceText
-        {
-            get
-            {
-                switch (m_eCurrentSequence)
-                {
-                    case eStateSequenceName.Init:
-                        return "INIT";
-
-                    case eStateSequenceName.PreOp:
-                        return "PRE-OP";
-
-                    case eStateSequenceName.SafeOp:
-                        return "SAFE-OP";
-
-                    case eStateSequenceName.Op:
-                        return "OP";
-
-                    case eStateSequenceName.None:
-                    default:
-                        return "NONE";
-                }
-            }
-        }
-
 
 
         public StateMachine(EcClient EC)
@@ -183,6 +158,40 @@ namespace SOEM_FrontEnd.Automation
             }
         }
 
+        private void DumpSlaveStates(string tag)
+        {
+            SOEMNative.soem_readstate();
+            int count = SOEMNative.soem_slave_count();
+
+            for (int i = 1; i <= count; i++)
+            {
+                ushort st = SOEMNative.soem_slave_state(i);
+                ushort al = SOEMNative.soem_slave_al_status(i);
+                _log.LogError($"{tag} - Slave {i}: state=0x{st:X}, AL=0x{al:X4}");
+            }
+        }
+
+
+        private void StopPdoWorker()
+        {
+            if (worker == null)
+                return;
+
+            try
+            {
+                worker.Stop();
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "PDO worker stop failed");
+            }
+            finally
+            {
+                worker = null;
+            }
+        }
+        
+
         private eStateSequenceName GetCurrentState()
         {
             lock (_stateLock)
@@ -222,6 +231,9 @@ namespace SOEM_FrontEnd.Automation
 
         private bool ExecuteNextStep(eStateSequenceName currentState, eStateSequenceName targetState)
         {
+            _log.LogInformation("ExecuteNextStep: Current={Current}, Target={Target}", currentState, targetState);
+
+
             switch (currentState)
             {
                 case eStateSequenceName.Init:
@@ -273,13 +285,16 @@ namespace SOEM_FrontEnd.Automation
                         case eStateSequenceName.Init:
                         case eStateSequenceName.PreOp:
                         case eStateSequenceName.SafeOp:
-                            return MoveToSafeOPCore();
+                            StopPdoWorker();
+                            return MoveDownToSafeOPCore();
 
                         case eStateSequenceName.Op:
                             return true;
                     }
                     break;
             }
+
+            _log.LogWarning("ExecuteNextStep: No valid transition. Current={Current}, Target={Target}", currentState, targetState);
 
             return false;
         }
@@ -332,6 +347,9 @@ namespace SOEM_FrontEnd.Automation
 
             if (ret == false)
             {
+                _log.LogError("Ensure Init failed");
+                DumpSlaveStates("MoveToInitCore");
+                
                 return false;
             }
 
@@ -350,6 +368,9 @@ namespace SOEM_FrontEnd.Automation
 
             if (ret == false)
             {
+                _log.LogError("Ensure PRE-OP failed");
+                DumpSlaveStates("MoveToPreOPCore");
+                
                 return false;
             }
 
@@ -372,6 +393,9 @@ namespace SOEM_FrontEnd.Automation
             ret = _ECClient.RebuildPdoMap();
             if (ret == false)
             {
+                _log.LogError("Ensure SAFE-OP failed");
+                DumpSlaveStates("MoveToSafeOPCore");
+
                 return false;
             }
 
@@ -488,6 +512,8 @@ namespace SOEM_FrontEnd.Automation
             try
             {
                 //워커 생성
+                StopPdoWorker();
+                
                 worker = new PDORTWorker(_ECClient);
 
                 var map = Datamap.Instance;
@@ -537,7 +563,9 @@ namespace SOEM_FrontEnd.Automation
                 if (ret == false)
                 {
                     //Console.WriteLine("EnsureOp Fail");
-                    _log.LogInformation($"EnsureOp Fail");
+                    _log.LogError("Ensure OP failed");
+                    DumpSlaveStates("MoveToOperateCore");
+
 
                     worker?.Stop();
 
@@ -546,11 +574,10 @@ namespace SOEM_FrontEnd.Automation
                     return false;
                 }
 
-                SetCurrentState(eStateSequenceName.Op);
-
-
                 //Worker시작.
                 worker.Start();
+                
+                SetCurrentState(eStateSequenceName.Op);
                 
                 return true;
 
@@ -578,6 +605,25 @@ namespace SOEM_FrontEnd.Automation
             }
 
         }
+
+        private bool MoveDownToSafeOPCore()
+        {
+            StopPdoWorker();
+
+            bool ret = _ECClient.EnsureState(EcClient.EC_STATE_SAFE_OP, 2000);
+            if (ret == false)
+            {
+                _log.LogError("Ensure SAFE-OP failed");
+                DumpSlaveStates("MoveDownToSafeOPCore");
+                return false;
+            }
+
+            SetCurrentState(eStateSequenceName.SafeOp);
+            _log.LogInformation("Device SafeOP OK (downward)");
+            return true;
+        }
+
+
 
         private SDOPoint ReadPointByWorker(ushort slave, ushort index, byte subIndex, int maxLen = 64)
         {
