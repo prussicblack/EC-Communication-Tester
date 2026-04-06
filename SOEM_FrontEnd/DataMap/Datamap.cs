@@ -1,7 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using SOEM_FrontEnd.Ethercat.ESI;
 using SOEM_FrontEnd.Model;
 using SOEM_FrontEnd.Util;
@@ -10,11 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using static SOEM_FrontEnd.Ethercat.ESI.ESIXMLData;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -346,7 +341,7 @@ namespace SOEM_FrontEnd.DataMap
                 ESIDataType dt;
                 if (!dtByName.TryGetValue(obj.DataType, out dt))
                 {
-                    // 사용자 정책: datatype 없으면 ESI/파서 문제로 봄 (fail-fast)
+                    //datatype 없으면 ESI/파서 문제로 봄
                     throw new InvalidOperationException("Datatype not found: " + obj.DataType + " @ Index 0x" + obj.Index.ToString("X4"));
                 }
 
@@ -417,7 +412,7 @@ namespace SOEM_FrontEnd.DataMap
         {
             SDOKey key = new SDOKey(slaveno, index, subIndex);
 
-            // 1) Point 등록(런타임)
+            // 1.Point 등록(런타임)
             SDOPoint p = new SDOPoint
             {
                 DataType = dataType,
@@ -432,10 +427,10 @@ namespace SOEM_FrontEnd.DataMap
                 LastRaw = null
             };
 
-            // 중복 방지: 인덱서로 덮어쓰기(원하면 Add로 바꿔 fail-fast 가능)
+            // 중복 방지: 인덱서로 덮어쓰기
             _dic[key] = p;
 
-            // 2) Row 등록(UI)
+            // 2.Row 등록(UI)
             SDOFlatObject row = new SDOFlatObject
             {
                 SlaveNo = slaveno,
@@ -510,7 +505,7 @@ namespace SOEM_FrontEnd.DataMap
                 }
             }
 
-            // Row 갱신은 UIThread에서 하는 게 안전하므로, 이벤트로 던짐
+            //Row 갱신은 UIThread에서 하는 게 안전하므로, 이벤트로 던짐
             SDOFlatObject row;
             _leafRowByKey.TryGetValue(key, out row);
 
@@ -543,7 +538,7 @@ namespace SOEM_FrontEnd.DataMap
                     p.Seq = _seq;
                     p.LastUpdateUtc = DateTime.UtcNow;
                     p.LastRaw = null;
-                    p.ReadStatus = SDOReadStatus.Error; // abortCode가 실제 Abort code로 들어오면 Abort로 바꿔도 됨
+                    p.ReadStatus = SDOReadStatus.Error; //abortCode 로 나중에 들어오면 코드로 변경.
 
                     p.AbortCode = abortCode;
                     p.Error = error;
@@ -554,7 +549,7 @@ namespace SOEM_FrontEnd.DataMap
                     p.Seq = _seq;
                     p.LastUpdateUtc = DateTime.UtcNow;
                     p.LastRaw = null;
-                    p.WriteStatus = SDOWriteStatus.Error; // abortCode가 실제 Abort code로 들어오면 Abort로 바꿔도 됨
+                    p.WriteStatus = SDOWriteStatus.Error; //abortCode 로 나중에 들어오면 코드로 변경.
 
                     p.AbortCode = abortCode;
                     p.Error = error;
@@ -646,7 +641,7 @@ namespace SOEM_FrontEnd.DataMap
 
         private void ApplyPointToRowOnUIThread(SDOPoint p, SDOFlatObject row, bool isread)
         {
-            // UI 갱신은 반드시 UIThread에서
+            //UI 갱신은 반드시 UIThread에서
             Dispatcher.UIThread.Post(() =>
             {
                 if (isread == true)
@@ -878,7 +873,7 @@ namespace SOEM_FrontEnd.DataMap
             return dt;
         }
 
-        // 플랫폼 독립 little-endian reader들
+        //플랫폼 독립 little-endian reader들
         private static short ReadInt16LE(byte[] b, int o)
         {
             return unchecked((short)ReadUInt16LE(b, o));
@@ -910,7 +905,7 @@ namespace SOEM_FrontEnd.DataMap
 
         private static float ReadSingleLE(byte[] b, int o)
         {
-            // BitConverter는 엔디안 의존 → 필요시 swap
+            // BitConverter는 엔디안 의존
             if (BitConverter.IsLittleEndian)
                 return BitConverter.ToSingle(b, o);
 
@@ -1095,10 +1090,6 @@ namespace SOEM_FrontEnd.DataMap
             _sdo = new SDOStore(dev, SlaveNo);
         }
 
-        //public void UpdateSdo(ushort index, byte sub, byte[] raw)
-        //{
-        //    _sdo.UpdateOk(new SDOKey(SlaveNo, index, sub), raw);
-        //}
 
         public SDOPoint TryGetSdo(ushort index, byte sub)
         {
@@ -1116,39 +1107,6 @@ namespace SOEM_FrontEnd.DataMap
             profile = BaseProfile as T;
             return profile != null;
         }
-
-        //PDO(임시) 나중에 변경 및 제거.
-        // 수집 스레드가 호출
-        //public void UpdatePdoFrame(byte[] inputImage)
-        //{
-        //    if (inputImage == null) return;
-
-        //    // 복사 여부는 정책에 따라: 여기서는 단순 복사
-        //    var copy = new byte[inputImage.Length];
-
-        //    Buffer.BlockCopy(inputImage, 0, copy, 0, inputImage.Length);
-
-        //    lock (_pdoLock)
-        //    {
-        //        _lastPdoInputImage = copy;
-        //    }
-        //}
-
-        //// UI/IPC가 호출: 특정 entry의 raw bytes만 복사해서 반환
-        //public byte[] TryReadPdoEntryBytes(int byteOffset, int byteLength)
-        //{
-        //    lock (_pdoLock)
-        //    {
-        //        if (_lastPdoInputImage == null) return null;
-        //        if (byteOffset < 0) return null;
-        //        if (byteLength <= 0) return null;
-        //        if (byteOffset + byteLength > _lastPdoInputImage.Length) return null;
-
-        //        var buf = new byte[byteLength];
-        //        Buffer.BlockCopy(_lastPdoInputImage, byteOffset, buf, 0, byteLength);
-        //        return buf;
-        //    }
-        //}
     }
 
 
@@ -1193,7 +1151,7 @@ namespace SOEM_FrontEnd.DataMap
                 {
                     //throw new InvalidOperationException("Already initialized.");
                     //Console.WriteLine("Already initialized. ReInitializing"); //재 이니셜라이징 되었다고 콘솔로그만.
-                    _log.LogInformation("Already initialized. ReInitializing");
+                    _log.LogInformation("Already initialized. ReInitializing"); //콘솔에서 로그로 변경.
 
                 }
 

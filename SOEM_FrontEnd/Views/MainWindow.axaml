@@ -43,9 +43,6 @@
 					Margin="0,0,0,0"
 					VerticalAlignment="Center"
 					Click="About_Click"/>
-
-			<!-- Window buttons (optional) -->
-			<!-- 원하면 Min/Max/Close도 커스텀으로 만들 수 있음 -->
 		</Grid>
 
 		<!-- Main content -->

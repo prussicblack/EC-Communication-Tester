@@ -187,7 +187,7 @@ namespace SOEM_FrontEnd.ViewModels
             }
         }
 
-        // 필요하면 데이터 길이에 맞춰 재구성 (선택)
+        //필요하면 데이터 길이에 맞춰 재구성
         public void Reset(int bitCount, int columns)
         {
             if (bitCount <= 0) throw new ArgumentOutOfRangeException(nameof(bitCount));

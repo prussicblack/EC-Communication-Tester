@@ -65,7 +65,6 @@ public partial class App : Application
         //Log.SetDefaultCategory("SOEM");
         //로깅시작 초기화 완료.
 
-
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var loadingVm = new LoadingViewModel
@@ -102,6 +101,10 @@ public partial class App : Application
         {
             await Task.Run(() =>
             {
+
+                //NPCAP있는지 확인하는거 들어가야됨.
+                //
+
                 // 초기화 단계들
                 Report(vm, 0.05, "Loading ESI...");
                 // ESI 로드/파싱
@@ -115,15 +118,13 @@ public partial class App : Application
                 // SDO RowVm 목록 생성(정의 기반)
 
                 Report(vm, 0.85, "Connecting to device...");
-                // (선택) 초기 스캔/연결
+                //초기 스캔/연결
 
                 Report(vm, 1.00, "Done.");
 
                 //throw new Exception("Test");
             });
 
-            //await Dispatcher.UIThread.InvokeAsync(() =>
-            //{
             var main = new MainWindow
             {
                 DataContext = new MainViewModel()
@@ -132,7 +133,6 @@ public partial class App : Application
             desktop.MainWindow = main;
             main.Show();
             splash.Close();
-            //});
         }
         catch (Exception ex)
         {

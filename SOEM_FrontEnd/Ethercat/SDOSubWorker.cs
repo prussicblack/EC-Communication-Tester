@@ -13,9 +13,9 @@ namespace SOEM_FrontEnd.Ethercat
     /// <summary>
     /// 단일 SDO 전용 스레드에서만 SDO를 읽고, SDOStore(Map)에 기록한다.
     ///
-    /// 옵션(1): 중복 Enqueue 코얼레싱
-    /// - 같은 SDOKey가 이미 큐/대기 중이면, 새 작업을 넣지 않고 대기자만 합친다.
-    /// - 실제 SOEM SDO 호출은 1회만 수행하고, 결과를 대기자 모두에게 전달한다.
+    ///중복 Enqueue 코얼레싱 추가.
+    ///같은 SDOKey가 이미 큐/대기 중이면, 새 작업을 넣지 않고 대기자만 합친다.
+    ///실제 SOEM SDO 호출은 1회만 수행하고, 결과를 대기자 모두에게 전달한다.
     /// </summary>
     public sealed class SDOSubWorker : IDisposable
     {
@@ -308,7 +308,7 @@ namespace SOEM_FrontEnd.Ethercat
             }
             catch (Exception ex)
             {
-                // 워커 스레드 자체가 깨진 경우: pending 대기자 실패 처리
+                //워커 스레드 자체가 깨진 경우: pending 대기자 실패 처리
                 FailAllPending("SDO worker fatal error: " + ex.Message);
             }
         }
@@ -364,15 +364,15 @@ namespace SOEM_FrontEnd.Ethercat
 
         private bool ExecuteWriteMap(SDOKey key, byte[] data)
         {
-            // 예: soem_sdo_write(slave, index, sub, buf, len) 같은 wrapper
+            //예: soem_sdo_write(slave, index, sub, buf, len) 같은 wrapper
             int rc = SOEMNative.soem_sdo_write((ushort)key.SlaveNo, key.Index, key.SubIndex, data, (uint)data.Length);
 
             if (rc == 0)
             {
-                // 즉시 UI에 "쓴 값" 반영(빠른 피드백)
+                //즉시 UI에 "쓴 값" 반영(빠른 피드백)
                 _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, data, false);
 
-                // 원하면: write 성공 후 실제 반영값 확인을 위해 read를 추가로 enqueue
+                //write 성공 후 실제 반영값 확인을 위해 read를 추가로 enqueue --> 미적용.
                 //EnqueueReadInternal(key, data.Length, null);
 
                 return true;
@@ -394,7 +394,6 @@ namespace SOEM_FrontEnd.Ethercat
 
             int rc = SOEMNative.soem_sdo_read((ushort)key.SlaveNo, key.Index, key.SubIndex, buf, ref len);
 
-            //SOEMNative.soem_get_last_error_info(out SoemErrorInfo testerr);
             var elist = EcClient.GetSoemErrorString();
 
             if (rc == 0)

@@ -18,8 +18,6 @@ namespace SOEM_FrontEnd.Ethercat.ESI
     public static class ESICatalog
     {
         // 폴더 아래 모든 .xml 파일을 EsiFile로 읽기
-
-
         private static readonly object _lock = new object();
 
         private static bool _initialized;

@@ -45,7 +45,7 @@
                     SelectedItem="{Binding NICSelect, Mode=TwoWay}"/>
 
           <Button Grid.Row ="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Command="{Binding CMD_SelectNIC}" Content="Select"/>
-          <Button Grid.Row ="1" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" Command="{Binding CMD_Test}" Content="Test"/>
+          <Button Grid.Row ="1" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" Command="{Binding CMD_Test}" Content="Test" Hidden="true" />
       </Grid>
 
 
@@ -238,15 +238,10 @@
 									IsEnabled="{Binding CanWriteSelectedSdo}"
 									Command="{Binding CMD_WriteSelectedSdoCommand}"/>
 
-							<!-- (옵션) Write 타입/포맷 표시 --><!--
+							<!--Write 타입/포맷 표시 -->
 							<TextBlock Grid.Row="0" Grid.Column="5"
 									   Text="{Binding SelectedSdoTypeText}"
 									   VerticalAlignment="Center"/>
-
-							--><!-- 로그/상태줄(옵션) --><!--
-							<TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="6"
-									   Text="{Binding SdoActionStatusText}"
-									   Opacity="0.8"/>-->
                             
 						</Grid>
 					</Border>

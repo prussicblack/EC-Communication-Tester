@@ -33,7 +33,7 @@ namespace SOEM_FrontEnd.Ethercat
         public int StatsPublishDiv { get; set; } = 100; // 1ms 기준 100ms마다 snapshot publish
 
         //통계를 위한 필드 추가.
-        // ===== RT 통계 누적용(accumulator) =====
+        //RT 통계 누적용(accumulator)
         private long _accLoopCount;
 
         private double _accLastDtUs;
@@ -58,7 +58,7 @@ namespace SOEM_FrontEnd.Ethercat
         private int _accMaxReceiveRc = int.MinValue;
         private long _accReceiveErrorCount;
 
-        // ===== 외부 공개용(snapshot) =====
+        // 스냅샷으로 UI단 처리
         private int _pubSeq;
 
         private long _pubLoopCount;
@@ -160,8 +160,8 @@ namespace SOEM_FrontEnd.Ethercat
                 if (!_running) 
                     return false;
 
-                // ---- BeforeSend: Rx(출력 PDO) → SOEM outputs ----
-                // 1) outputs: Rx -> SOEM outputs
+                // ---- BeforeSend: Rx(출력 PDO) -> SOEM outputs ----
+                //1.outputs: Rx -> SOEM outputs
                 for (int i = 0; i < _binds.Count; i++)
                 {
                     var (slave, pdo) = _binds[i];
@@ -174,18 +174,19 @@ namespace SOEM_FrontEnd.Ethercat
                 }
 
                 // ---- Send / Receive ----
-                // 2) send/recv
+                //2.send/recv
                 int sendRc = _ec.SendProcessData();
                 int recvRc = _ec.ReceiveProcessData(ReceiveTimeoutUs);
 
                 //Mailbox handler 처리.
+                //이거 잘 안도는데...나주엥 확인.
                 // Mailbox cyclic handler pump (XoE support)
                 //if (MailboxLimitPerCycle > 0)
                 //    SOEMNative.soem_mbxhandler(0, MailboxLimitPerCycle);
 
 
-                // ---- AfterReceive: SOEM inputs → Tx(입력 PDO) ----
-                // 3) inputs: SOEM inputs -> TxWriteSpan
+                // ---- AfterReceive: SOEM inputs -> Tx(입력 PDO) ----
+                //3.inputs: SOEM inputs -> TxWriteSpan
                 for (int j = 0; j < _binds.Count; j++)
                 {
                     var (slave, pdo) = _binds[j];
@@ -473,9 +474,6 @@ namespace SOEM_FrontEnd.Ethercat
 
 
     }
-
-
-
 
     //통계기능 추가.
     public readonly struct PdoRtStats

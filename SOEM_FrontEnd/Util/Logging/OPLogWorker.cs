@@ -38,6 +38,7 @@ namespace SOEM_FrontEnd.Util.Logging
 
     internal sealed class OPLogWorker : IDisposable
     {
+        //실제 로그관련 동작 스레드.
         private readonly OPLoggerOptions _opt;
 
         private readonly BlockingCollection<LogEnvelope> _queue;

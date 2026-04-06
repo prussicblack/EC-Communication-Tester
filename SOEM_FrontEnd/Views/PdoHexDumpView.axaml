@@ -4,11 +4,6 @@
              x:Class="SOEM_FrontEnd.Views.PdoHexDumpView"
              x:DataType="vm:PdoHexDumpViewModel">
 
-	<!--<Expander Header="PDO HEX (Rx: Master→Slave / Tx: Slave→Master)"
-			  IsExpanded="False"
-			  IsVisible="{Binding HasPdo}"
-			  Margin="0,8,0,0">-->
-
 		<Grid ColumnDefinitions="*,*" ColumnSpacing="8">
 
 			<StackPanel Grid.Column="0" Spacing="4">
@@ -38,5 +33,4 @@
 			</StackPanel>
 
 		</Grid>
-	<!--</Expander>-->
 </UserControl>

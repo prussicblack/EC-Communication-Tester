@@ -83,7 +83,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             var profile = dev.Element(ns + "Profile");
             if (profile == null)
             {
-                //Servo가 아닌경우는 프로파일이 없을 수 있음.
+                //주의 Servo가 아닌경우는 프로파일이 없을 수 있음.
             }
 
             var device = new ESIDevice

@@ -7,7 +7,7 @@ namespace SOEM_FrontEnd.ViewModels;
 
 public partial class MotorControlViewModel : ViewModelBase
 {
-    private IMotorCommands _motor; // backend profile (optional)
+    private IMotorCommands _motor; // backend profile 
 
     private string _axisName = "Axis";
     public string AxisName
@@ -120,9 +120,7 @@ public partial class MotorControlViewModel : ViewModelBase
     public ICommand CmdStopRepeat { get; }
 
     public ICommand CmdMoveStop { get; }
-    
-    //public ICommand CmdMoveJogMinus { get; }
-    //public ICommand CmdMoveJogPlus { get; }
+   
 
     public MotorControlViewModel()
     {
@@ -146,17 +144,14 @@ public partial class MotorControlViewModel : ViewModelBase
         CmdMoveToStart = new RelayCommand(DoMoveToStart);
         CmdMoveToEnd = new RelayCommand(DoMoveToEnd);
 
-        //CmdMoveJogMinus = new RelayCommand(DoMoveJogMinus);
-        //CmdMoveJogPlus = new RelayCommand(DoMoveJogPlus);
-
-        CmdStartRepeat = new RelayCommand(() => { /* TODO */ });
-        CmdStopRepeat = new RelayCommand(() => { /* TODO */ });
+        CmdStartRepeat = new RelayCommand(() => { /* 할거...*/ });
+        CmdStopRepeat = new RelayCommand(() => { /* 할거...*/ });
 
     }
 
     public void UiTick()
     {
-        // 1) 스냅샷+맵 기반으로 6064(Actual Position) 읽기
+        //스냅샷+맵 기반으로 6064(Actual Position) 읽기
         if (_motor == null) return;
 
         CurrentPosition = _motor.ActualPosition;

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace SOEM_FrontEnd.Util.Logging
 {
     /// <summary>
+    /// 주요 구현점.
     /// OPLogger: Microsoft.Extensions.Logging.ILogger 기반 + 내부 Serilog 파일 기록 + UI sink.
     /// - 별도 worker thread (bounded queue)
     /// - threadSafe, ConcurrentQueue

@@ -184,7 +184,6 @@ public partial class MainViewModel : ViewModelBase
             _SelectedSlave = value;
             OnPropertyChanged(nameof(SelectedSlave));
             OnPropertyChanged(nameof(SelectedSlaveData));           // 중요
-            //OnPropertyChanged(nameof(SdoRows));                     // (선택) 별도 프로퍼티 쓰면
 
             OnPropertyChanged(nameof(IsMasterSelected));
             OnPropertyChanged(nameof(IsSlaveSelected));
@@ -967,7 +966,7 @@ public partial class MainViewModel : ViewModelBase
 
     private static double MeasureMaxWidth(IEnumerable<string> items)
     {
-        // ComboBox 기본 폰트에 최대한 맞추기 (원하면 VM에 FontSize/FontFamily를 넘겨서 더 정확히)
+        // ComboBox 기본 폰트에 최대한 맞추기
         var typeface = new Typeface(FontFamily.Default);
         const double fontSize = 15.0;
 
@@ -990,8 +989,7 @@ public partial class MainViewModel : ViewModelBase
                 maxText = ft.Width;
         }
 
-        // “콤보박스 크롬” (좌우 패딩 + 드롭다운 버튼 영역) 여유분
-        // 테마/스타일에 따라 달라서 보통 48~64px에서 맞춥니다.
+        // “콤보박스 크롬” (좌우 패딩 + 드롭다운 버튼 영역) 여유분 테마/스타일에 따라 달라서 보통 48~64px
         const double chrome = 56;
 
         var width = Math.Ceiling(maxText + chrome);
@@ -1050,7 +1048,7 @@ public partial class MainViewModel : ViewModelBase
 
         return;
 
-        //성공시 랜카드 Nic 저장.
+        //성공시 랜카드 Nic 저장해서 ENI구성.
 
     }
 
@@ -1128,74 +1126,6 @@ public partial class MainViewModel : ViewModelBase
 
     }
 
-    public void RemapRxPdo(ushort slave)
-    {
-        // 1) SM2(RxPDO) 비활성화: 0x1C12:00 = 0
-        ECClient.SdoWriteU8(slave, 0x1C12, 0x00, 0);
-        //Console.WriteLine("SM2(RxPDO) 비활성화");
-        _log.LogInformation("SM2(RxPDO) 비활성화");
-
-
-        // 2) Index의 매핑 제거.
-        ECClient.SdoWriteU8(slave, 0x1601, 0x00, 0);
-        //Console.WriteLine("Index 매핑 제거");
-        _log.LogInformation("Index 매핑 제거");
-
-        // 3) RxMap의 Entry 를 써넣기.
-        //byte sub = 1;
-        //foreach (var entrie in RxMap.Entries)
-        //{
-        //    uint map = ECClient.MakeMapWord(entrie.Index, entrie.SubIndex, entrie.BitLength);
-        //    ECClient.SdoWriteU32(slave, RxMap.Index, sub, map);
-
-        //    Console.WriteLine($"RxMap Remapping {slave}-{RxMap.Index}-{sub}");
-
-        //    sub++;
-        //}
-
-        // 6040:0 (16bit)
-        uint m1 = ECClient.MakeMapWord(0x6040, 0x00, 16);
-        ECClient.SdoWriteU32(slave, 0x1601, 0x01, m1);
-
-        // 607A:0 (32bit)
-        uint m2 = ECClient.MakeMapWord(0x607A, 0x00, 32);
-        ECClient.SdoWriteU32(slave, 0x1601, 0x02, m2);
-
-        // 6081:0 (32bit)
-        uint m3 = ECClient.MakeMapWord(0x6081, 0x00, 32);
-        ECClient.SdoWriteU32(slave, 0x1601, 0x03, m3);
-
-        // 6060:0 (8bit)
-        uint m4 = ECClient.MakeMapWord(0x6060, 0x00, 8);
-        ECClient.SdoWriteU32(slave, 0x1601, 0x04, m4);
-
-        // 엔트리 개수 = 4 (16+32+32+8 = 88bit)
-        ECClient.SdoWriteU8(slave, 0x1601, 0x00, 4);
-
-        // 이제 Assign
-        ECClient.SdoWriteU8(slave, 0x1C12, 0x00, 0);     // SM2 비활성화
-        ECClient.SdoWriteU16(slave, 0x1C12, 0x01, 0x1601);
-        ECClient.SdoWriteU8(slave, 0x1C12, 0x00, 1);     // PDO 개수 = 1
-
-
-        /*
-        Console.WriteLine($"RxMap Remap Complete");
-
-
-        //엔트리 갯수 기록
-        byte count = (byte)(sub - 1);
-        ECClient.SdoWriteU8(slave, RxMap.Index, 0x00, count);
-        Console.WriteLine($"RxMap Entree Count Write");
-
-
-        // 4) SM2(RxPDO assign)에 이 PDO 연결
-        ECClient.SdoWriteU8(slave, 0x1C12, 0x00, 1);        // RxPDO 개수 = 1
-        ECClient.SdoWriteU16(slave, 0x1C12, 0x01, RxMap.Index); // 1번째 PDO = rxMap.Index
-        Console.WriteLine($"RxMap Connect");
-        */
-
-    }
-
     public void HandleReadAllSDO()
     {
         //해당 Slave의 SDO 오브젝트들을 모두 읽어서 SlaveStore에 기록.
@@ -1212,132 +1142,5 @@ public partial class MainViewModel : ViewModelBase
         foreach (var key in slavekeys)
             SdoWorker.EnqueueRead(key.SlaveNo, key.Index, key.SubIndex);
     }
-        
-
-
-    public void RemapRxPdo(ushort slave, ESIXMLData.ESIPDO RxMap)
-    {
-        // 1) SM2(RxPDO) 비활성화: 0x1C12:00 = 0
-        ECClient.SdoWriteU8(slave, 0x1C12,0x00,0);
-        //Console.WriteLine("SM2(RxPDO) 비활성화");
-        _log.LogInformation("SM2(RxPDO) 비활성화");
-
-
-        // 2) Index의 매핑 제거.
-        ECClient.SdoWriteU8(slave, RxMap.Index, 0x00, 0);
-        //Console.WriteLine("Index 매핑 제거");
-        _log.LogInformation("Index 매핑 제거");
-
-        // 3) RxMap의 Entry 를 써넣기.
-        //byte sub = 1;
-        //foreach (var entrie in RxMap.Entries)
-        //{
-        //    uint map = ECClient.MakeMapWord(entrie.Index, entrie.SubIndex, entrie.BitLength);
-        //    ECClient.SdoWriteU32(slave, RxMap.Index, sub, map);
-
-        //    Console.WriteLine($"RxMap Remapping {slave}-{RxMap.Index}-{sub}");
-
-        //    sub++;
-        //}
-
-        // 6040:0 (16bit)
-        uint m1 = ECClient.MakeMapWord(0x6040, 0x00, 16);
-        ECClient.SdoWriteU32(slave, 0x1601, 0x01, m1);
-
-        // 607A:0 (32bit)
-        uint m2 = ECClient.MakeMapWord(0x607A, 0x00, 32);
-        ECClient.SdoWriteU32(slave, 0x1601, 0x02, m2);
-
-        // 6081:0 (32bit)
-        uint m3 = ECClient.MakeMapWord(0x6081, 0x00, 32);
-        ECClient.SdoWriteU32(slave, 0x1601, 0x03, m3);
-
-        // 6060:0 (8bit)
-        uint m4 = ECClient.MakeMapWord(0x6060, 0x00, 8);
-        ECClient.SdoWriteU32(slave, 0x1601, 0x04, m4);
-
-        // 엔트리 개수 = 4 (16+32+32+8 = 88bit)
-        ECClient.SdoWriteU8(slave, 0x1601, 0x00, 4);
-
-        // 이제 Assign
-        ECClient.SdoWriteU8(slave, 0x1C12, 0x00, 0);     // SM2 비활성화
-        ECClient.SdoWriteU16(slave, 0x1C12, 0x01, 0x1601);
-        ECClient.SdoWriteU8(slave, 0x1C12, 0x00, 1);     // PDO 개수 = 1
-
-
-        /*
-        Console.WriteLine($"RxMap Remap Complete");
-
-
-        //엔트리 갯수 기록
-        byte count = (byte)(sub - 1);
-        ECClient.SdoWriteU8(slave, RxMap.Index, 0x00, count);
-        Console.WriteLine($"RxMap Entree Count Write");
-
-
-        // 4) SM2(RxPDO assign)에 이 PDO 연결
-        ECClient.SdoWriteU8(slave, 0x1C12, 0x00, 1);        // RxPDO 개수 = 1
-        ECClient.SdoWriteU16(slave, 0x1C12, 0x01, RxMap.Index); // 1번째 PDO = rxMap.Index
-        Console.WriteLine($"RxMap Connect");
-        */
-    }
-
-    public void RemapTxPdo(ushort slave)
-    {
-
-
-    }
-
-    public void RemapTxPdo(ushort slave, ESIXMLData.ESIPDO TxMap)
-    {
-        //테스트 필요.
-        //ESI Catalog에서 해당 구성정보를 가져와서 사용할것.
-        //PP 모드 구성 가져와서 사용할것.
-
-        // 1) SM3(TxPDO) 비활성화: 0x1C13:00 = 0
-        ECClient.SdoWriteU8(slave, 0x1C13, 0x00, 0);
-        //Console.WriteLine("SM3(TxPDO) 비활성화");
-        _log.LogInformation("SM3(TxPDO) 비활성화");
-
-
-        // 2) 0x1A00, 0x1A01 기존 매핑 제거 (sub0 = 0)
-        //    (장비에 따라 1A00만 쓰고 있을 수도 있는데, ESI에 Exclude=1A00 나와 있으니 둘 다 정리)
-        ECClient.SdoWriteU8(slave, TxMap.Index, 0x00, 0); //ESI상 0x1A01 0x1A00 둘중 하나.
-        //Console.WriteLine("Index 매핑 제거");
-        _log.LogInformation("Index 매핑 제거");
-
-        // 3) 0x1A01에 새 엔트리들 작성
-        // sub1: 0x6041:00, 16bit
-        byte sub = 1;
-        foreach (var entrie in TxMap.Entries)
-        {
-            uint map = ECClient.MakeMapWord(entrie.Index, entrie.SubIndex, entrie.BitLength);
-            ECClient.SdoWriteU32(slave, TxMap.Index, sub, map);
-
-            //Console.WriteLine($"TxMap Remapping {slave}-{TxMap.Index}-{sub}");
-            _log.LogInformation($"TxMap Remapping {slave}-{TxMap.Index}-{sub}");
-
-            sub++;
-        }
-
-        //Console.WriteLine($"TxMap Remap Complete");
-        _log.LogInformation($"TxMap Remap Complete");
-
-        //엔트리 갯수 기록
-        byte count = (byte)(sub - 1);
-        ECClient.SdoWriteU8(slave, TxMap.Index, 0x00, count);
-        //Console.WriteLine($"TxMap Entree Count Write");
-        _log.LogInformation($"TxMap Entree Count Write");
-
-
-        // 4) SM3(TxPDO assign)에 1A01만 다시 연결
-        ECClient.SdoWriteU8(slave, 0x1C13, 0x00, 1);        // PDO 개수 = 1
-        ECClient.SdoWriteU16(slave, 0x1C13, 0x01, TxMap.Index);  // 1번째 PDO = 0x1A01
-        //Console.WriteLine($"TxMap Connect");
-        _log.LogInformation($"TxMap Connect");
-    }
-
-    
-    
     
 }

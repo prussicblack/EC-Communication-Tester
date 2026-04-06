@@ -24,7 +24,7 @@ static ecx_contextt g_ctx;
 static int g_inited = 0;
 static int g_iomap_size_bytes = 0; // ecx_config_map_group() return (total IOmap/PDO bytes)
 
-// IOmap 크기는 필요 시 늘리세요.
+// IOmap 크기는 필요 시 늘릴것.
 static uint8_t IOmap[8192];
 
 EXP int CALL soem_open(const char *ifname)
@@ -96,18 +96,18 @@ EXP int CALL soem_config_map_only(void)
 
    g_iomap_size_bytes = iomap;
 
-   return iomap; // 맵 크기 바이트 수 리턴 (원하면 그냥 0/에러로 해도 됨)
+   return iomap; // 맵 크기 바이트 수 리턴
 }
 
 // --------- PDO/IO size queries ----------
-// 1) Total IOmap bytes created by ecx_config_map_group()
+// 1.Total IOmap bytes created by ecx_config_map_group()
 EXP int CALL soem_get_pdo_total_bytes(void)
 {
    if (!g_inited) return -2;
    return g_iomap_size_bytes;
 }
 
-// 2) Current total in/out bytes (sum of slavelist[i].Ibytes/Obytes)
+// 2.Current total in/out bytes (sum of slavelist[i].Ibytes/Obytes)
 //    returns: 0=ok, negative=error
 EXP int CALL soem_get_total_inout_bytes(int *out_in_bytes, int *out_out_bytes)
 {
@@ -127,7 +127,6 @@ EXP int CALL soem_get_total_inout_bytes(int *out_in_bytes, int *out_out_bytes)
    return 0;
 }
 
-// (Optional) per-slave in/out bytes and bits
 EXP int CALL soem_get_slave_inout_size(int slave, int *out_in_bytes, int *out_out_bytes, int *out_in_bits, int *out_out_bits)
 {
    if (!g_inited) return -2;
@@ -183,7 +182,7 @@ EXP int CALL soem_get_slave_info(int idx, soem_slave_info_t *outInfo)
    outInfo->configadr = s->configadr;
    outInfo->vendor = s->eep_man;
    outInfo->product = s->eep_id;
-   outInfo->revision = s->eep_rev; // ★ 여기
+   outInfo->revision = s->eep_rev;
 
    // 이름 복사
    // strncpy(outInfo->name, s->name, EC_MAXNAME);

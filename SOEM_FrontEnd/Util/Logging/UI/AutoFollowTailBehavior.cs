@@ -235,7 +235,7 @@ namespace SOEM_FrontEnd.Util.Logging.UI
             Dispatcher.UIThread.Post(() =>
             {
                 try { lb.ScrollIntoView(last); }
-                catch { /* 실패해도 죽지 않게 */ }
+                catch { /* 실패해도 죽지 않게만.. */ }
             }, DispatcherPriority.Background);
         }
     }

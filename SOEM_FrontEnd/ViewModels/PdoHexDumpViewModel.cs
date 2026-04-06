@@ -23,19 +23,11 @@ namespace SOEM_FrontEnd.ViewModels
             private set { SetProperty(ref _txHex, value); }
         }
 
-        //private bool _hasPdo = true;
-        //public bool HasPdo
-        //{
-        //    get { return _hasPdo; }
-        //    private set { SetProperty(ref _hasPdo, value); }
-        //}
-
         private DispatcherTimer _timer;
 
         public void Attach(IPDOView pdoView)
         {
             _pdoView = pdoView;
-            //HasPdo = (_pdoView != null);
 
             Refresh();
 

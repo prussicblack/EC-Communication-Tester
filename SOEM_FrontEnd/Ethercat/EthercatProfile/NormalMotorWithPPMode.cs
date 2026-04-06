@@ -34,7 +34,6 @@ namespace SOEM_FrontEnd.Ethercat
         //rxMapTable 0x6040(CW), 0x607a(Target Position) 존재.
         //txMapTable 0x6041(SW), 0x6064(Actual Position) 존재.
 
-
         private readonly ushort _SlaveNo;
 
         private int _off6040cw = -1; // Rx Offset.(매번 lookup 참조가 아니라 빠르게 접근용)
@@ -386,12 +385,12 @@ namespace SOEM_FrontEnd.Ethercat
             SafetyActivated = 1 << 15 //1-Safety기능이 활성화되어 정지상태.
         }
 
-        // 비트 마스크 헬퍼(추가 클래스 없이, 이 클래스에서만 사용) ===
+        //비트 마스크 헬퍼. 여기서만 사용할것.
         private static bool HasSW(ushort sw, StatusWordBit mask) => (sw & (ushort)mask) != 0;
         private static ushort SetCW(ushort cw, ControlWordBit mask) => (ushort)(cw | (ushort)mask);
         private static ushort ClearCW(ushort cw, ControlWordBit mask) => (ushort)(cw & (ushort)~(ushort)mask);
 
-        // === 402 전이 기본 CW 값(“값”이라 비트 enum이 아니라 const가 더 명확) ===
+        //402 전이 기본 CW 값
         private const ushort CW_SHUTDOWN = 0x0006;
         private const ushort CW_SWITCHON = 0x0007;
         private const ushort CW_ENABLEOP = 0x000F;
@@ -472,7 +471,7 @@ namespace SOEM_FrontEnd.Ethercat
             if ((uint)_off6040cw + 2u > (uint)Output.Length)
                 return;
 
-            // 1) 입력(TxPDO) 직접 읽기
+            //1.입력(TxPDO) 직접 읽기
             // Statusword 0x6041 (u16)
             ushort sw = BinaryPrimitives.ReadUInt16LittleEndian(Input.Slice(_off6041sw, 2));
 
@@ -490,7 +489,7 @@ namespace SOEM_FrontEnd.Ethercat
                 // 필요하면 내부 캐시에 저장(alloc 없이)
                 // _actualPosCache = ap;
             }
-            // 2) 402 상태 비트
+            //2.402 상태 비트
             bool swReadyToSwitchOn = HasSW(sw, StatusWordBit.ReadySwitchOn);
             bool swSwitchOn = HasSW(sw, StatusWordBit.SwitchedOn);
             bool swOperationEnabled = HasSW(sw, StatusWordBit.OperationEnabled);
@@ -505,11 +504,11 @@ namespace SOEM_FrontEnd.Ethercat
             _isSetPointAck = swSetPointAck;
             _isTargetReached = swTargetReached;
 
-            // 3) 다음 cycle에 보낼 Controlword 계산
+            //3.다음 cycle에 보낼 Controlword 계산
             ushort cw = Base402Controlword(sw, prevCw, _reqEnable);
 
 
-            // 4) Fault reset 펄스 처리(1 cycle)
+            //4.Fault reset 펄스 처리(1 cycle)
             if (_reqFaultReset)
             {
                 _reqFaultReset = false;
@@ -598,11 +597,11 @@ namespace SOEM_FrontEnd.Ethercat
 
             ProcessMoveAbsStateMachine(ref cw, swSetPointAck, swTargetReached, swFault, swOperationEnabled);
 
-            // 6) 최종 CW를 RxPDO(Output)에 기록
+            //5.최종 CW를 RxPDO(Output)에 기록
             if ((uint)_off6040cw + 2u > (uint)Output.Length)
                 return;
 
-            // 7) 최종 Controlword를 outputs(RxPDO)로 기록
+            //6.최종 Controlword를 outputs(RxPDO)로 기록
             BinaryPrimitives.WriteUInt16LittleEndian(Output.Slice(_off6040cw, 2), cw);
 
         }
@@ -635,8 +634,6 @@ namespace SOEM_FrontEnd.Ethercat
                 if (swOperationEnabled) cwBase = CW_ENABLEOP;   // 0x000F
             }
 
-            // ===== 기존 CW에서 "유지해도 되는 비트"만 가져오기 =====
-            // 여기 리스트는 네 프로젝트 정책에 따라 조절.
             // 보통 PP에서는 Relative/ChangeNow/Halt 정도는 유지해도 OK.
             ushort keepMask = (ushort)(ControlWordBit.Relative | ControlWordBit.ChangeSetImmediately | ControlWordBit.Halt);
 

@@ -19,7 +19,6 @@
 
         <TextBlock Text="Loading..." FontSize="20"/>
         <ScrollViewer Height="50" VerticalScrollBarVisibility="Auto">
-		<!--<TextBlock Text="{Binding StatusText}" FontSize="14" TextWrapping="Wrap" />-->
         <TextBox Text="{Binding StatusText}"
                  IsReadOnly="True"
                  AcceptsReturn="True"
