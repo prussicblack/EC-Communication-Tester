@@ -297,7 +297,7 @@
 									IsEnabled="{Binding CanWriteSelectedSdo}"
 									Command="{Binding CMD_WriteSelectedSdoCommand}"/>
 
-							<!--Write 타입/포맷 표시 -->
+							<!--Write 타입/포맷 표시 --><!--
 							<!--<TextBlock Grid.Row="0" Grid.Column="5"
 									   Text="{Binding SelectedSdoTypeText}"
 									   VerticalAlignment="Center"/>-->
