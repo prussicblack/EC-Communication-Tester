@@ -52,11 +52,11 @@ namespace SOEM_FrontEnd.Ethercat.ESI
             // Devices
             var descriptions = root.Element(ns + "Descriptions");
             if (descriptions == null)
-                throw new Exception("No <Descriptions>");
+                throw new Exception(path + "No <Descriptions>");
 
             var devicesElem = descriptions.Element(ns + "Devices");
             if (devicesElem == null)
-                throw new Exception("No <Devices>");
+                throw new Exception(path + "No <Devices>");
 
             foreach (var devElem in devicesElem.Elements(ns + "Device"))
             {
