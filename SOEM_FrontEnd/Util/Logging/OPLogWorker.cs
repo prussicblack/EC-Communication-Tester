@@ -324,7 +324,7 @@ namespace SOEM_FrontEnd.Util.Logging
 
         private string BuildNewLogFilePath(string prefix, int seq)
         {
-            string stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff", CultureInfo.InvariantCulture);
+            string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff", CultureInfo.InvariantCulture);
 
             string ext = _opt.FileExtension;
             if (string.IsNullOrWhiteSpace(ext)) ext = ".log";

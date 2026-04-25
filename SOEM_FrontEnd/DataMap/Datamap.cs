@@ -485,7 +485,7 @@ namespace SOEM_FrontEnd.DataMap
                 {
                     _seq++;
                     p.Seq = _seq;
-                    p.LastUpdateUtc = DateTime.UtcNow;
+                    p.LastUpdateUtc = DateTime.Now;
                     p.LastRaw = copy;
                     p.ReadStatus = SDOReadStatus.Ok;
 
@@ -496,7 +496,7 @@ namespace SOEM_FrontEnd.DataMap
                 {
                     _seq++;
                     p.Seq = _seq;
-                    p.LastUpdateUtc = DateTime.UtcNow;
+                    p.LastUpdateUtc = DateTime.Now;
                     p.LastRaw = copy;
                     p.WriteStatus = SDOWriteStatus.Ok;
 
@@ -536,7 +536,7 @@ namespace SOEM_FrontEnd.DataMap
                 {
                     _seq++;
                     p.Seq = _seq;
-                    p.LastUpdateUtc = DateTime.UtcNow;
+                    p.LastUpdateUtc = DateTime.Now;
                     p.LastRaw = null;
                     p.ReadStatus = SDOReadStatus.Error; //abortCode 로 나중에 들어오면 코드로 변경.
 
@@ -547,7 +547,7 @@ namespace SOEM_FrontEnd.DataMap
                 {
                     _seq++;
                     p.Seq = _seq;
-                    p.LastUpdateUtc = DateTime.UtcNow;
+                    p.LastUpdateUtc = DateTime.Now;
                     p.LastRaw = null;
                     p.WriteStatus = SDOWriteStatus.Error; //abortCode 로 나중에 들어오면 코드로 변경.
 
@@ -582,7 +582,7 @@ namespace SOEM_FrontEnd.DataMap
 
                 _seq++;
                 p.Seq = _seq;
-                p.LastUpdateUtc = DateTime.UtcNow;
+                p.LastUpdateUtc = DateTime.Now;
                 p.AbortCode = 0;
                 p.Error = null;
 
