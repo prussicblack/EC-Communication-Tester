@@ -5,7 +5,7 @@
              xmlns:vm="clr-namespace:SOEM_FrontEnd.ViewModels"
 			 xmlns:ui="clr-namespace:SOEM_FrontEnd.Util.Logging.UI"
 			 xmlns:views="clr-namespace:SOEM_FrontEnd.Views"
-			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="550"
              x:Class="SOEM_FrontEnd.Views.MainView"
              x:DataType="vm:MainViewModel">
   <Design.DataContext>
@@ -45,7 +45,7 @@
                     SelectedItem="{Binding NICSelect, Mode=TwoWay}"/>
 
           <Button Grid.Row ="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Command="{Binding CMD_SelectNIC}" Content="Select"/>
-          <Button Grid.Row ="1" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" Command="{Binding CMD_Test}" Content="Test" Hidden="true" />
+          <Button Grid.Row ="1" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" Command="{Binding CMD_Test}" Content="Test" IsVisible="False"/>
       </Grid>
 
 
@@ -76,7 +76,7 @@
               <!-- Master -->
               <TabControl IsVisible="{Binding IsMasterSelected}">
                   <TabItem Header="Master Status">
-                      <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,*,Auto" ColumnDefinitions="Auto,*">
+                      <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*">
 
                           <TextBlock Grid.Row="0" Grid.Column="0" Text="Selected NIC:" FontWeight="Bold" Margin="0,0,8,6"/>
                           <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding NICSelect}" Margin="0,0,0,6"/>
@@ -114,8 +114,67 @@
                               </StackPanel>
                           </Border>
 
-                          <Button Grid.Row="4" Grid.Column="0" Content="Reset Stats" Command="{Binding CMD_ResetStat}"/>
+                          <!--<Button Grid.Row="4" Grid.Column="0" Content="Reset Stats" Command="{Binding CMD_ResetStat}"/>-->
 
+						  <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Padding="8" Margin="4" BorderBrush="#555" BorderThickness="1" CornerRadius="4">
+							  <StackPanel Spacing="6">
+
+								  <TextBlock Text="PDO Runtime" FontWeight="Bold" FontSize="15" />
+
+								  <Grid ColumnDefinitions="140,120,140,120" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="8">
+
+									  <TextBlock Grid.Row="0" Grid.Column="0" Text="Running" />
+									  <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PdoIsRunning}" />
+
+									  <TextBlock Grid.Row="0" Grid.Column="2" Text="Loop Count" />
+									  <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding PdoLoopCount}" />
+
+									  <TextBlock Grid.Row="1" Grid.Column="0" Text="Last Period" />
+									  <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PdoLastPeriodUs, StringFormat='{}{0} us'}" />
+
+									  <TextBlock Grid.Row="1" Grid.Column="2" Text="Target Period" />
+									  <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding PdoTargetPeriodUs, StringFormat='{}{0} us'}" />
+
+									  <TextBlock Grid.Row="2" Grid.Column="0" Text="Min Period" />
+									  <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PdoMinPeriodUs, StringFormat='{}{0} us'}" />
+
+									  <TextBlock Grid.Row="2" Grid.Column="2" Text="Max Period" />
+									  <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding PdoMaxPeriodUs, StringFormat='{}{0} us'}" />
+
+									  <TextBlock Grid.Row="3" Grid.Column="0" Text="Avg Period" />
+									  <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding PdoAvgPeriodUs, StringFormat='{}{0} us'}" />
+
+									  <TextBlock Grid.Row="3" Grid.Column="2" Text="Last WKC" />
+									  <TextBlock Grid.Row="3" Grid.Column="3"
+												 Text="{Binding PdoWkcText}" />
+
+									  <TextBlock Grid.Row="4" Grid.Column="0" Text="WKC Error" />
+									  <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding PdoWkcErrorCount}" />
+
+									  <TextBlock Grid.Row="4" Grid.Column="2" Text="Overrun" />
+									  <TextBlock Grid.Row="4" Grid.Column="3" Text="{Binding PdoOverrunCount}" />
+
+									  <TextBlock Grid.Row="5" Grid.Column="0" Text="Last Update" />
+									  <TextBlock Grid.Row="5" Grid.Column="1"
+												 Grid.ColumnSpan="3"
+												 Text="{Binding PdoLastUpdateText}" />
+								  </Grid>
+
+								  <StackPanel Orientation="Horizontal"
+											  Spacing="8">
+									  <CheckBox Content="PDO 통계를 UI 로그에도 출력"
+												IsChecked="{Binding IsPdoStatsUiLogEnabled}" />
+
+									  <Button Content="Max Reset"
+											  Command="{Binding ResetPdoStatsCommand}" />
+									  
+								  </StackPanel>
+
+								  
+							  </StackPanel>
+						  </Border>
+						  
+						  
                       </Grid>
                   </TabItem>
               </TabControl>
@@ -239,9 +298,9 @@
 									Command="{Binding CMD_WriteSelectedSdoCommand}"/>
 
 							<!--Write 타입/포맷 표시 -->
-							<TextBlock Grid.Row="0" Grid.Column="5"
+							<!--<TextBlock Grid.Row="0" Grid.Column="5"
 									   Text="{Binding SelectedSdoTypeText}"
-									   VerticalAlignment="Center"/>
+									   VerticalAlignment="Center"/>-->
                             
 						</Grid>
 					</Border>
@@ -249,16 +308,77 @@
                 </Grid>
 		  </TabItem>
               
-              <TabItem Header="ReMAP">
+              <TabItem Header="MAP Status">
+				  <Grid Margin="8" RowDefinitions="Auto,*,Auto,*" RowSpacing="6">
 
+					  <TextBlock Grid.Row="0" Text="RxPDO / Outputs / 0x1C12" FontWeight="Bold" />
+
+					  <DataGrid Grid.Row="1" ItemsSource="{Binding RxPdoMapRows}" AutoGenerateColumns="False" IsReadOnly="True"	GridLinesVisibility="All" HeadersVisibility="All">
+
+						  <DataGrid.Columns>
+							  <DataGridTextColumn Header="#"
+												  Binding="{Binding No}" />
+
+							  <DataGridTextColumn Header="Address"
+												  Binding="{Binding AddressText}" />
+
+							  <DataGridTextColumn Header="BitLen"
+												  Binding="{Binding BitLength}" />
+
+							  <DataGridTextColumn Header="ByteOffset"
+												  Binding="{Binding ByteOffset}" />
+
+							  <DataGridTextColumn Header="BitInByte"
+												  Binding="{Binding BitInByte}" />
+
+							  <DataGridTextColumn Header="Raw"
+												  Binding="{Binding RawText}" />
+						  </DataGrid.Columns>
+					  </DataGrid>
+
+					  <TextBlock Grid.Row="2"
+								 Text="TxPDO / Inputs / 0x1C13"
+								 FontWeight="Bold"
+								 Margin="0,8,0,0" />
+
+					  <DataGrid Grid.Row="3"
+								ItemsSource="{Binding TxPdoMapRows}"
+								AutoGenerateColumns="False"
+								IsReadOnly="True"
+								GridLinesVisibility="All"
+								HeadersVisibility="All">
+
+						  <DataGrid.Columns>
+							  <DataGridTextColumn Header="#"
+												  Binding="{Binding No}" />
+
+							  <DataGridTextColumn Header="Address"
+												  Binding="{Binding AddressText}" />
+
+							  <DataGridTextColumn Header="BitLen"
+												  Binding="{Binding BitLength}" />
+
+							  <DataGridTextColumn Header="ByteOffset"
+												  Binding="{Binding ByteOffset}" />
+
+							  <DataGridTextColumn Header="BitInByte"
+												  Binding="{Binding BitInByte}" />
+
+							  <DataGridTextColumn Header="Raw"
+												  Binding="{Binding RawText}" />
+						  </DataGrid.Columns>
+					  </DataGrid>
+
+				  </Grid>
+				 
 
               </TabItem>
 
-              <TabItem Header="PDO">
-				  <!-- PDO설정 및 관련 내용 여기에.-->
+              <!--<TabItem Header="PDO">
+				  --><!-- PDO설정 및 관련 내용 여기에...는 Control의 기능이 방대해져서 삭제.--><!--
 
 
-              </TabItem>
+              </TabItem>-->
 
               <TabItem Header="Control">
                   <!-- PDO에서 설정된 내용 바탕으로 동적UI로 처리.-->

@@ -17,5 +17,10 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
         ReadOnlyMemory<byte> InputSnapshot { get; } //마스터 기준 입력.
         void PublishSnapshots();
 
+        //현재 Map 주소 표기용.
+
+        IReadOnlyList<PdoMapRow> RxPdoMapRows { get; }
+        IReadOnlyList<PdoMapRow> TxPdoMapRows { get; }
+
     }
 }

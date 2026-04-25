@@ -39,5 +39,11 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
         bool IsError { get; }
 
         int ActualPosition { get; }
+
+        bool IsHomeSensor { get; }
+        bool IsNLimSensor { get; }
+        bool IsPLimSensor { get; }
+
+
     }
 }

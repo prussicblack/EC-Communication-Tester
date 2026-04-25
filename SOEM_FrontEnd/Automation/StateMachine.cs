@@ -455,8 +455,13 @@ namespace SOEM_FrontEnd.Automation
                         }
                         else
                         {
-                            store.BaseProfile = new NormalOProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
-                            //Console.WriteLine($"Slave {i} - 402Drive Profile Set Fail NormalIO set.");
+                             NormalOProfile normalioprofile = new NormalOProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
+                             //Console.WriteLine($"Slave {i} - 402Drive Profile Set Fail NormalIO set.");
+
+                             normalioprofile.SetPdoMapping(txAllMapList, txAllMapList);
+
+                             store.BaseProfile = normalioprofile;
+
                             _log.LogInformation("Slave {{i}} - 402Drive Profile Set Fail NormalIO set.");
 
                         }
@@ -829,7 +834,44 @@ namespace SOEM_FrontEnd.Automation
             worker.ResetStats();
             
         }
+        public bool TryGetPdoStats(out PdoRtStats stats)
+        {
+            stats = default(PdoRtStats);
 
+            if (worker == null)
+            {
+                return false;
+            }
+
+            stats = worker.GetStatsSnapshot();
+            return true;
+        }
+
+        public bool IsPdoRunning
+        {
+            get
+            {
+                if (worker == null)
+                {
+                    return false;
+                }
+
+                return worker.IsRunning;
+            }
+        }
+
+        public double PdoTargetPeriodUs
+        {
+            get
+            {
+                if (worker == null)
+                {
+                    return 0.0;
+                }
+
+                return worker.Period.TotalMilliseconds * 1000.0;
+            }
+        }
 
     }
 

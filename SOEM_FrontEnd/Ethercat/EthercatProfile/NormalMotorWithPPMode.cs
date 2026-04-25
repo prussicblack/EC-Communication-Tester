@@ -42,9 +42,14 @@ namespace SOEM_FrontEnd.Ethercat
         private int _off6064ap = -1;   // Tx: Actual Position (마찬가지. 빠른 접근용)
         private int _off607Atp = -1;   // Rx: Target Position
 
+        //서보 IO리미트 전체.
+        private int _off60FDio = -1; //Tx: Servo IO Status.
+
+
         //SDO 핫패스.
         private SDOPoint _sdo6060; // Mode of operation
         private SDOPoint _sdo6098; // Homing method 같은 것
+
 
         private SDOPoint _sdo6081; //Profile Velocity
         private SDOPoint _sdo6083; //Profile Acceleration
@@ -57,6 +62,7 @@ namespace SOEM_FrontEnd.Ethercat
         private uint _profileVelocity = 0;
         private uint _profileAcceleration = 0;
         private uint _profileDeceleration = 0;
+
 
 
         private readonly EcClient _ECClient;
@@ -79,6 +85,10 @@ namespace SOEM_FrontEnd.Ethercat
         public bool IsInPosition => _isTargetReached;
 
         public int ActualPosition => getActualPosition();
+
+        public bool IsNLimSensor => _isNlimOn;
+        public bool IsHomeSensor => _isHomeOn;
+        public bool IsPLimSensor => _isPlimOn;
 
         public void SetProfile(uint velocity, uint acceleration, uint deceleration)
         {
@@ -177,12 +187,16 @@ namespace SOEM_FrontEnd.Ethercat
             return true;
         }
 
-        public void SetPdoMapping(List<uint> rxAllMap, List<uint> txAllMap)
+        public override void SetPdoMapping(List<uint> rxAllMap, List<uint> txAllMap)
         {
             Build(_rxMapTable, rxAllMap);
             Build(_txMapTable, txAllMap);
 
+            SetCurrentPdoMapRows(rxAllMap, txAllMap);
+
             TryResolve402();
+
+            TryServoIOMapping();
         }
 
         private static void Build(Dictionary<OdKey, PdoField> dict, List<uint> allmap)
@@ -236,6 +250,34 @@ namespace SOEM_FrontEnd.Ethercat
 
             return _off6040cw >= 0 && _off607Atp >= 0 && _off6041sw >= 0;
         }
+
+        public bool TryServoIOMapping()
+        {
+            _off60FDio = -1;
+
+            PdoField field;
+
+            if (_txMapTable.TryGetValue(new OdKey(0x60FD, 0x00), out field) == false)
+            {
+                return false;
+            }
+
+            if (field.BitInByte != 0)
+            {
+                return false;
+            }
+
+            if (field.BitLen < 32)
+            {
+                return false;
+            }
+
+            _off60FDio = field.ByteOffset;
+
+            return true;
+        }
+
+
 
         private static int TryGetByteOffset(Dictionary<OdKey, PdoField> dict, ushort idx, byte sub)
         {
@@ -428,6 +470,13 @@ namespace SOEM_FrontEnd.Ethercat
         private uint _appliedProfileAcceleration;
         private uint _appliedProfileDeceleration;
 
+        //ServoIO 표기용.
+        private bool _isNlimOn;
+        private bool _isPlimOn;
+        private bool _isHomeOn;
+
+
+
 
         private enum MoveState
         {
@@ -457,6 +506,11 @@ namespace SOEM_FrontEnd.Ethercat
         {
             //SW보고 CW작업하기 위해사용.
             //alloc/Lock/Log금지.
+
+            //servo io 추가. 
+            //나중에 명령줄때 이거 기준으로 줘야 할 수 있으므로, 앞쪽으로 이동.
+            UpdateServoIO();
+
 
             //좀 맘에 안드는데, 이전꺼 읽어와서 비트만 넣어주는 방식으로 나중에 다시 작성.
 
@@ -503,6 +557,7 @@ namespace SOEM_FrontEnd.Ethercat
             _isError = swFault;
             _isSetPointAck = swSetPointAck;
             _isTargetReached = swTargetReached;
+
 
             //3.다음 cycle에 보낼 Controlword 계산
             ushort cw = Base402Controlword(sw, prevCw, _reqEnable);
@@ -605,6 +660,33 @@ namespace SOEM_FrontEnd.Ethercat
             BinaryPrimitives.WriteUInt16LittleEndian(Output.Slice(_off6040cw, 2), cw);
 
         }
+
+        private void UpdateServoIO()
+        {
+            if (_off60FDio < 0)
+            {
+                _isNlimOn = false;
+                _isPlimOn = false;
+                _isHomeOn = false;
+                return;
+            }
+
+            if ((uint)_off60FDio + 4u > (uint)Input.Length)
+            {
+                _isNlimOn = false;
+                _isPlimOn = false;
+                _isHomeOn = false;
+                return;
+            }
+
+            uint servoio = BinaryPrimitives.ReadUInt32LittleEndian(Input.Slice(_off60FDio, 4));
+
+            // 0x60FD 기준: bit0 = N-Limit, bit1 = P-Limit, bit2 = Home
+            _isNlimOn = (servoio & 0x00000001u) != 0;
+            _isPlimOn = (servoio & 0x00000002u) != 0;
+            _isHomeOn = (servoio & 0x00000004u) != 0;
+        }
+
 
         private ushort Base402Controlword(ushort sw, ushort prevCw, bool enableRequested)
         {

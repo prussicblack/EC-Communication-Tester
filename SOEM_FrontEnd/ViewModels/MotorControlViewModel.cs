@@ -107,6 +107,30 @@ public partial class MotorControlViewModel : ViewModelBase
         set => SetProperty(ref _endPositionText, value);
     }
 
+
+    private bool _nlim;
+    public bool nlim
+    {
+        get => _nlim;
+        set => SetProperty(ref _nlim, value);
+    }
+
+    private bool _plim;
+    public bool plim
+    {
+        get => _plim;
+        set => SetProperty(ref _plim, value);
+    }
+
+    private bool _org;
+    public bool org
+    {
+        get => _org;
+        set => SetProperty(ref _org, value);
+    }
+
+
+
     public ICommand CmdMoveIncMinus { get; }
     public ICommand CmdMoveIncPlus { get; }
     public ICommand CmdServoOn { get; }
@@ -160,7 +184,9 @@ public partial class MotorControlViewModel : ViewModelBase
         //IsHomed = _motor.IsHome;
         IsInPosition = _motor.IsInPosition;
 
-
+        org = _motor.IsHomeSensor;
+        nlim = _motor.IsNLimSensor;
+        plim = _motor.IsPLimSensor;
     }
 
 

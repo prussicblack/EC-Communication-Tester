@@ -1,6 +1,4 @@
-﻿using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
-using Avalonia.Media;
+﻿using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -24,12 +22,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
-using static System.Net.Mime.MediaTypeNames;
 
 //#nullable enable
 
@@ -93,14 +86,14 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    public ObservableCollection<string> SlavesListUI { get;} = new();
+    public ObservableCollection<string> SlavesListUI { get; } = new();
 
     private int _SlaveCountUI;
 
     public int SlaveCountUI
     {
         get
-        { 
+        {
             return _SlaveCountUI;
         }
         set
@@ -115,7 +108,7 @@ public partial class MainViewModel : ViewModelBase
 
     public List<ESIXMLData.ESIDevice> DevicesData = new List<ESIXMLData.ESIDevice>();
 
-    private ObservableCollection<ESIXMLData.ESISDOObject> _SDOObjects; 
+    private ObservableCollection<ESIXMLData.ESISDOObject> _SDOObjects;
 
     public ObservableCollection<ESIXMLData.ESISDOObject> SDOObjects
     {
@@ -162,7 +155,7 @@ public partial class MainViewModel : ViewModelBase
     {
         get
         {
-            if(Datamap.Instance.IsInit() == true)
+            if (Datamap.Instance.IsInit() == true)
                 return Datamap.Instance.GetSlave(_SelectedSlave);
 
             return null;
@@ -179,7 +172,7 @@ public partial class MainViewModel : ViewModelBase
         }
         set
         {
-            if (_SelectedSlave == value) 
+            if (_SelectedSlave == value)
                 return;
             _SelectedSlave = value;
             OnPropertyChanged(nameof(SelectedSlave));
@@ -270,6 +263,174 @@ public partial class MainViewModel : ViewModelBase
         get { return IoInputVm != null; }
     }
 
+    //마스터 통계용 UI
+    private bool _pdoIsRunning;
+    public bool PdoIsRunning
+    {
+        get { return _pdoIsRunning; }
+        set { SetProperty(ref _pdoIsRunning, value); }
+    }
+
+    private long _pdoLoopCount;
+    public long PdoLoopCount
+    {
+        get { return _pdoLoopCount; }
+        set { SetProperty(ref _pdoLoopCount, value); }
+    }
+
+    private long _pdoLastPeriodUs;
+    public long PdoLastPeriodUs
+    {
+        get { return _pdoLastPeriodUs; }
+        set { SetProperty(ref _pdoLastPeriodUs, value); }
+    }
+
+    private long _pdoTargetPeriodUs;
+    public long PdoTargetPeriodUs
+    {
+        get { return _pdoTargetPeriodUs; }
+        set { SetProperty(ref _pdoTargetPeriodUs, value); }
+    }
+
+    private long _pdoMinPeriodUs;
+    public long PdoMinPeriodUs
+    {
+        get { return _pdoMinPeriodUs; }
+        set { SetProperty(ref _pdoMinPeriodUs, value); }
+    }
+
+    private long _pdoMaxPeriodUs;
+    public long PdoMaxPeriodUs
+    {
+        get { return _pdoMaxPeriodUs; }
+        set { SetProperty(ref _pdoMaxPeriodUs, value); }
+    }
+
+    private long _pdoAvgPeriodUs;
+    public long PdoAvgPeriodUs
+    {
+        get { return _pdoAvgPeriodUs; }
+        set { SetProperty(ref _pdoAvgPeriodUs, value); }
+    }
+
+    private int _pdoLastWkc;
+    public int PdoLastWkc
+    {
+        get { return _pdoLastWkc; }
+        set
+        {
+            if (SetProperty(ref _pdoLastWkc, value))
+            {
+                OnPropertyChanged(nameof(PdoWkcText));
+            }
+        }
+    }
+
+    private int _pdoExpectedWkc;
+    public int PdoExpectedWkc
+    {
+        get { return _pdoExpectedWkc; }
+        set
+        {
+            if (SetProperty(ref _pdoExpectedWkc, value))
+            {
+                OnPropertyChanged(nameof(PdoWkcText));
+            }
+        }
+    }
+
+    public string PdoWkcText
+    {
+        get
+        {
+            if (PdoExpectedWkc > 0)
+            {
+                return PdoLastWkc.ToString() + " / " + PdoExpectedWkc.ToString();
+            }
+
+            return PdoLastWkc.ToString();
+        }
+    }
+
+    private long _pdoWkcErrorCount;
+    public long PdoWkcErrorCount
+    {
+        get { return _pdoWkcErrorCount; }
+        set { SetProperty(ref _pdoWkcErrorCount, value); }
+    }
+
+    private long _pdoOverrunCount;
+    public long PdoOverrunCount
+    {
+        get { return _pdoOverrunCount; }
+        set { SetProperty(ref _pdoOverrunCount, value); }
+    }
+
+    private string _pdoLastUpdateText = "";
+    public string PdoLastUpdateText
+    {
+        get { return _pdoLastUpdateText; }
+        set { SetProperty(ref _pdoLastUpdateText, value); }
+    }
+
+    private bool _isPdoStatsUiLogEnabled;
+    public bool IsPdoStatsUiLogEnabled
+    {
+        get { return _isPdoStatsUiLogEnabled; }
+        set { SetProperty(ref _isPdoStatsUiLogEnabled, value); }
+    }
+
+    //public ObservableCollection<string> PdoStatsUiLogs { get; } = new ObservableCollection<string>();
+
+    public ICommand ResetPdoStatsCommand { get; }
+
+    private long _lastPdoStatsUiLogTimestamp;
+    private const double PdoStatsLogIntervalSeconds = 600.0;
+
+    //PDO Map View
+    public ObservableCollection<PdoMapRow> RxPdoMapRows { get; } = new ObservableCollection<PdoMapRow>();
+
+    public ObservableCollection<PdoMapRow> TxPdoMapRows { get; } = new ObservableCollection<PdoMapRow>();
+
+
+    private void HandleResetPdoStats()
+    {
+        if (StateMachine != null)
+        {
+            StateMachine.ResetStats();
+        }
+
+        PdoLoopCount = 0;
+        PdoLastPeriodUs = 0;
+        PdoMinPeriodUs = 0;
+        PdoMaxPeriodUs = 0;
+        PdoAvgPeriodUs = 0;
+        PdoLastWkc = 0;
+        PdoExpectedWkc = 0;
+        PdoWkcErrorCount = 0;
+        PdoOverrunCount = 0;
+        PdoLastUpdateText = "";
+        _lastPdoStatsUiLogTimestamp = 0;
+    }
+
+    //public void AppendPdoStatsUiLog(string line)
+    //{
+    //    if (string.IsNullOrEmpty(line))
+    //    {
+    //        return;
+    //    }
+
+    //    PdoStatsUiLogs.Add(line);
+
+    //    while (PdoStatsUiLogs.Count > 200)
+    //    {
+    //        PdoStatsUiLogs.RemoveAt(0);
+    //    }
+    //}
+
+
+
+
 
 
     private void UpdateControlProfile()
@@ -282,12 +443,18 @@ public partial class MainViewModel : ViewModelBase
             IoInputVm = null;
             _selectedPdoView = null;
             PdoHexDumpVm.Attach(null);
+
+            RxPdoMapRows.Clear();
+            TxPdoMapRows.Clear();
+
             return;
         }
 
         IPDOView pdoView = store.BaseProfile as IPDOView;
         _selectedPdoView = pdoView;
         PdoHexDumpVm.Attach(pdoView);
+
+        UpdatePdoMapRows(pdoView);
 
         //모터 우선확인.
         var motor = store.BaseProfile as IMotorCommands;
@@ -356,6 +523,32 @@ public partial class MainViewModel : ViewModelBase
 
     }
 
+    private void UpdatePdoMapRows(IPDOView pdoView)
+    {
+        RxPdoMapRows.Clear();
+        TxPdoMapRows.Clear();
+
+        if (pdoView == null)
+        {
+            return;
+        }
+
+        if (pdoView.RxPdoMapRows != null)
+        {
+            for (int i = 0; i < pdoView.RxPdoMapRows.Count; i++)
+            {
+                RxPdoMapRows.Add(pdoView.RxPdoMapRows[i]);
+            }
+        }
+
+        if (pdoView.TxPdoMapRows != null)
+        {
+            for (int i = 0; i < pdoView.TxPdoMapRows.Count; i++)
+            {
+                TxPdoMapRows.Add(pdoView.TxPdoMapRows[i]);
+            }
+        }
+    }
 
     //SDO 관련
     public ICommand CMD_ReadAllSdoCommand { get; private set; }
@@ -434,8 +627,8 @@ public partial class MainViewModel : ViewModelBase
             OnPropertyChanged(nameof(MasterEcStateColor));
         }
     }
-    
-    
+
+
 
 
 
@@ -446,7 +639,7 @@ public partial class MainViewModel : ViewModelBase
     public ICommand CMD_MoveToSafeOp { get; private set; }
     public ICommand CMD_MoveToOp { get; private set; }
 
-    public ICommand CMD_ResetStat { get; private set; }
+    //public ICommand CMD_ResetStat { get; private set; }
 
 
     //UI단에 표기되는 로그.
@@ -481,7 +674,7 @@ public partial class MainViewModel : ViewModelBase
         UpdateNicList();
 
 
-        
+
         CMD_ReadAllSdoCommand = new RelayCommand(HandleReadAllSDO);
         CMD_ReadSelectedSdoCommand = new RelayCommand(HandleReadSelectedSDO);
         CMD_WriteSelectedSdoCommand = new RelayCommand(HandleSelectedWriteSDO);
@@ -492,7 +685,9 @@ public partial class MainViewModel : ViewModelBase
         CMD_MoveToSafeOp = new RelayCommand(HandleMoveToSafeOp);
         CMD_MoveToOp = new RelayCommand(HandleMoveToOp);
 
-        CMD_ResetStat = new RelayCommand(HandleResetStat);
+        //CMD_ResetStat = new RelayCommand(HandleResetStat);
+
+        ResetPdoStatsCommand = new RelayCommand(HandleResetPdoStats);
 
         //UI로그 연결을 위한 코드.
         _sink = new AvaloniaUiLogSink(line =>
@@ -529,17 +724,18 @@ public partial class MainViewModel : ViewModelBase
                     IoInputVm.UpdateFromBytes(_selectedPdoView.InputSnapshot.Span);
             }
 
+
         };
         _uiTimer.Start();
 
-        
+
         //임시 로그타이머. 나중에 Automation으로 옮길것.
         _uiTimerLow = new DispatcherTimer();
         _uiTimerLow.Interval = TimeSpan.FromMilliseconds(1000); // 갱신주기. 1초
         _uiTimerLow.Tick += (_, __) =>
         {
-            StateMachine.PollPdoStats();
-
+            //StateMachine.PollPdoStats();
+            UpdatePdoStatsUi();
         };
         _uiTimerLow.Start();
 
@@ -618,7 +814,7 @@ public partial class MainViewModel : ViewModelBase
         if (!ok)
             return;
 
-        
+
         // BaseProfile들이 SafeOP 전환 과정에서 채워지므로, 선택된 Slave UI 갱신
         OnPropertyChanged(nameof(SelectedSlaveData));
         UpdateControlProfile();
@@ -640,10 +836,10 @@ public partial class MainViewModel : ViewModelBase
 
     }
 
-    private void HandleResetStat()
-    {
-        StateMachine.ResetStats();
-    }
+    //private void HandleResetStat()
+    //{
+    //    StateMachine.ResetStats();
+    //}
 
     private void HandleReadSelectedSDO()
     {
@@ -1052,7 +1248,7 @@ public partial class MainViewModel : ViewModelBase
 
     }
 
-    
+
     private void HandleTest()
     {
         //UI테스트용.
@@ -1071,9 +1267,9 @@ public partial class MainViewModel : ViewModelBase
             product = 0x8100,// eep_id
             revision = 0x1,// 리비전
 
-            name ="DM3E-556"
+            name = "DM3E-556"
         };
-        
+
         testInfoList.Add(testInfo1);
 
 
@@ -1142,5 +1338,85 @@ public partial class MainViewModel : ViewModelBase
         foreach (var key in slavekeys)
             SdoWorker.EnqueueRead(key.SlaveNo, key.Index, key.SubIndex);
     }
-    
+
+    private void UpdatePdoStatsUi()
+    {
+        if (StateMachine == null)
+        {
+            PdoIsRunning = false;
+            return;
+        }
+
+        PdoRtStats stats;
+
+        if (StateMachine.TryGetPdoStats(out stats) == false)
+        {
+            PdoIsRunning = false;
+            return;
+        }
+
+        PdoIsRunning = StateMachine.IsPdoRunning;
+        PdoLoopCount = stats.LoopCount;
+
+        PdoLastPeriodUs = (long)stats.LastDtUs;
+        PdoTargetPeriodUs = (long)StateMachine.PdoTargetPeriodUs;
+        PdoMinPeriodUs = (long)stats.MinDtUs;
+        PdoMaxPeriodUs = (long)stats.MaxDtUs;
+        PdoAvgPeriodUs = (long)stats.AvgDtUs;
+
+        PdoLastWkc = stats.LastReceiveRc;
+        PdoExpectedWkc = 0;
+
+        PdoWkcErrorCount = stats.ReceiveErrorCount;
+        PdoOverrunCount = stats.LateCycleCount;
+
+        PdoLastUpdateText = DateTime.Now.ToString("HH:mm:ss");
+
+        AppendPdoStatsUiLogIfNeeded(stats);
+    }
+
+    private void AppendPdoStatsUiLogIfNeeded(PdoRtStats stats)
+    {
+        if (!IsPdoStatsUiLogEnabled)
+        {
+            return;
+        }
+
+        long nowTimestamp = Stopwatch.GetTimestamp();
+
+        if (_lastPdoStatsUiLogTimestamp != 0)
+        {
+            double elapsedSeconds = (double)(nowTimestamp - _lastPdoStatsUiLogTimestamp) / (double)Stopwatch.Frequency;
+
+            if (elapsedSeconds < PdoStatsLogIntervalSeconds)
+            {
+                return;
+            }
+        }
+
+        _lastPdoStatsUiLogTimestamp = nowTimestamp;
+
+        string message =
+            "[PDO] " +
+            "Loop=" + stats.LoopCount.ToString() +
+            ", Dt(us)=" +
+            ((long)stats.LastDtUs).ToString() + "/" +
+            ((long)stats.MinDtUs).ToString() + "/" +
+            ((long)stats.AvgDtUs).ToString() + "/" +
+            ((long)stats.MaxDtUs).ToString() +
+            ", Jitter(us)=" +
+            ((long)stats.LastJitterUs).ToString() + "/" +
+            ((long)stats.MinJitterUs).ToString() + "/" +
+            ((long)stats.AvgAbsJitterUs).ToString() + "/" +
+            ((long)stats.MaxJitterUs).ToString() +
+            ", RecvWKC=" + stats.LastReceiveRc.ToString() +
+            ", RecvErr=" + stats.ReceiveErrorCount.ToString() +
+            ", SendRc=" + stats.LastSendRc.ToString() +
+            ", SendErr=" + stats.SendErrorCount.ToString() +
+            ", Late=" + stats.LateCycleCount.ToString();
+
+        _log.LogInformation(message);
+    }
+
+
 }

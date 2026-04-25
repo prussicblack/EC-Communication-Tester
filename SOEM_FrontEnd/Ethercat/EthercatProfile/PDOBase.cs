@@ -32,6 +32,12 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
         public ReadOnlyMemory<byte> OutputSnapshot => System.Threading.Volatile.Read(ref _outputSnapCurrent);
         public ReadOnlyMemory<byte> InputSnapshot => System.Threading.Volatile.Read(ref _inputSnapCurrent);
 
+
+        //PDO Map View
+        private readonly List<PdoMapRow> _rxPdoMapRows = new List<PdoMapRow>();
+        private readonly List<PdoMapRow> _txPdoMapRows = new List<PdoMapRow>();
+
+
         public void PublishSnapshots()
         {
             // 다음에 공개할 버퍼 선택
@@ -66,9 +72,64 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
             }
         }
 
+        //PDO Map View
+        public IReadOnlyList<PdoMapRow> RxPdoMapRows
+        {
+            get { return _rxPdoMapRows; }
+        }
+
+        public IReadOnlyList<PdoMapRow> TxPdoMapRows
+        {
+            get { return _txPdoMapRows; }
+        }
+
+        protected void SetCurrentPdoMapRows(List<uint> rxAllMap, List<uint> txAllMap)
+        {
+            BuildCurrentPdoMapRows(_rxPdoMapRows, rxAllMap);
+            BuildCurrentPdoMapRows(_txPdoMapRows, txAllMap);
+        }
+
+        private static void BuildCurrentPdoMapRows(List<PdoMapRow> target, List<uint> allMap)
+        {
+            target.Clear();
+
+            if (allMap == null)
+            {
+                return;
+            }
+
+            int bitOffset = 0;
+
+            for (int i = 0; i < allMap.Count; i++)
+            {
+                uint raw = allMap[i];
+
+                ushort index = (ushort)(raw >> 16);
+                byte subIndex = (byte)(raw >> 8);
+                byte bitLength = (byte)(raw & 0xFF);
+
+                PdoMapRow row = new PdoMapRow
+                {
+                    No = i + 1,
+                    Raw = raw,
+                    Index = index,
+                    SubIndex = subIndex,
+                    BitLength = bitLength,
+                    BitOffset = bitOffset
+                };
+
+                target.Add(row);
+
+                bitOffset += bitLength;
+            }
+        }
+
+        public virtual void SetPdoMapping(List<uint> rxAllMap, List<uint> txAllMap)
+        {
+            SetCurrentPdoMapRows(rxAllMap, txAllMap);
+        }
 
         //PDO View
-
         public PDOBase(int outputSize, int inputSize)
         {
             _output = new byte[outputSize];

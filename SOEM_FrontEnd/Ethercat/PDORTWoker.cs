@@ -88,6 +88,14 @@ namespace SOEM_FrontEnd.Ethercat
         //통계 리셋.
         private volatile bool _reqStatsReset;
 
+        public bool IsRunning
+        {
+            get
+            {
+                return _running;
+            }
+        }
+
 
         public PDORTWorker(EcClient ec)
         {
