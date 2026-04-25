@@ -14,6 +14,7 @@
 
       디자인 프리뷰에서만 VM을 직접 생성하고 싶으면 아래 Design.DataContext를 사용할것.
     -->
+	
     <Design.DataContext>
         <vm:MotorControlViewModel />
     </Design.DataContext>
@@ -183,8 +184,6 @@
 							
 						<!--조그버튼에 떼면 정지하는 로직 있어야됨. 누르고 있는동안에만 이동할것.-->
 						<UniformGrid Grid.Row="1" Columns="2">
-                        <!--<Button Content="◀ JOG-" Command="{Binding CmdMoveJogMinus}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-							<Button Content="+JOG ▶" Command="{Binding CmdMoveJogPlus}"  VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>-->
                         <Button x:Name="JogMinusButton" Content="◀ JOG-" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                         <Button x:Name="JogPlusButton" Content="+JOG ▶" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                         </UniformGrid>
@@ -202,7 +201,7 @@
 							<Button Content="HOME" Command="{Binding CmdHome}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" IsEnabled="False"/>
 							<!--<Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>-->
                             <Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-4
+
                             <Button Height="32" Content="STOP" Command="{Binding CmdMoveStop}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 
 							<!--<Button Height="32" Content="Move Start Pos" Command="{Binding CmdMoveToStart}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>-->

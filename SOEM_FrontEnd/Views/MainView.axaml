@@ -114,7 +114,6 @@
                               </StackPanel>
                           </Border>
 
-                          <!--<Button Grid.Row="4" Grid.Column="0" Content="Reset Stats" Command="{Binding CMD_ResetStat}"/>-->
 
 						  <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Padding="8" Margin="4" BorderBrush="#555" BorderThickness="1" CornerRadius="4">
 							  <StackPanel Spacing="6">
@@ -296,11 +295,6 @@
 							<Button Grid.Row="0" Grid.Column="3" Content="Write"
 									IsEnabled="{Binding CanWriteSelectedSdo}"
 									Command="{Binding CMD_WriteSelectedSdoCommand}"/>
-
-							<!--Write 타입/포맷 표시 --><!--
-							<!--<TextBlock Grid.Row="0" Grid.Column="5"
-									   Text="{Binding SelectedSdoTypeText}"
-									   VerticalAlignment="Center"/>-->
                             
 						</Grid>
 					</Border>
@@ -374,11 +368,6 @@
 
               </TabItem>
 
-              <!--<TabItem Header="PDO">
-				  --><!-- PDO설정 및 관련 내용 여기에...는 Control의 기능이 방대해져서 삭제.--><!--
-
-
-              </TabItem>-->
 
               <TabItem Header="Control">
                   <!-- PDO에서 설정된 내용 바탕으로 동적UI로 처리.-->
