@@ -41,9 +41,11 @@
 	<!-- Content -->
 	<Border Padding="16">
 		<StackPanel Spacing="8">
-			<TextBlock Text="EtherCAT Front-End (SOEM 기반)"/>
+			<TextBlock Text="SOEM Front-End (SOEM 기반)"/>
 			<TextBlock Text="Version: 0.1.0"/>
+			<TextBlock Text="PreRelease"/>
 			<Separator Margin="0,8,0,8"/>
+			
 
 		</StackPanel>
 	</Border>
