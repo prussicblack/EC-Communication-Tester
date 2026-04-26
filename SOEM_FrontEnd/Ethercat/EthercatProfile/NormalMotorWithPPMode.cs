@@ -49,8 +49,13 @@ namespace SOEM_FrontEnd.Ethercat
         //SDO 핫패스.
         private SDOPoint _sdo6060; // Mode of operation
         private SDOPoint _sdo6098; // Homing method 같은 것
+        //SDO 핫패스. 홈기동용.
+        private SDOPoint _sdo6099_01; // Homing speed: search switch
+        private SDOPoint _sdo6099_02; // Homing speed: search zero
+        private SDOPoint _sdo609A;    // Homing acceleration
+        private SDOPoint _sdo607C;    // Home offset
 
-
+        //SDO 핫패스. 일반기동용.
         private SDOPoint _sdo6081; //Profile Velocity
         private SDOPoint _sdo6083; //Profile Acceleration
         private SDOPoint _sdo6084; //Profile Deceleration
@@ -63,6 +68,9 @@ namespace SOEM_FrontEnd.Ethercat
         private uint _profileAcceleration = 0;
         private uint _profileDeceleration = 0;
 
+        //홈기동용 Write Buffer.
+        private readonly byte[] _i8WriteBuffer = new byte[1];
+        private readonly byte[] _i32WriteBuffer = new byte[4];
 
 
         private readonly EcClient _ECClient;
@@ -78,7 +86,7 @@ namespace SOEM_FrontEnd.Ethercat
 
         public bool IsServoOn => _isServoOn;
 
-        public bool IsHome => false;
+        public bool IsHome => _isHomed;
 
         public bool IsError => _isError;
 
@@ -238,6 +246,14 @@ namespace SOEM_FrontEnd.Ethercat
             _sdo6081 = slave.TryGetSdo(0x6081, 0x00);
             _sdo6083 = slave.TryGetSdo(0x6083, 0x00);
             _sdo6084 = slave.TryGetSdo(0x6084, 0x00);
+
+
+            //홈 기동용 핫패스 바인딩.
+            _sdo6099_01 = slave.TryGetSdo(0x6099, 0x01);
+            _sdo6099_02 = slave.TryGetSdo(0x6099, 0x02);
+            _sdo609A = slave.TryGetSdo(0x609A, 0x00);
+            _sdo607C = slave.TryGetSdo(0x607C, 0x00);
+
         }
 
         public bool TryResolve402()
@@ -339,7 +355,7 @@ namespace SOEM_FrontEnd.Ethercat
             point.Error = null;
         }
 
-        private bool TryQueueWriteU32(ushort index, uint value, SDOPoint point)
+        private bool TryQueueWriteU32(ushort index, byte subIndex, uint value, SDOPoint point)
         {
             if (_sdoWorker == null)
                 return false;
@@ -350,7 +366,42 @@ namespace SOEM_FrontEnd.Ethercat
             MarkWritePending(point);
 
             BinaryPrimitives.WriteUInt32LittleEndian(_u32WriteBuffer.AsSpan(0, 4), value);
-            _sdoWorker.EnqueueWrite(_SlaveNo, index, 0x00, _u32WriteBuffer);
+            _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _u32WriteBuffer);
+            return true;
+        }
+
+        private bool TryQueueWriteU32(ushort index, uint value, SDOPoint point)
+        {
+            return TryQueueWriteU32(index, 0x00, value, point);
+        }
+
+        private bool TryQueueWriteI8(ushort index, byte subIndex, sbyte value, SDOPoint point)
+        {
+            if (_sdoWorker == null)
+                return false;
+
+            if (point == null)
+                return false;
+
+            MarkWritePending(point);
+
+            _i8WriteBuffer[0] = unchecked((byte)value);
+            _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _i8WriteBuffer);
+            return true;
+        }
+
+        private bool TryQueueWriteI32(ushort index, byte subIndex, int value, SDOPoint point)
+        {
+            if (_sdoWorker == null)
+                return false;
+
+            if (point == null)
+                return false;
+
+            MarkWritePending(point);
+
+            BinaryPrimitives.WriteInt32LittleEndian(_i32WriteBuffer.AsSpan(0, 4), value);
+            _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _i32WriteBuffer);
             return true;
         }
 
@@ -426,11 +477,29 @@ namespace SOEM_FrontEnd.Ethercat
             PushDetected = 1 << 14, //1-PushMode중 작업물 감지상태
             SafetyActivated = 1 << 15 //1-Safety기능이 활성화되어 정지상태.
         }
+        //PP모드 Bit12 = SetPointAcknowledge
+        //Home모드 Bit12 = Homing attained
+
+        //PP모드 Bit13 = Following error
+        //Home모드 Bit13 = Homing error
+
 
         //비트 마스크 헬퍼. 여기서만 사용할것.
         private static bool HasSW(ushort sw, StatusWordBit mask) => (sw & (ushort)mask) != 0;
         private static ushort SetCW(ushort cw, ControlWordBit mask) => (ushort)(cw | (ushort)mask);
         private static ushort ClearCW(ushort cw, ControlWordBit mask) => (ushort)(cw & (ushort)~(ushort)mask);
+
+        //홈 기동용 StatusWord Helper
+        private static bool HasHomingAttained(ushort sw)
+        {
+            return (sw & (1 << 12)) != 0;
+        }
+
+        private static bool HasHomingError(ushort sw)
+        {
+            return (sw & (1 << 13)) != 0;
+        }
+
 
         //402 전이 기본 CW 값
         private const ushort CW_SHUTDOWN = 0x0006;
@@ -476,7 +545,26 @@ namespace SOEM_FrontEnd.Ethercat
         private bool _isHomeOn;
 
 
+        //홈 기동용 파라미터 필드.
+        private sbyte _homeMethod = 35;
+        private uint _homeSearchSwitchSpeed = 1000;
+        private uint _homeSearchZeroSpeed = 500;
+        private uint _homeAcceleration = 1000;
+        private int _homeOffset = 0;
 
+        private bool _isHomed;
+        private bool _homeRestoreThenFault;
+
+        private MotionCommand _motion = MotionCommand.None;
+
+        private enum MotionCommand
+        {
+            None = 0,
+            MoveAbs,
+            MoveInc,
+            Jog,
+            Home
+        }
 
         private enum MoveState
         {
@@ -495,6 +583,31 @@ namespace SOEM_FrontEnd.Ethercat
             WaitSetPointAck,
             WaitSetPointAckClear,
             WaitTargetReached,
+
+            //이하는 홈 기동용 시퀀스.
+            QueueModeHoming,
+            WaitModeHoming,
+
+            QueueHomeMethod,
+            WaitHomeMethod,
+
+            QueueHomeSpeedSwitch,
+            WaitHomeSpeedSwitch,
+
+            QueueHomeSpeedZero,
+            WaitHomeSpeedZero,
+
+            QueueHomeAcceleration,
+            WaitHomeAcceleration,
+
+            QueueHomeOffset,
+            WaitHomeOffset,
+
+            QueuePdoHomeStart,
+            WaitHomeComplete,
+
+            QueueModePP,
+            WaitModePP,
 
             Done,
             Fault
@@ -613,14 +726,27 @@ namespace SOEM_FrontEnd.Ethercat
                 _reqStop = false;
 
                 _reqMove = false;
+                _jogActive = false;
+                _jogDirection = 0;
                 _haltActive = true;
+
+                cw = ClearCW(cw, ControlWordBit.NewSetPoint);
 
                 if (_moveState != MoveState.Idle)
                 {
-                    _moveState = MoveState.Idle;
+                    if (_motionKind == MotionCommand.Home)
+                    {
+                        _homeRestoreThenFault = false;
+                        _moveState = MoveState.QueueModePP;
+                    }
+                    else
+                    {
+                        _motionKind = MotionCommand.None;
+                        _moveState = MoveState.Idle;
+                    }
                 }
 
-                cw = ClearCW(cw, ControlWordBit.NewSetPoint);
+
             }
 
             // 현재 Halt 상태 반영
@@ -650,7 +776,7 @@ namespace SOEM_FrontEnd.Ethercat
                 }
             }
 
-            ProcessMoveAbsStateMachine(ref cw, swSetPointAck, swTargetReached, swFault, swOperationEnabled);
+            ProcessMoveAbsStateMachine(ref cw, swSetPointAck, swTargetReached, swFault, swOperationEnabled, sw);
 
             //5.최종 CW를 RxPDO(Output)에 기록
             if ((uint)_off6040cw + 2u > (uint)Output.Length)
@@ -729,7 +855,7 @@ namespace SOEM_FrontEnd.Ethercat
             return cw;
         }
 
-        private void ProcessMoveAbsStateMachine(ref ushort cw, bool swSetPointAck, bool swTargetReached, bool swFault, bool swOperationEnabled)
+        private void ProcessMoveAbsStateMachine(ref ushort cw, bool swSetPointAck, bool swTargetReached, bool swFault, bool swOperationEnabled, ushort sw)
         {
             uint readValue;
 
@@ -753,22 +879,40 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
+                        if (_isServoOn == false || _isError == true)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        if (_motion == MotionCommand.Home)
+                        {
+                            if (_sdo6060 == null || _sdo6098 == null || _sdo6099_01 == null || _sdo6099_02 == null || _sdo609A == null || _sdo607C == null)
+                            {
+                                _moveState = MoveState.Fault;
+                                break;
+                            }
+
+                            _isHomed = false;
+                            _homeRestoreThenFault = false;
+                            _moveState = MoveState.QueueModeHoming;
+                            break;
+                        }
+
+
                         if (_sdo6081 == null || _sdo6083 == null || _sdo6084 == null)
                         {
                             _moveState = MoveState.Fault;
                             break;
                         }
 
-                        if (_isServoOn == true & _isError == false)
+                        if (_profileDirty)
                         {
-                            if (_profileDirty)
-                                _moveState = MoveState.QueueWrite6081;
-                            else
-                                _moveState = MoveState.QueuePdoStart;
+                            _moveState = MoveState.QueueWrite6081;
                         }
                         else
                         {
-                            _moveState = MoveState.Fault;
+                            _moveState = MoveState.QueuePdoStart;
                         }
 
                         break;
@@ -989,10 +1133,286 @@ namespace SOEM_FrontEnd.Ethercat
 
                         break;
                     }
+                //홈 시퀀스 케이스 추가.
+                case MoveState.QueueModeHoming:
+                    {
+                        if (TryQueueWriteI8(0x6060, 0x00, 6, _sdo6060) == false)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.WaitModeHoming;
+                        break;
+                    }
+
+                case MoveState.WaitModeHoming:
+                    {
+                        if (_sdo6060.WriteStatus == SDOWriteStatus.Pending ||
+                            _sdo6060.WriteStatus == SDOWriteStatus.None)
+                        {
+                            break;
+                        }
+
+                        if (_sdo6060.WriteStatus != SDOWriteStatus.Ok)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.QueueHomeMethod;
+                        break;
+                    }
+
+                case MoveState.QueueHomeMethod:
+                    {
+                        if (TryQueueWriteI8(0x6098, 0x00, _homeMethod, _sdo6098) == false)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.WaitHomeMethod;
+                        break;
+                    }
+
+                case MoveState.WaitHomeMethod:
+                    {
+                        if (_sdo6098.WriteStatus == SDOWriteStatus.Pending ||
+                            _sdo6098.WriteStatus == SDOWriteStatus.None)
+                        {
+                            break;
+                        }
+
+                        if (_sdo6098.WriteStatus != SDOWriteStatus.Ok)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.QueueHomeSpeedSwitch;
+                        break;
+                    }
+
+                case MoveState.QueueHomeSpeedSwitch:
+                    {
+                        if (TryQueueWriteU32(0x6099, 0x01, _homeSearchSwitchSpeed, _sdo6099_01) == false)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.WaitHomeSpeedSwitch;
+                        break;
+                    }
+
+                case MoveState.WaitHomeSpeedSwitch:
+                    {
+                        if (_sdo6099_01.WriteStatus == SDOWriteStatus.Pending ||
+                            _sdo6099_01.WriteStatus == SDOWriteStatus.None)
+                        {
+                            break;
+                        }
+
+                        if (_sdo6099_01.WriteStatus != SDOWriteStatus.Ok)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.QueueHomeSpeedZero;
+                        break;
+                    }
+
+                case MoveState.QueueHomeSpeedZero:
+                    {
+                        if (TryQueueWriteU32(0x6099, 0x02, _homeSearchZeroSpeed, _sdo6099_02) == false)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.WaitHomeSpeedZero;
+                        break;
+                    }
+
+                case MoveState.WaitHomeSpeedZero:
+                    {
+                        if (_sdo6099_02.WriteStatus == SDOWriteStatus.Pending ||
+                            _sdo6099_02.WriteStatus == SDOWriteStatus.None)
+                        {
+                            break;
+                        }
+
+                        if (_sdo6099_02.WriteStatus != SDOWriteStatus.Ok)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.QueueHomeAcceleration;
+                        break;
+                    }
+
+                case MoveState.QueueHomeAcceleration:
+                    {
+                        if (TryQueueWriteU32(0x609A, 0x00, _homeAcceleration, _sdo609A) == false)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.WaitHomeAcceleration;
+                        break;
+                    }
+
+                case MoveState.WaitHomeAcceleration:
+                    {
+                        if (_sdo609A.WriteStatus == SDOWriteStatus.Pending ||
+                            _sdo609A.WriteStatus == SDOWriteStatus.None)
+                        {
+                            break;
+                        }
+
+                        if (_sdo609A.WriteStatus != SDOWriteStatus.Ok)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.QueueHomeOffset;
+                        break;
+                    }
+
+                case MoveState.QueueHomeOffset:
+                    {
+                        if (TryQueueWriteI32(0x607C, 0x00, _homeOffset, _sdo607C) == false)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.WaitHomeOffset;
+                        break;
+                    }
+
+                case MoveState.WaitHomeOffset:
+                    {
+                        if (_sdo607C.WriteStatus == SDOWriteStatus.Pending ||
+                            _sdo607C.WriteStatus == SDOWriteStatus.None)
+                        {
+                            break;
+                        }
+
+                        if (_sdo607C.WriteStatus != SDOWriteStatus.Ok)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.QueuePdoHomeStart;
+                        break;
+                    }
+
+                case MoveState.QueuePdoHomeStart:
+                    {
+                        if (swFault)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        if (swOperationEnabled == false)
+                        {
+                            break;
+                        }
+
+                        cw = ClearCW(cw, ControlWordBit.Relative);
+                        cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
+                        cw = ClearCW(cw, ControlWordBit.Halt);
+
+                        // Homing mode에서 ControlWord bit4 = Homing operation start
+                        cw = SetCW(cw, ControlWordBit.NewSetPoint);
+
+                        _moveState = MoveState.WaitHomeComplete;
+                        break;
+                    }
+
+                case MoveState.WaitHomeComplete:
+                    {
+                        bool homingAttained = HasHomingAttained(sw);
+                        bool homingError = HasHomingError(sw);
+
+                        // Homing 동작 중에는 bit4 유지
+                        cw = SetCW(cw, ControlWordBit.NewSetPoint);
+
+                        if (homingError || swFault)
+                        {
+                            cw = ClearCW(cw, ControlWordBit.NewSetPoint);
+
+                            _isHomed = false;
+                            _homeRestoreThenFault = true;
+                            _moveState = MoveState.QueueModePP;
+                            break;
+                        }
+
+                        if (homingAttained)
+                        {
+                            cw = ClearCW(cw, ControlWordBit.NewSetPoint);
+
+                            _isHomed = true;
+                            _homeRestoreThenFault = false;
+                            _moveState = MoveState.QueueModePP;
+                        }
+
+                        break;
+                    }
+
+                case MoveState.QueueModePP:
+                    {
+                        if (TryQueueWriteI8(0x6060, 0x00, 1, _sdo6060) == false)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _moveState = MoveState.WaitModePP;
+                        break;
+                    }
+
+                case MoveState.WaitModePP:
+                    {
+                        if (_sdo6060.WriteStatus == SDOWriteStatus.Pending ||
+                            _sdo6060.WriteStatus == SDOWriteStatus.None)
+                        {
+                            break;
+                        }
+
+                        if (_sdo6060.WriteStatus != SDOWriteStatus.Ok)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        if (_homeRestoreThenFault)
+                        {
+                            _homeRestoreThenFault = false;
+                            _motion = MotionCommand.None;
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        _motion = MotionCommand.None;
+                        _moveState = MoveState.Done;
+                        break;
+                    }
+
 
                 case MoveState.Done:
                     {
                         cw = ClearCW(cw, ControlWordBit.NewSetPoint);
+                        _motion = MotionCommand.None;
+                        _homeRestoreThenFault = false;
                         _moveState = MoveState.Idle;
                         break;
                     }
@@ -1001,6 +1421,8 @@ namespace SOEM_FrontEnd.Ethercat
                 default:
                     {
                         cw = ClearCW(cw, ControlWordBit.NewSetPoint);
+                        _motion = MotionCommand.None;
+                        _homeRestoreThenFault = false;
                         _moveState = MoveState.Idle;
                         break;
                     }
@@ -1024,6 +1446,8 @@ namespace SOEM_FrontEnd.Ethercat
             _haltActive = false;   // Stop 상태 해제
             _moveTarget = position;
             _IsAbsMove = true;
+            _motion = MotionCommand.MoveAbs;
+
 
             //마지막에 위에것이 확정되었다는 의미로...
             _reqMove = true;
@@ -1046,6 +1470,8 @@ namespace SOEM_FrontEnd.Ethercat
             _moveTarget = position;
             _IsAbsMove = false;
 
+            _motion = MotionCommand.MoveInc;
+
             //마지막에 위에것이 확정되었다는 의미로...
             _reqMove = true;
 
@@ -1060,8 +1486,6 @@ namespace SOEM_FrontEnd.Ethercat
 
         public bool Stop()
         {
-            //_reqStop = true;
-
             _jogActive = false;
             _jogDirection = 0;
             _reqStop = true;
@@ -1085,6 +1509,9 @@ namespace SOEM_FrontEnd.Ethercat
             _jogDirection = 1;
             _jogActive = true;
             _haltActive = false;
+
+            _motion = MotionCommand.Jog;
+
             return true;
         }
 
@@ -1104,6 +1531,9 @@ namespace SOEM_FrontEnd.Ethercat
             _jogDirection = -1;
             _jogActive = true;
             _haltActive = false;
+
+            _motion = MotionCommand.Jog;
+
             return true;
         }
 
@@ -1142,8 +1572,36 @@ namespace SOEM_FrontEnd.Ethercat
 
         public bool Home()
         {
-            throw new NotImplementedException();
+            if (_isServoOn == false || _isError == true)
+                return false;
+
+            if (_moveState != MoveState.Idle)
+                return false;
+
+            if (_reqMove)
+                return false;
+
+            _jogActive = false;
+            _jogDirection = 0;
+            _haltActive = false;
+
+            _motion = MotionCommand.Home;
+
+            _reqMove = true;
+
+            return true;
         }
+
+        public void SetHomeProfile(sbyte method, uint searchSwitchSpeed, uint searchZeroSpeed, uint acceleration, int homeOffset)
+        {
+            _homeMethod = method;
+            _homeSearchSwitchSpeed = searchSwitchSpeed;
+            _homeSearchZeroSpeed = searchZeroSpeed;
+            _homeAcceleration = acceleration;
+            _homeOffset = homeOffset;
+        }
+
+
 
         public readonly struct PdoMapEntry
         {

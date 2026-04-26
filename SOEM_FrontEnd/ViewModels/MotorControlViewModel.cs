@@ -108,6 +108,44 @@ public partial class MotorControlViewModel : ViewModelBase
     }
 
 
+    private string _homeMethodText = "37";
+    public string HomeMethodText
+    {
+        get { return _homeMethodText; }
+        set { SetProperty(ref _homeMethodText, value); }
+    }
+
+    private string _homeSearchSwitchSpeedText = "10";
+    public string HomeSearchSwitchSpeedText
+    {
+        get { return _homeSearchSwitchSpeedText; }
+        set { SetProperty(ref _homeSearchSwitchSpeedText, value); }
+    }
+
+    private string _homeSearchZeroSpeedText = "5";
+    public string HomeSearchZeroSpeedText
+    {
+        get { return _homeSearchZeroSpeedText; }
+        set { SetProperty(ref _homeSearchZeroSpeedText, value); }
+    }
+
+    private string _homeAccelerationText = "100";
+    public string HomeAccelerationText
+    {
+        get { return _homeAccelerationText; }
+        set { SetProperty(ref _homeAccelerationText, value); }
+    }
+
+    private string _homeOffsetText = "0";
+    public string HomeOffsetText
+    {
+        get { return _homeOffsetText; }
+        set { SetProperty(ref _homeOffsetText, value); }
+    }
+
+
+
+
     private bool _nlim;
     public bool nlim
     {
@@ -181,7 +219,7 @@ public partial class MotorControlViewModel : ViewModelBase
         CurrentPosition = _motor.ActualPosition;
         IsServoOn = _motor.IsServoOn;
         HasError = _motor.IsError;
-        //IsHomed = _motor.IsHome;
+        IsHomed = _motor.IsHome;
         IsInPosition = _motor.IsInPosition;
 
         org = _motor.IsHomeSensor;
@@ -259,6 +297,29 @@ public partial class MotorControlViewModel : ViewModelBase
             IsHomed = true;
             return;
         }
+
+        sbyte method;
+        uint searchSwitchSpeed;
+        uint searchZeroSpeed;
+        uint acceleration;
+        int homeOffset;
+
+        if (!sbyte.TryParse(HomeMethodText, out method))
+            return;
+
+        if (!uint.TryParse(HomeSearchSwitchSpeedText, out searchSwitchSpeed))
+            return;
+
+        if (!uint.TryParse(HomeSearchZeroSpeedText, out searchZeroSpeed))
+            return;
+
+        if (!uint.TryParse(HomeAccelerationText, out acceleration))
+            return;
+
+        if (!int.TryParse(HomeOffsetText, out homeOffset))
+            return;
+
+        _motor.SetHomeProfile(method, searchSwitchSpeed, searchZeroSpeed, acceleration, homeOffset);
 
         _motor.Home();
         RefreshFromMotor();

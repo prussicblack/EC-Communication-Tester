@@ -12,6 +12,10 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
         //일단은 미사용.
 
         void SetProfile(uint velocity, uint acceleration, uint deceleration);
+
+        //홈 기동을 위한 프로파일.
+        void SetHomeProfile(sbyte method, uint searchSwitchSpeed, uint searchZeroSpeed, uint acceleration, int homeOffset);
+
         bool MoveABS(int position);
 
         bool MoveINC(int position);

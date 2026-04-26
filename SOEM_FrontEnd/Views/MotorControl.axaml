@@ -198,7 +198,7 @@
 							<Button Content="Servo ON" Command="{Binding CmdServoOn}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 							<Button Content="Servo OFF" Command="{Binding CmdServoOff}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 							<Button Content="Alarm Clear" Foreground="Red" Command="{Binding CmdAlarmClear}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-							<Button Content="HOME" Command="{Binding CmdHome}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" IsEnabled="False"/>
+							<Button Content="HOME" Command="{Binding CmdHome}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 							<!--<Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>-->
                             <Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 
