@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using System;
 
 namespace SOEM_FrontEnd.Views;
 
@@ -13,6 +14,24 @@ public partial class MainWindow : Window
     public static readonly StyledProperty<Thickness> WindowPaddingProperty =
        AvaloniaProperty.Register<MainWindow, Thickness>(nameof(WindowPadding));
 
+    //종료시 shutdown호출을 위한 코드.
+    private bool _disposedViewModel;
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        if (!_disposedViewModel)
+        {
+            _disposedViewModel = true;
+
+            IDisposable disposable = DataContext as IDisposable;
+
+            if (disposable != null)
+            {
+                disposable.Dispose();
+            }
+        }
+
+        base.OnClosing(e);
+    }
 
     public Thickness WindowPadding
     {

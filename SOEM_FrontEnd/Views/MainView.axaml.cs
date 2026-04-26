@@ -10,7 +10,8 @@ namespace SOEM_FrontEnd.Views;
 public partial class MainView : UserControl
 {
     private bool _logHooked;
-    
+   
+
     public MainView()
     {
         InitializeComponent();

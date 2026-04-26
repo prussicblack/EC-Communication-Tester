@@ -43,7 +43,7 @@ public class SlaveItem : INotifyPropertyChanged
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-public partial class MainViewModel : ViewModelBase
+public partial class MainViewModel : ViewModelBase, IDisposable
 {
     //public string Greeting => "Welcome to Avalonia!";
 
