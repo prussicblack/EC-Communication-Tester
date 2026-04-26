@@ -223,7 +223,7 @@
 					</Grid>
 
 
-					<StackPanel Grid.Row="1" Grid.Column="2" Spacing="4">
+					<StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" VerticalAlignment="Top" Spacing="4">
 
 						<TextBlock Text="Home Parameter"
 								   FontWeight="Bold"
@@ -238,7 +238,7 @@
 						</StackPanel>
 
 						<StackPanel Orientation="Horizontal" Spacing="5">
-							<TextBlock Width="90" Text="Search SW"/>
+							<TextBlock Width="90" Text="Home Speed"/>
 							<TextBox Width="90"
 									 Height="26"
 									 Text="{Binding HomeSearchSwitchSpeedText, UpdateSourceTrigger=PropertyChanged}"
@@ -246,7 +246,7 @@
 						</StackPanel>
 
 						<StackPanel Orientation="Horizontal" Spacing="5">
-							<TextBlock Width="90" Text="Search Zero"/>
+							<TextBlock Width="90" Text="Creep Speed"/>
 							<TextBox Width="90"
 									 Height="26"
 									 Text="{Binding HomeSearchZeroSpeedText, UpdateSourceTrigger=PropertyChanged}"
