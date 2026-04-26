@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:SOEM_FrontEnd.ViewModels"
              x:DataType="vm:MotorControlViewModel"
-             mc:Ignorable="d" d:DesignWidth="550" d:DesignHeight="350"
+             mc:Ignorable="d" d:DesignWidth="750" d:DesignHeight="330"
              x:Class="SOEM_FrontEnd.Views.MotorControl">
 
     <!--
@@ -38,7 +38,8 @@
 
 				<!-- Body -->
 				<Grid RowDefinitions="Auto,Auto,Auto"
-					  ColumnDefinitions="230,260">
+					  ColumnDefinitions="230,260,220"
+					  ColumnSpacing="10">
 
 					<!-- Current Position -->
 					<StackPanel Grid.Row="0" Grid.ColumnSpan="2"
@@ -167,7 +168,7 @@
 					</StackPanel>
 
 					<!-- Buttons -->
-					<Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6">
+					<Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
 
 						<!-- 리미트 관련 추가. PDO로직도 추가해야됨. 리미트 미사용 설정도-->
 						<UniformGrid Grid.Row="0" Columns="3">
@@ -192,15 +193,18 @@
 							<Button Content="◀ INC-" Command="{Binding CmdMoveIncMinus}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 							<Button Content="+INC ▶" Command="{Binding CmdMoveIncPlus}"  VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 						</UniformGrid>
-						
 
-						<UniformGrid Grid.Row="3" Columns="2">
+						<UniformGrid Grid.Row="3" Columns="1">
+							<Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+						</UniformGrid>
+
+
+						<UniformGrid Grid.Row="4" Columns="2">
 							<Button Content="Servo ON" Command="{Binding CmdServoOn}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 							<Button Content="Servo OFF" Command="{Binding CmdServoOff}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 							<Button Content="Alarm Clear" Foreground="Red" Command="{Binding CmdAlarmClear}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-							<Button Content="HOME" Command="{Binding CmdHome}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+							<!--<Button Content="HOME" Command="{Binding CmdHome}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>-->
 							<!--<Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" IsEnabled="{Binding IsHomed}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>-->
-                            <Button Height="32" Content="ABS MOVE" Command="{Binding CmdMoveAbs}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 
                             <Button Height="32" Content="STOP" Command="{Binding CmdMoveStop}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 
@@ -218,6 +222,64 @@
 
 					</Grid>
 
+
+					<StackPanel Grid.Row="1" Grid.Column="2" Spacing="4">
+
+						<TextBlock Text="Home Parameter"
+								   FontWeight="Bold"
+								   Margin="0,0,0,4"/>
+
+						<StackPanel Orientation="Horizontal" Spacing="5">
+							<TextBlock Width="90" Text="Method"/>
+							<TextBox Width="90"
+									 Height="26"
+									 Text="{Binding HomeMethodText, UpdateSourceTrigger=PropertyChanged}"
+									 HorizontalContentAlignment="Right"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Spacing="5">
+							<TextBlock Width="90" Text="Search SW"/>
+							<TextBox Width="90"
+									 Height="26"
+									 Text="{Binding HomeSearchSwitchSpeedText, UpdateSourceTrigger=PropertyChanged}"
+									 HorizontalContentAlignment="Right"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Spacing="5">
+							<TextBlock Width="90" Text="Search Zero"/>
+							<TextBox Width="90"
+									 Height="26"
+									 Text="{Binding HomeSearchZeroSpeedText, UpdateSourceTrigger=PropertyChanged}"
+									 HorizontalContentAlignment="Right"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Spacing="5">
+							<TextBlock Width="90" Text="Home Acc"/>
+							<TextBox Width="90"
+									 Height="26"
+									 Text="{Binding HomeAccelerationText, UpdateSourceTrigger=PropertyChanged}"
+									 HorizontalContentAlignment="Right"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Spacing="5">
+							<TextBlock Width="90" Text="Offset"/>
+							<TextBox Width="90"
+									 Height="26"
+									 Text="{Binding HomeOffsetText, UpdateSourceTrigger=PropertyChanged}"
+									 HorizontalContentAlignment="Right"/>
+						</StackPanel>
+
+						<Button Height="32"
+								Margin="0,8,0,0"
+								Content="HOME"
+								Command="{Binding CmdHome}"
+								VerticalAlignment="Stretch"
+								HorizontalAlignment="Stretch"
+								HorizontalContentAlignment="Center"
+								VerticalContentAlignment="Center"/>
+					</StackPanel>
+					
+					
 				</Grid>
 			</StackPanel>
 		</Border>

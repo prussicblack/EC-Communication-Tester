@@ -388,9 +388,12 @@ public partial class MainViewModel : ViewModelBase
     private const double PdoStatsLogIntervalSeconds = 600.0;
 
     //PDO Map View
-    public ObservableCollection<PdoMapRow> RxPdoMapRows { get; } = new ObservableCollection<PdoMapRow>();
+    //public ObservableCollection<PdoMapRow> RxPdoMapRows { get; } = new ObservableCollection<PdoMapRow>();
 
-    public ObservableCollection<PdoMapRow> TxPdoMapRows { get; } = new ObservableCollection<PdoMapRow>();
+    //public ObservableCollection<PdoMapRow> TxPdoMapRows { get; } = new ObservableCollection<PdoMapRow>();
+    public ObservableCollection<PdoMapUiRow> RxPdoMapRows { get; } = new ObservableCollection<PdoMapUiRow>();
+    public ObservableCollection<PdoMapUiRow> TxPdoMapRows { get; } = new ObservableCollection<PdoMapUiRow>();
+
 
 
     private void HandleResetPdoStats()
@@ -525,6 +528,7 @@ public partial class MainViewModel : ViewModelBase
 
     private void UpdatePdoMapRows(IPDOView pdoView)
     {
+        /*
         RxPdoMapRows.Clear();
         TxPdoMapRows.Clear();
 
@@ -548,6 +552,38 @@ public partial class MainViewModel : ViewModelBase
                 TxPdoMapRows.Add(pdoView.TxPdoMapRows[i]);
             }
         }
+        */
+        RxPdoMapRows.Clear();
+        TxPdoMapRows.Clear();
+
+        if (pdoView == null)
+        {
+            return;
+        }
+
+        if (pdoView.RxPdoMapRows != null)
+        {
+            for (int i = 0; i < pdoView.RxPdoMapRows.Count; i++)
+            {
+                PdoMapRow mapRow = pdoView.RxPdoMapRows[i];
+                SDOFlatObject sdoRow = FindSdoRowForCurrentSlave(mapRow.Index, mapRow.SubIndex);
+
+                RxPdoMapRows.Add(new PdoMapUiRow(mapRow, sdoRow));
+            }
+        }
+
+        if (pdoView.TxPdoMapRows != null)
+        {
+            for (int i = 0; i < pdoView.TxPdoMapRows.Count; i++)
+            {
+                PdoMapRow mapRow = pdoView.TxPdoMapRows[i];
+                SDOFlatObject sdoRow = FindSdoRowForCurrentSlave(mapRow.Index, mapRow.SubIndex);
+
+                TxPdoMapRows.Add(new PdoMapUiRow(mapRow, sdoRow));
+            }
+        }
+
+
     }
 
     //SDO 관련
@@ -1418,5 +1454,128 @@ public partial class MainViewModel : ViewModelBase
         _log.LogInformation(message);
     }
 
+    //MAP은 PDO의 주소를 받아서 Datamap에서 설명이랑 관련 내용 다 가져오는 방식으로 적용.
+    public sealed class PdoMapUiRow
+    {
+        private readonly PdoMapRow _mapRow;
+        private readonly SDOFlatObject _sdoRow;
+
+        public PdoMapUiRow(PdoMapRow mapRow, SDOFlatObject sdoRow)
+        {
+            _mapRow = mapRow;
+            _sdoRow = sdoRow;
+        }
+
+        public int No
+        {
+            get { return _mapRow.No; }
+        }
+
+        public string AddressText
+        {
+            get { return _mapRow.AddressText; }
+        }
+
+        public string Name
+        {
+            get
+            {
+                if (_sdoRow == null)
+                {
+                    return "";
+                }
+
+                return _sdoRow.DisplayName;
+            }
+        }
+
+        public string DataType
+        {
+            get
+            {
+                if (_sdoRow == null)
+                {
+                    return "";
+                }
+
+                return _sdoRow.DataType;
+            }
+        }
+
+        public ushort SdoBitSize
+        {
+            get
+            {
+                if (_sdoRow == null)
+                {
+                    return 0;
+                }
+
+                return _sdoRow.BitSize;
+            }
+        }
+
+        public byte BitLength
+        {
+            get { return _mapRow.BitLength; }
+        }
+
+        public int BitOffset
+        {
+            get { return _mapRow.BitOffset; }
+        }
+
+        public int ByteOffset
+        {
+            get { return _mapRow.ByteOffset; }
+        }
+
+        public int BitInByte
+        {
+            get { return _mapRow.BitInByte; }
+        }
+
+        public string RawText
+        {
+            get { return _mapRow.RawText; }
+        }
+    }
+
+    private SDOFlatObject FindSdoRowForCurrentSlave(ushort index, byte subIndex)
+    {
+        SlaveStore store = SelectedSlaveData;
+
+        if (store == null)
+        {
+            return null;
+        }
+
+        if (store.SdoStore == null)
+        {
+            return null;
+        }
+
+        if (store.SdoStore.Rows == null)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < store.SdoStore.Rows.Count; i++)
+        {
+            SDOFlatObject row = store.SdoStore.Rows[i];
+
+            if (row == null)
+            {
+                continue;
+            }
+
+            if (row.Index == index && row.SubIndex == subIndex)
+            {
+                return row;
+            }
+        }
+
+        return null;
+    }
 
 }

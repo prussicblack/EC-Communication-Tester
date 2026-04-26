@@ -316,8 +316,17 @@
 							  <DataGridTextColumn Header="Address"
 												  Binding="{Binding AddressText}" />
 
+							  <DataGridTextColumn Header="Name"
+												  Binding="{Binding Name}" />
+
+							  <DataGridTextColumn Header="Type"	
+												  Binding="{Binding DataType}" />
+
 							  <DataGridTextColumn Header="BitLen"
 												  Binding="{Binding BitLength}" />
+							  
+							  <DataGridTextColumn Header="SDO BitSize"
+												  Binding="{Binding SdoBitSize}" />
 
 							  <DataGridTextColumn Header="ByteOffset"
 												  Binding="{Binding ByteOffset}" />
