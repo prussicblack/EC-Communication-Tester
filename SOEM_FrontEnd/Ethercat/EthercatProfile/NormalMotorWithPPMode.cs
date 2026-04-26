@@ -734,14 +734,14 @@ namespace SOEM_FrontEnd.Ethercat
 
                 if (_moveState != MoveState.Idle)
                 {
-                    if (_motionKind == MotionCommand.Home)
+                    if (_motion == MotionCommand.Home)
                     {
                         _homeRestoreThenFault = false;
                         _moveState = MoveState.QueueModePP;
                     }
                     else
                     {
-                        _motionKind = MotionCommand.None;
+                        _motion = MotionCommand.None;
                         _moveState = MoveState.Idle;
                     }
                 }
