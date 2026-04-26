@@ -496,7 +496,7 @@ namespace SOEM_FrontEnd.Automation
                             store.BaseProfile = ppmode;
 
                             //Console.WriteLine($"Slave {i} - 402Drive Profile. PPMode Set");
-                            _log.LogInformation("Slave {{i}} - 402Drive Profile. PPMode Set");
+                            _log.LogInformation($"Slave {i} - 402Drive Profile. PPMode Set");
                         }
                         else
                         {
@@ -507,7 +507,7 @@ namespace SOEM_FrontEnd.Automation
 
                              store.BaseProfile = normalioprofile;
 
-                            _log.LogInformation("Slave {{i}} - 402Drive Profile Set Fail NormalIO set.");
+                            _log.LogInformation($"Slave {i} - 402Drive Profile Set Fail NormalIO set.");
 
                         }
 
