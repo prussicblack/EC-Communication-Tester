@@ -8,6 +8,7 @@ using SOEM_FrontEnd.Model;
 using SOEM_FrontEnd.Util.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 
 namespace SOEM_FrontEnd.Automation
@@ -101,21 +102,65 @@ namespace SOEM_FrontEnd.Automation
 
         public void Shutdown()
         {
-            _automationRunning = false;
-
-            if (_automationSignal != null)
-                _automationSignal.Set();
-
-            if (_automationThread != null && _automationThread.IsAlive)
-                _automationThread.Join(2000);
-
-            if (_automationSignal != null)
+            try
             {
-                _automationSignal.Dispose();
-                _automationSignal = null;
+                // 종료 시에는 먼저 INIT으로 내려간다.
+                // 기존 automation thread를 그대로 사용해서 상태 전이를 처리한다.
+                RequestState(eStateSequenceName.Init);
+
+                bool initOk = WaitForState(eStateSequenceName.Init, 5000);
+
+                if (!initOk)
+                {
+                    _log.LogWarning("Shutdown: timeout while waiting for INIT state. Current={Current}", GetCurrentState());
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Shutdown: failed while moving to INIT");
+            }
+            finally
+            {
+                // 혹시 OP 상태에서 내려오지 못했더라도 PDO worker는 반드시 정리
+                StopPdoWorker();
+
+                _automationRunning = false;
+
+                if (_automationSignal != null)
+                {
+                    _automationSignal.Set();
+                }
+
+                if (_automationThread != null && _automationThread.IsAlive)
+                {
+                    _automationThread.Join(2000);
+                }
+
+                if (_automationSignal != null)
+                {
+                    _automationSignal.Dispose();
+                    _automationSignal = null;
+                }
+
+                _automationThread = null;
+            }
+        }
+
+        private bool WaitForState(eStateSequenceName targetState, int timeoutMs)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+
+            while (sw.ElapsedMilliseconds < timeoutMs)
+            {
+                if (GetCurrentState() == targetState)
+                {
+                    return true;
+                }
+
+                Thread.Sleep(20);
             }
 
-            _automationThread = null;
+            return GetCurrentState() == targetState;
         }
 
         private bool RequestState(eStateSequenceName targetState)

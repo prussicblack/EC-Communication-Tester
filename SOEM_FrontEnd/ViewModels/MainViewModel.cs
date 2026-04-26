@@ -782,13 +782,35 @@ public partial class MainViewModel : ViewModelBase
 
     public void Dispose()
     {
-        // 창 닫힐 때 sink 해제/정리
+        if (_uiTimer != null)
+        {
+            _uiTimer.Stop();
+        }
+
+        if (_uiTimerLow != null)
+        {
+            _uiTimerLow.Stop();
+        }
+
         if (StateMachine != null)
         {
             StateMachine.CurrentSequenceChanged -= OnCurrentSequenceChanged;
             StateMachine.Shutdown();
         }
 
+        if (SdoWorker != null)
+        {
+            SdoWorker.Dispose();
+            SdoWorker = null;
+        }
+
+        if (ECClient != null)
+        {
+            ECClient.Dispose();
+            ECClient = null;
+        }
+
+        // 창 닫힐 때 sink 해제/정리
         OPLogger.SetUiSink(null);
         _sink.Dispose();
     }
