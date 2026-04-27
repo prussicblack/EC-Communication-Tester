@@ -68,7 +68,11 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros">
+    <SoemRootDir>$(MSBuildProjectDirectory)\..</SoemRootDir>
+    <NpcapSdkDir Condition="'$(NpcapSdkDir)'==''">C:\npcap-sdk\</NpcapSdkDir>
+    <DesktopOutputDir>$(SolutionDir)..\SOEM_FrontEnd.Desktop\bin\x64\$(Configuration)\net8.0\</DesktopOutputDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -101,7 +105,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\include;..\oshw;..\osal;..\build\include;..\osal\win32;..\oshw\win32;..\oshw\win32\wpcap\Include;..\build\;..\build\include\soem;c:\npcap-sdk\Lib\x64;c:\npcap-sdk\Include\pcap;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SoemRootDir)\include;$(SoemRootDir)\oshw;$(SoemRootDir)\osal;$(SoemRootDir)\build\include;$(SoemRootDir)\osal\win32;$(SoemRootDir)\oshw\win32;$(SoemRootDir)\oshw\win32\wpcap\Include;$(SoemRootDir)\build;$(SoemRootDir)\build\include\soem;$(NpcapSdkDir)Include;$(NpcapSdkDir)Include\pcap;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <ShowIncludes>true</ShowIncludes>
       <UseDynamicDebugging>true</UseDynamicDebugging>
@@ -112,10 +116,10 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>winmm.lib;wpcap.lib;Packet.lib;Ws2_32.lib;soem.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>c:\npcap-sdk\Include;c:\npcap-sdk\Lib\x64;..\build\Release;..\oshw\win32\wpcap\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(NpcapSdkDir)Lib\x64;$(SoemRootDir)\build\$(Configuration);$(SoemRootDir)\build\Release;$(SoemRootDir)\oshw\win32\wpcap\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>set OUTDIR=$(SolutionDir)..\SOEM_FrontEnd.Desktop\bin\x64\$(Configuration)\net8.0\
+      <Command>set "OUTDIR=$(DesktopOutputDir)"
 
 xcopy /Y /D /I /R "$(TargetPath)" "%OUTDIR%"
 
@@ -131,14 +135,14 @@ xcopy /Y /D /I /R "$(TargetDir)$(TargetName).pdb" "%OUTDIR%"
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\include;..\oshw;..\osal;..\build\include;..\osal\win32;..\oshw\win32;..\oshw\win32\wpcap\Include;..\build\;..\build\include\soem;c:\npcap-sdk\Lib\x64;c:\npcap-sdk\Include\pcap;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SoemRootDir)\include;$(SoemRootDir)\oshw;$(SoemRootDir)\osal;$(SoemRootDir)\build\include;$(SoemRootDir)\osal\win32;$(SoemRootDir)\oshw\win32;$(SoemRootDir)\oshw\win32\wpcap\Include;$(SoemRootDir)\build;$(SoemRootDir)\build\include\soem;$(NpcapSdkDir)Include;$(NpcapSdkDir)Include\pcap;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>c:\npcap-sdk\Include;c:\npcap-sdk\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>winmm.lib;wpcap.lib;Packet.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(NpcapSdkDir)Lib\x64;$(SoemRootDir)\build\$(Configuration);$(SoemRootDir)\build\Release;$(SoemRootDir)\oshw\win32\wpcap\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib;wpcap.lib;Packet.lib;Ws2_32.lib;soem.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
