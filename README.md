@@ -4,6 +4,8 @@ EC Communication Tester is a prerelease field-test tool for EtherCAT device comm
 
 The project is built around SOEM and provides a simple desktop UI for checking slaves, reading and writing SDOs, monitoring PDO runtime status, viewing current PDO mappings, and testing basic CiA 402 profile-position motion.
 
+Icon - https://kr.freepik.com/icon/animal_13821479#fromView=search&page=1&position=2&uuid=819500a6-b5d1-4001-8037-2408109e2258
+
 ## Current status
 
 This project is currently prerelease / field-test software.
