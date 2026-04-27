@@ -138,3 +138,17 @@ Before operating real hardware:
 - Do not rely on this software as a safety function.
 
 ## Prerelease note
+앞으로 해봐야 하는 작업들...
+
+1. UI에 아날로그 In/Out 관련 클래스 만들어서 ESI보고 판정 후 UI표기.
+2. ENI관련 작업, 매핑 기능 포함된.
+3. PDO전송관련 비관리 C코드로 이관.
+4. Slave Status 부 작업. SOEM의 SlaveInfo 참조해서 래핑 후 래퍼및 메인단 추가.
+5. ZeroMQ/NetMQ 나 MMF를 사용해서 외부에서 명령 주고 받을 수 있도록 처리. 
+기타 다양한 기기 테스트.
+
+테스트 기기.
+파스텍 Ezi-Servo2.
+리드샤인 스텝모터드라이브 DM3E.
+백호프 EK1100
+모벤시스 독립형 IO모듈 일부.
