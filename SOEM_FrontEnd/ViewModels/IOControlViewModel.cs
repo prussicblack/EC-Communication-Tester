@@ -173,13 +173,14 @@ namespace SOEM_FrontEnd.ViewModels
 
             for (int bit = 0; bit < bitCount; bit++)
             {
-                int byteIndex = bit / 8;
-                int bitIndexInByte = bit % 8;
+                int byteIndex = bit >> 3;
+                int bitIndexInByte = bit & 7;
 
                 bool on = false;
+
                 if (byteIndex < data.Length)
                 {
-                    byte mask = (byte)(1 << bitIndexInByte);
+                    int mask = 1 << bitIndexInByte;
                     on = (data[byteIndex] & mask) != 0;
                 }
 
