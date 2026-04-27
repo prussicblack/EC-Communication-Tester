@@ -6,7 +6,7 @@
         xmlns:views="clr-namespace:SOEM_FrontEnd.Views"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="SOEM_FrontEnd.Views.MainWindow"
-        Icon="/Assets/icon-cat-16397242.ico"
+        Icon="/Assets/animal_13821479.ico"
         Title="SOEM FrontEnd"
 		ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaChromeHints="PreferSystemChrome"
@@ -29,7 +29,7 @@
 						Width="16" Height="16"
 						Margin="10,0,6,0"
 						VerticalAlignment="Center"
-						Source="avares://SOEM_FrontEnd/Assets/icon-cat-16397242.ico"/>
+						Source="avares://SOEM_FrontEnd/Assets/animal_13821479.ico"/>
 			<!-- title -->
 			<TextBlock Grid.Column="1"
 					   Margin="10,0,0,0"

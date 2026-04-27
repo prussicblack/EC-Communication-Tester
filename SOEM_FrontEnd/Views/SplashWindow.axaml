@@ -11,7 +11,7 @@
         x:Class="SOEM_FrontEnd.SplashWindow"
 		x:DataType="vm:LoadingViewModel"
         Title="SplashWindow"
-	    Icon="/Assets/icon-cat-16397242.ico"
+	    Icon="/Assets/animal_13821479.ico"
 >
 	
 	
