@@ -73,7 +73,7 @@
     <NpcapSdkDir Condition="'$(NpcapSdkDir)'==''">C:\npcap-sdk\</NpcapSdkDir>
     <DesktopOutputDir>$(SolutionDir)SOEM_FrontEnd.Desktop\bin\x64\$(Configuration)\net8.0\</DesktopOutputDir>
   </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>soem_wrap</TargetName>
@@ -83,7 +83,7 @@
     <IntDir>$(ProjectDir)obj\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>soem_wrap</TargetName>
   </PropertyGroup>
-<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
@@ -126,7 +126,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>winmm.lib;wpcap.lib;Packet.lib;Ws2_32.lib;soem.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(NpcapSdkDir)Lib\x64;$(SoemRootDir)build\$(Configuration);$(SoemRootDir)oshw\win32\wpcap\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(NpcapSdkDir)Lib\x64;$(SoemRootDir)$(Configuration);$(SoemRootDir)oshw\win32\wpcap\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>if not exist "$(DesktopOutputDir)" mkdir "$(DesktopOutputDir)"
@@ -148,15 +148,15 @@ if exist "$(TargetDir)$(TargetName).pdb" copy /Y "$(TargetDir)$(TargetName).pdb"
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(NpcapSdkDir)Lib\x64;$(SoemRootDir)build\$(Configuration);$(SoemRootDir)oshw\win32\wpcap\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(NpcapSdkDir)Lib\x64;$(SoemRootDir)$(Configuration);$(SoemRootDir)oshw\win32\wpcap\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>winmm.lib;wpcap.lib;Packet.lib;Ws2_32.lib;soem.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-      <PostBuildEvent>
+    <PostBuildEvent>
       <Command>if not exist "$(DesktopOutputDir)" mkdir "$(DesktopOutputDir)"
 copy /Y "$(TargetPath)" "$(DesktopOutputDir)"
 if exist "$(TargetDir)$(TargetName).pdb" copy /Y "$(TargetDir)$(TargetName).pdb" "$(DesktopOutputDir)"</Command>
     </PostBuildEvent>
-</ItemDefinitionGroup>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="soem_wrap.h" />
   </ItemGroup>

@@ -8,7 +8,9 @@
     <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>AnyCPU;x64</Platforms>
-    <PublishAot>False</PublishAot>
+
+
+
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <IsPublishable>False</IsPublishable>
@@ -20,7 +22,19 @@
     <IsPublishable>False</IsPublishable>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IsPublishable>False</IsPublishable>
+    <IsPublishable>True</IsPublishable>
+
+	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	<RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+	<PlatformTarget>x64</PlatformTarget>
+
+	<PublishAot>True</PublishAot>
+	<SelfContained>true</SelfContained>
+	<PublishSingleFile>false</PublishSingleFile>
+
+  </PropertyGroup>
+  <PropertyGroup Label="Avalonia">
+    <AvaloniaUseCompiledBindingsByDefault>True</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,4 +44,16 @@
   <ItemGroup>
     <ProjectReference Include="..\SOEM_FrontEnd\SOEM_FrontEnd.csproj" />
   </ItemGroup>
+
+	<ItemGroup Condition="'$(Configuration)'=='Release'">
+		<None Include="$(SolutionDir)soem_wrap\bin\x64\$(Configuration)\soem_wrap.dll">
+			<Link>soem_wrap.dll</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</None>
+	</ItemGroup>
+
+
+
+
 </Project>
