@@ -138,6 +138,8 @@ namespace SOEM_FrontEnd.Ethercat
         private void ThreadMain()
         {
             IntPtr mmcssHandle = IntPtr.Zero;
+            var oldLatency = GCSettings.LatencyMode;
+
             try
             {
                 // MMCSS Pro Audio 등록
@@ -147,6 +149,8 @@ namespace SOEM_FrontEnd.Ethercat
                 {
                     throw new Exception("MMCSS Failed");
                 }
+                GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
+
                 //ThreadAffinityHelper.PinCurrentThread(cpuIndex: 2); // 예: 코어 2 고정
 
 
@@ -154,6 +158,7 @@ namespace SOEM_FrontEnd.Ethercat
             }
             finally
             {
+                GCSettings.LatencyMode = oldLatency;
                 MMCSSHelper.LeaveMmcss(mmcssHandle);
             }
         }
@@ -166,9 +171,7 @@ namespace SOEM_FrontEnd.Ethercat
             double ticksPerUs = (double)Stopwatch.Frequency / 1000000.0;
             double targetPeriodUs = Period.TotalMilliseconds * 1000.0;
             long loop = 0;
-            var old = GCSettings.LatencyMode;
-            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
-
+            
             EthercatRtLoop.Run(Period, () =>
             {
                 if (!_running) 
