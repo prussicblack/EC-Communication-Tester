@@ -7,7 +7,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="SOEM_FrontEnd.Views.MainWindow"
         Icon="/Assets/animal_13821479.ico"
-        Title="SOEM FrontEnd"
+        Title="EC Communication Tester"
 		ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaChromeHints="PreferSystemChrome"
         ExtendClientAreaTitleBarHeightHint="36">
@@ -34,7 +34,7 @@
 			<TextBlock Grid.Column="1"
 					   Margin="10,0,0,0"
 					   VerticalAlignment="Center"
-					   Text="SOEM_FrontEnd"
+					   Text="EC Communication Tester"
 					   FontWeight="Bold"/>
 
 			<!-- About button (right side) -->

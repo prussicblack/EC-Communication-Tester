@@ -8,8 +8,10 @@
     <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>AnyCPU;x64</Platforms>
-
-
+	
+	<ApplicationIcon>..\SOEM_FrontEnd\Assets\animal_13821479.ico</ApplicationIcon>
+	  
+	<AssemblyName>ECCommTester</AssemblyName>
 
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
