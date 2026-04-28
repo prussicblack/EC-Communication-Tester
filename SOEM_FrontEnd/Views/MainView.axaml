@@ -120,8 +120,7 @@
 
 								  <TextBlock Text="PDO Runtime" FontWeight="Bold" FontSize="15" />
 
-								  <Grid ColumnDefinitions="140,120,140,120" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="8">
-
+								  <Grid ColumnDefinitions="140,120,140,120" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="8">
 									  <TextBlock Grid.Row="0" Grid.Column="0" Text="Running" />
 									  <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PdoIsRunning}" />
 
@@ -157,6 +156,25 @@
 									  <TextBlock Grid.Row="5" Grid.Column="1"
 												 Grid.ColumnSpan="3"
 												 Text="{Binding PdoLastUpdateText}" />
+
+									  <TextBlock Grid.Row="6" Grid.Column="0" Text="Max Wait" />
+									  <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding PdoMaxWaitUs, StringFormat='{}{0} us'}" />
+
+									  <TextBlock Grid.Row="6" Grid.Column="2" Text="Max Body" />
+									  <TextBlock Grid.Row="6" Grid.Column="3" Text="{Binding PdoMaxBodyUs, StringFormat='{}{0} us'}" />
+
+									  <TextBlock Grid.Row="7" Grid.Column="0" Text="Max Tx+Send" />
+									  <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding PdoMaxTxSendUs, StringFormat='{}{0} us'}" />
+
+									  <TextBlock Grid.Row="7" Grid.Column="2" Text="Max Recv" />
+									  <TextBlock Grid.Row="7" Grid.Column="3" Text="{Binding PdoMaxRecvUs, StringFormat='{}{0} us'}" />
+
+									  <TextBlock Grid.Row="8" Grid.Column="0" Text="Max Post" />
+									  <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding PdoMaxPostUs, StringFormat='{}{0} us'}" />
+
+									  <TextBlock Grid.Row="8" Grid.Column="2" Text="Max Housekeeping" />
+									  <TextBlock Grid.Row="8" Grid.Column="3" Text="{Binding PdoMaxHousekeepingUs, StringFormat='{}{0} us'}" />
+									  
 								  </Grid>
 
 								  <StackPanel Orientation="Horizontal"

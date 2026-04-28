@@ -373,6 +373,50 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         set { SetProperty(ref _pdoLastUpdateText, value); }
     }
 
+    private long _pdoMaxWaitUs;
+    public long PdoMaxWaitUs
+    {
+        get { return _pdoMaxWaitUs; }
+        set { SetProperty(ref _pdoMaxWaitUs, value); }
+    }
+
+    private long _pdoMaxBodyUs;
+    public long PdoMaxBodyUs
+    {
+        get { return _pdoMaxBodyUs; }
+        set { SetProperty(ref _pdoMaxBodyUs, value); }
+    }
+
+    private long _pdoMaxTxSendUs;
+    public long PdoMaxTxSendUs
+    {
+        get { return _pdoMaxTxSendUs; }
+        set { SetProperty(ref _pdoMaxTxSendUs, value); }
+    }
+
+    private long _pdoMaxRecvUs;
+    public long PdoMaxRecvUs
+    {
+        get { return _pdoMaxRecvUs; }
+        set { SetProperty(ref _pdoMaxRecvUs, value); }
+    }
+
+    private long _pdoMaxPostUs;
+    public long PdoMaxPostUs
+    {
+        get { return _pdoMaxPostUs; }
+        set { SetProperty(ref _pdoMaxPostUs, value); }
+    }
+
+    private long _pdoMaxHousekeepingUs;
+    public long PdoMaxHousekeepingUs
+    {
+        get { return _pdoMaxHousekeepingUs; }
+        set { SetProperty(ref _pdoMaxHousekeepingUs, value); }
+    }
+
+
+
     private bool _isPdoStatsUiLogEnabled;
     public bool IsPdoStatsUiLogEnabled
     {
@@ -413,6 +457,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         PdoWkcErrorCount = 0;
         PdoOverrunCount = 0;
         PdoLastUpdateText = "";
+        PdoMaxWaitUs = 0;
+        PdoMaxBodyUs = 0;
+        PdoMaxTxSendUs = 0;
+        PdoMaxRecvUs = 0;
+        PdoMaxPostUs = 0;
+        PdoMaxHousekeepingUs = 0;
         _lastPdoStatsUiLogTimestamp = 0;
     }
 
@@ -1427,6 +1477,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         PdoWkcErrorCount = stats.ReceiveErrorCount;
         PdoOverrunCount = stats.LateCycleCount;
+        PdoMaxWaitUs = (long)stats.MaxWaitUs;
+        PdoMaxBodyUs = (long)stats.MaxBodyUs;
+        PdoMaxTxSendUs = (long)stats.MaxTxSendUs;
+        PdoMaxRecvUs = (long)stats.MaxRecvUs;
+        PdoMaxPostUs = (long)stats.MaxPostUs;
+        PdoMaxHousekeepingUs = (long)stats.MaxHousekeepingUs;
 
         PdoLastUpdateText = DateTime.Now.ToString("HH:mm:ss");
 
@@ -1471,7 +1527,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ", RecvErr=" + stats.ReceiveErrorCount.ToString() +
             ", SendRc=" + stats.LastSendRc.ToString() +
             ", SendErr=" + stats.SendErrorCount.ToString() +
-            ", Late=" + stats.LateCycleCount.ToString();
+            ", Late=" + stats.LateCycleCount.ToString() +
+            ", MaxPhase(us)=Wait:" + ((long)stats.MaxWaitUs).ToString() +
+            "/Body:" + ((long)stats.MaxBodyUs).ToString() +
+            "/TxSend:" + ((long)stats.MaxTxSendUs).ToString() +
+            "/Recv:" + ((long)stats.MaxRecvUs).ToString() +
+            "/Post:" + ((long)stats.MaxPostUs).ToString() +
+            "/House:" + ((long)stats.MaxHousekeepingUs).ToString();
 
         _log.LogInformation(message);
     }
