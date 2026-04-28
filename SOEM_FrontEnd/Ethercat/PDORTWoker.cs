@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -145,6 +147,8 @@ namespace SOEM_FrontEnd.Ethercat
                 {
                     throw new Exception("MMCSS Failed");
                 }
+                //ThreadAffinityHelper.PinCurrentThread(cpuIndex: 2); // 예: 코어 2 고정
+
 
                 RunPdoLoop();
             }
@@ -162,6 +166,8 @@ namespace SOEM_FrontEnd.Ethercat
             double ticksPerUs = (double)Stopwatch.Frequency / 1000000.0;
             double targetPeriodUs = Period.TotalMilliseconds * 1000.0;
             long loop = 0;
+            var old = GCSettings.LatencyMode;
+            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
 
             EthercatRtLoop.Run(Period, () =>
             {
@@ -556,6 +562,35 @@ namespace SOEM_FrontEnd.Ethercat
         public long ReceiveErrorCount { get; }
     }
 
+    internal static class ThreadAffinityHelper
+    {
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetCurrentThread();
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern UIntPtr SetThreadAffinityMask(IntPtr hThread, UIntPtr dwThreadAffinityMask);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetThreadPriority(IntPtr hThread, int nPriority);
+
+        // Win32 THREAD_PRIORITY_TIME_CRITICAL = 15
+        private const int THREAD_PRIORITY_TIME_CRITICAL = 15;
+
+        public static void PinCurrentThread(int cpuIndex)
+        {
+            if (cpuIndex < 0 || cpuIndex >= IntPtr.Size * 8)
+                throw new ArgumentOutOfRangeException(nameof(cpuIndex));
+
+            UIntPtr mask = (UIntPtr)(1UL << cpuIndex);
+            IntPtr hThread = GetCurrentThread();
+
+            UIntPtr prev = SetThreadAffinityMask(hThread, mask);
+            if (prev == UIntPtr.Zero)
+                throw new InvalidOperationException("SetThreadAffinityMask failed");
+
+            // 선택: 스레드 우선순위도 추가 상승
+            SetThreadPriority(hThread, THREAD_PRIORITY_TIME_CRITICAL);
+        }
+    }
 
 }

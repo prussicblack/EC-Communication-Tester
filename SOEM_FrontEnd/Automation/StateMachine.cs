@@ -6,6 +6,7 @@ using SOEM_FrontEnd.Ethercat.EthercatProfile;
 using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
 using SOEM_FrontEnd.Model;
 using SOEM_FrontEnd.Util.Logging;
+using SOEM_FrontEnd.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -372,16 +373,32 @@ namespace SOEM_FrontEnd.Automation
 
         public bool MoveToPreOP()
         {
+            if (_ECClient.SlaveCount <= 0)
+            {
+                _log.LogError($"PreOP failed, Slave Count {_ECClient.SlaveCount}");
+                return false;
+            }
             return RequestState(eStateSequenceName.PreOp);
         }
 
         public bool MoveToSafeOP()
         {
+            if (_ECClient.SlaveCount <= 0)
+            {
+                _log.LogError($"SafeOP failed, Slave Count {_ECClient.SlaveCount}");
+                return false;
+            }
+
             return RequestState(eStateSequenceName.SafeOp);
         }
 
         public bool MoveToOperate()
         {
+            if (_ECClient.SlaveCount <= 0)
+            {
+                _log.LogError($"Operate failed, Slave Count {_ECClient.SlaveCount}");
+                return false;
+            }
             return RequestState(eStateSequenceName.Op);
         }
 
@@ -409,6 +426,12 @@ namespace SOEM_FrontEnd.Automation
 
         private bool MoveToPreOPCore()
         {
+            if (_ECClient.SlaveCount <= 0)
+            {
+                _log.LogError($"MoveToPreOPCore failed, Slave Count {_ECClient.SlaveCount}");
+                return false;
+            }
+
             bool ret = _ECClient.EnsureState(EcClient.EC_STATE_PRE_OP, 2000);
 
             if (ret == false)
