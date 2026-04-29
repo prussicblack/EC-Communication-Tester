@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Avalonia.Controls.Shapes;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 
 namespace SOEM_FrontEnd.Util.Logging
@@ -45,6 +46,30 @@ namespace SOEM_FrontEnd.Util.Logging
         /// Log.I/W/E 사용.
         /// 
         /// </summary>
+
+
+        /// <summary>
+        /// UI로그 연결기능을 위한 코드 정리.
+        ///
+        /// 
+        /// 1. 로그 싱크 Create. Action이라 동작을 입력한다.
+        /// _sink = new AvaloniaUiLogSink(line =>
+        /// {
+        ///    // AvaloniaUiLogSink가 UI thread로 flush하니까 여기선 Add만
+        ///    UiLogs.Add(line);
+        ///
+        ///    //너무 길어지면 오래된 것 삭제
+        ///    const int max = 3000;
+        ///    if (UiLogs.Count > max)
+        ///        UiLogs.RemoveAt(0);
+        /// });
+        /// 
+        /// 2. 로그 싱크 설정
+        /// OPLogger.SetUiSink(_sink);
+        /// 이러면 로그 발생시 위쪽의 Action이 동작하게 된다.
+        ///</summary>
+
+
 
 
         private static ILogger _default;
