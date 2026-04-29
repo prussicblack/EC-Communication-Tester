@@ -71,8 +71,14 @@ namespace SOEM_FrontEnd.Util.Logging
             _opt = opt;
 
             if (string.IsNullOrWhiteSpace(_opt.LogFolder))
+            {
                 _opt.LogFolder = Path.Combine(AppContext.BaseDirectory, "Logs");
-
+            }
+            else
+            {
+                _opt.LogFolder = Path.Combine(AppContext.BaseDirectory, _opt.LogFolder);
+            }
+            
             Directory.CreateDirectory(_opt.LogFolder);
 
             _uiSink = uiSink ?? NullUiSink.Instance;
