@@ -1316,6 +1316,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         int slaveCount = SlaveCountUI = ECClient.SlaveCount;
 
+        SlaveInfoData.Clear();
         SlavesListUI.Clear();
 
         for (int i = 0; i <= slaveCount; i++)

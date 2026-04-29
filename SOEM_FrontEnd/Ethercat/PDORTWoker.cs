@@ -28,7 +28,7 @@ namespace SOEM_FrontEnd.Ethercat
 
 
         public TimeSpan Period { get; set; } = TimeSpan.FromMilliseconds(1);
-        public int ReceiveTimeoutUs { get; set; } = 2000;
+        public int ReceiveTimeoutUs { get; set; } = 1000;
         public int UiPublishDiv { get; set; } = 15; // 1ms 기준 약 60Hz
 
         //통계를 위한 프로퍼티 추가.
