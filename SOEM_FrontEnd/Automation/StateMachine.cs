@@ -482,60 +482,72 @@ namespace SOEM_FrontEnd.Automation
                 {
 
                     case DeviceMode.NormalIO:
-                    {
-                        //
-                        store.BaseProfile = new NormalOProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
-                        //Console.WriteLine($"Slave {i} - NormalIO");
-                        _log.LogInformation("Slave {{i}} - NormalIO");
-                        break;
-                    }
+                        {
+                            //
+                            store.BaseProfile = new NormalOProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
+                            //Console.WriteLine($"Slave {i} - NormalIO");
+                            _log.LogInformation("Slave {{i}} - NormalIO");
+                            break;
+                        }
                     case DeviceMode.NormalPPMode: //어쨋건 체크는 해야지...나중에 전용 방어코드가 들어가긴 하겠는데.
                     case DeviceMode.None:
                     default:
-                    {
-                        //없는경우 자동판단.
-                        //402인 경우 PPmode를 기본모드로,
-                        //없으면 Profile모드 다른거로 하면 되는데, 일단 여기서는 제외.
-
-                        //402인 경우. PDO에 6040/6041존재시.
-                        //Mapping은 존재한다면, PreOP에서 끝내야됨.
-
-                        //Mapping구조는, 
-                        //RX 0x1C12 -> 0x1600, 0x1601... -> 0x6040(Control Word)
-                        //Tx 0x1C13 -> 0x1A00, 0x1A01... -> 0x6041(State Word)
-                        bool is402 = DriveProfile402Check(i, out List<uint> txAllMapList, out List<uint> rxAllMapList);
-
-                        if (is402 == true)
                         {
-                            NormalMotorWithPPMode ppmode = new NormalMotorWithPPMode(rxSize: outBytes, txSize: inBytes, i, _ECClient);
-                            
-                            if (_sdoWorker != null)
+                            //없는경우 자동판단.
+                            //402인 경우 PPmode를 기본모드로,
+                            //없으면 Profile모드 다른거로 하면 되는데, 일단 여기서는 제외.
+
+                            //402인 경우. PDO에 6040/6041존재시.
+                            //Mapping은 존재한다면, PreOP에서 끝내야됨.
+
+                            //Mapping구조는, 
+                            //RX 0x1C12 -> 0x1600, 0x1601... -> 0x6040(Control Word)
+                            //Tx 0x1C13 -> 0x1A00, 0x1A01... -> 0x6041(State Word)
+                            //bool is402 = DriveProfile402Check(i, out List<uint> txAllMapList, out List<uint> rxAllMapList);
+
+                            List<uint> rxAllMapList;
+                            List<uint> txAllMapList;
+
+                            bool pdoMapReadOk = TryReadCurrentPdoMaps(i, out rxAllMapList, out txAllMapList);
+                            bool is402 = false;
+
+                            if (pdoMapReadOk)
                             {
-                                ppmode.AttachSdoWorker(_sdoWorker);
+                                is402 = IsDriveProfile402(rxAllMapList, txAllMapList);
                             }
 
-                                
-                            ppmode.SetPdoMapping(rxAllMapList, txAllMapList);
-                            store.BaseProfile = ppmode;
+                            if (is402 == true)
+                            {
+                                NormalMotorWithPPMode ppmode = new NormalMotorWithPPMode(rxSize: outBytes, txSize: inBytes, i, _ECClient);
 
-                            //Console.WriteLine($"Slave {i} - 402Drive Profile. PPMode Set");
-                            _log.LogInformation($"Slave {i} - 402Drive Profile. PPMode Set");
+                                if (_sdoWorker != null)
+                                {
+                                    ppmode.AttachSdoWorker(_sdoWorker);
+                                }
+
+
+                                ppmode.SetPdoMapping(rxAllMapList, txAllMapList);
+                                store.BaseProfile = ppmode;
+
+                                //Console.WriteLine($"Slave {i} - 402Drive Profile. PPMode Set");
+                                _log.LogInformation($"Slave {i} - 402Drive Profile. PPMode Set");
+                            }
+                            else
+                            {
+                                NormalOProfile normalioprofile = new NormalOProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
+                                //Console.WriteLine($"Slave {i} - 402Drive Profile Set Fail NormalIO set.");
+
+                                normalioprofile.SetPdoMapping(rxAllMapList, txAllMapList);
+
+                                store.BaseProfile = normalioprofile;
+
+                                _log.LogInformation($"Slave {i} - 402Drive Profile Set Fail NormalIO set.");
+
+                            }
+
+                            break;
                         }
-                        else
-                        {
-                             NormalOProfile normalioprofile = new NormalOProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
-                             //Console.WriteLine($"Slave {i} - 402Drive Profile Set Fail NormalIO set.");
-
-                             normalioprofile.SetPdoMapping(txAllMapList, txAllMapList);
-
-                             store.BaseProfile = normalioprofile;
-
-                            _log.LogInformation($"Slave {i} - 402Drive Profile Set Fail NormalIO set.");
-
-                        }
-
-                        break;
-                    }
+                    
                 }
 
                 //프로파일 결정되면 SafeOP로 올리기 위해 실행해야될거 처리.
@@ -728,7 +740,167 @@ namespace SOEM_FrontEnd.Automation
         }
 
 
+        private static bool IsDriveProfile402(List<uint> rxAllMapList, List<uint> txAllMapList)
+        {
+            bool has6040 = HasIndexSub(rxAllMapList, 0x6040, 0x00);
+            bool has6041 = HasIndexSub(txAllMapList, 0x6041, 0x00);
 
+            return has6040 && has6041;
+        }
+
+        private bool TryReadCurrentPdoMaps(ushort slave, out List<uint> rxAllMapList, out List<uint> txAllMapList)
+        {
+            rxAllMapList = new List<uint>();
+            txAllMapList = new List<uint>();
+
+            bool rxOk = TryReadPdoAssignMap(slave, 0x1C12, rxAllMapList);
+            bool txOk = TryReadPdoAssignMap(slave, 0x1C13, txAllMapList);
+
+            if (rxOk == false && txOk == false)
+            {
+                _log.LogWarning(
+                    "PDO map read failed. Slave={Slave}, RxOk={RxOk}, TxOk={TxOk}",
+                    slave,
+                    rxOk,
+                    txOk);
+
+                return false;
+            }
+
+            _log.LogInformation(
+                "PDO map read. Slave={Slave}, RxOk={RxOk}, TxOk={TxOk}, RxMapCount={RxMapCount}, TxMapCount={TxMapCount}",
+                slave,
+                rxOk,
+                txOk,
+                rxAllMapList.Count,
+                txAllMapList.Count);
+
+            return true;
+        }
+
+
+        private bool TryReadPdoAssignMap(ushort slave, ushort assignIndex, List<uint> allMapList)
+        {
+            if (allMapList == null)
+            {
+                return false;
+            }
+
+            SDOPoint assignCountPoint = ReadPointByWorker(slave, assignIndex, 0x00, 1);
+
+            if (assignCountPoint == null ||
+                assignCountPoint.LastRaw == null ||
+                assignCountPoint.LastRaw.Length < 1)
+            {
+                _log.LogInformation(
+                    "PDO assign object read failed. Slave={Slave}, Assign=0x{Assign:X4}",
+                    slave,
+                    assignIndex);
+
+                return false;
+            }
+
+            int assignCount = assignCountPoint.LastRaw[0];
+
+            if (assignCount <= 0)
+            {
+                _log.LogInformation(
+                    "PDO assign object is empty. Slave={Slave}, Assign=0x{Assign:X4}",
+                    slave,
+                    assignIndex);
+
+                return true;
+            }
+
+            List<ushort> pdoIndexList = new List<ushort>();
+
+            for (int i = 1; i <= assignCount; i++)
+            {
+                SDOPoint entryPoint = ReadPointByWorker(slave, assignIndex, (byte)i, 2);
+
+                if (entryPoint == null ||
+                    entryPoint.LastRaw == null ||
+                    entryPoint.LastRaw.Length < 2)
+                {
+                    _log.LogWarning(
+                        "PDO assign entry read failed. Slave={Slave}, Assign=0x{Assign:X4}, Sub={Sub}",
+                        slave,
+                        assignIndex,
+                        i);
+
+                    return false;
+                }
+
+                ushort pdoIndex = ReadUInt16LE(entryPoint.LastRaw);
+
+                if (pdoIndex != 0)
+                {
+                    pdoIndexList.Add(pdoIndex);
+                }
+            }
+
+            for (int i = 0; i < pdoIndexList.Count; i++)
+            {
+                ushort pdoMapIndex = pdoIndexList[i];
+
+                SDOPoint mapCountPoint = ReadPointByWorker(slave, pdoMapIndex, 0x00, 1);
+
+                if (mapCountPoint == null ||
+                    mapCountPoint.LastRaw == null ||
+                    mapCountPoint.LastRaw.Length < 1)
+                {
+                    _log.LogWarning(
+                        "PDO map object count read failed. Slave={Slave}, MapObject=0x{MapObject:X4}",
+                        slave,
+                        pdoMapIndex);
+
+                    return false;
+                }
+
+                int elementCount = mapCountPoint.LastRaw[0];
+
+                for (byte sub = 1; sub <= elementCount; sub++)
+                {
+                    SDOPoint mapPoint = ReadPointByWorker(slave, pdoMapIndex, sub, 4);
+
+                    if (mapPoint == null ||
+                        mapPoint.LastRaw == null ||
+                        mapPoint.LastRaw.Length < 4)
+                    {
+                        _log.LogWarning(
+                            "PDO map entry read failed. Slave={Slave}, MapObject=0x{MapObject:X4}, Sub={Sub}",
+                            slave,
+                            pdoMapIndex,
+                            sub);
+
+                        return false;
+                    }
+
+                    uint map = ReadUInt32LE(mapPoint.LastRaw);
+
+                    allMapList.Add(map);
+                }
+            }
+
+            return true;
+        }
+
+        private static ushort ReadUInt16LE(byte[] raw)
+        {
+            return (ushort)(raw[0] |
+                            (raw[1] << 8));
+        }
+
+        private static uint ReadUInt32LE(byte[] raw)
+        {
+            return (uint)(raw[0] |
+                          (raw[1] << 8) |
+                          (raw[2] << 16) |
+                          (raw[3] << 24));
+        }
+
+        //402판단과 맵 상태관련을 분리.
+        /*
         private bool DriveProfile402Check(ushort slave, out List<uint> txAllMapList, out List<uint> rxAllMapList)
         {
             //없는경우 자동판단.
@@ -853,19 +1025,29 @@ namespace SOEM_FrontEnd.Automation
             bool is402 = has6040 && has6041;
 
             return is402;
-        }
+        }*/
 
 
         static bool HasIndexSub(List<uint> allmap, ushort index, byte sub)
         {
+            if (allmap == null)
+            {
+                return false;
+            }
+
             for (int i = 0; i < allmap.Count; i++)
             {
                 uint map = allmap[i];
+
                 ushort idx = (ushort)(map >> 16);
-                byte si = (byte)(map >> 8);
+                byte si = (byte)((map >> 8) & 0xFF);
+
                 if (idx == index && si == sub)
+                {
                     return true;
+                }
             }
+
             return false;
         }
 

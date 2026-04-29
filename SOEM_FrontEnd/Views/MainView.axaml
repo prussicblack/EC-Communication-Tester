@@ -321,88 +321,87 @@
 		  </TabItem>
               
               <TabItem Header="MAP Status">
-				  <Grid Margin="8" RowDefinitions="Auto,*,Auto,*" RowSpacing="6">
+					  <Grid Margin="8" RowSpacing="6">
 
-					  <TextBlock Grid.Row="0" Text="RxPDO / Outputs / 0x1C12" FontWeight="Bold" />
+						  <Grid.RowDefinitions>
+							  <RowDefinition Height="Auto"/>
+							  <RowDefinition Height="{Binding RxPdoMapRowsHeight}"/>
+							  <RowDefinition Height="Auto"/>
+							  <RowDefinition Height="{Binding TxPdoMapRowsHeight}"/>
+						  </Grid.RowDefinitions>
 
-					  <DataGrid Grid.Row="1" ItemsSource="{Binding RxPdoMapRows}" AutoGenerateColumns="False" IsReadOnly="True"	GridLinesVisibility="All" HeadersVisibility="All">
+						  <TextBlock Grid.Row="0"
+									 Text="RxPDO / Outputs / 0x1C12"
+									 FontWeight="Bold"
+									 IsVisible="{Binding HasRxPdoMapRows}" />
 
-						  <DataGrid.Columns>
-							  <DataGridTextColumn Header="#"
-												  Binding="{Binding No}" />
+						  <DataGrid Grid.Row="1"
+									ItemsSource="{Binding RxPdoMapRows}"
+									IsVisible="{Binding HasRxPdoMapRows}"
+									AutoGenerateColumns="False"
+									IsReadOnly="True"
+									GridLinesVisibility="All"
+									HeadersVisibility="All"
+									VerticalAlignment="Stretch"
+									HorizontalAlignment="Stretch"
+									ScrollViewer.VerticalScrollBarVisibility="Auto"
+									ScrollViewer.HorizontalScrollBarVisibility="Auto">
 
-							  <DataGridTextColumn Header="Address"
-												  Binding="{Binding AddressText}" />
+							  <DataGrid.Columns>
+								  <DataGridTextColumn Header="#" Binding="{Binding No}" />
+								  <DataGridTextColumn Header="Address" Binding="{Binding AddressText}" />
+								  <DataGridTextColumn Header="Name" Binding="{Binding Name}" />
+								  <DataGridTextColumn Header="Type" Binding="{Binding DataType}" />
+								  <DataGridTextColumn Header="BitLen" Binding="{Binding BitLength}" />
+								  <DataGridTextColumn Header="SDO BitSize" Binding="{Binding SdoBitSize}" />
+								  <DataGridTextColumn Header="ByteOffset" Binding="{Binding ByteOffset}" />
+								  <DataGridTextColumn Header="BitInByte" Binding="{Binding BitInByte}" />
+								  <DataGridTextColumn Header="Raw" Binding="{Binding RawText}" />
+							  </DataGrid.Columns>
+						  </DataGrid>
 
-							  <DataGridTextColumn Header="Name"
-												  Binding="{Binding Name}" />
+						  <TextBlock Grid.Row="2"
+									 Text="TxPDO / Inputs / 0x1C13"
+									 FontWeight="Bold"
+									 Margin="0,8,0,0"
+									 IsVisible="{Binding HasTxPdoMapRows}" />
 
-							  <DataGridTextColumn Header="Type"	
-												  Binding="{Binding DataType}" />
+						  <DataGrid Grid.Row="3"
+									ItemsSource="{Binding TxPdoMapRows}"
+									IsVisible="{Binding HasTxPdoMapRows}"
+									AutoGenerateColumns="False"
+									IsReadOnly="True"
+									GridLinesVisibility="All"
+									HeadersVisibility="All"
+									VerticalAlignment="Stretch"
+									HorizontalAlignment="Stretch"
+									ScrollViewer.VerticalScrollBarVisibility="Auto"
+									ScrollViewer.HorizontalScrollBarVisibility="Auto">
 
-							  <DataGridTextColumn Header="BitLen"
-												  Binding="{Binding BitLength}" />
-							  
-							  <DataGridTextColumn Header="SDO BitSize"
-												  Binding="{Binding SdoBitSize}" />
+							  <DataGrid.Columns>
+								  <DataGridTextColumn Header="#" Binding="{Binding No}" />
+								  <DataGridTextColumn Header="Address" Binding="{Binding AddressText}" />
+								  <DataGridTextColumn Header="Name" Binding="{Binding Name}" />
+								  <DataGridTextColumn Header="Type" Binding="{Binding DataType}" />
+								  <DataGridTextColumn Header="BitLen" Binding="{Binding BitLength}" />
+								  <DataGridTextColumn Header="SDO BitSize" Binding="{Binding SdoBitSize}" />
+								  <DataGridTextColumn Header="ByteOffset" Binding="{Binding ByteOffset}" />
+								  <DataGridTextColumn Header="BitInByte" Binding="{Binding BitInByte}" />
+								  <DataGridTextColumn Header="Raw" Binding="{Binding RawText}" />
+							  </DataGrid.Columns>
+						  </DataGrid>
 
-							  <DataGridTextColumn Header="ByteOffset"
-												  Binding="{Binding ByteOffset}" />
-
-							  <DataGridTextColumn Header="BitInByte"
-												  Binding="{Binding BitInByte}" />
-
-							  <DataGridTextColumn Header="Raw"
-												  Binding="{Binding RawText}" />
-						  </DataGrid.Columns>
-					  </DataGrid>
-
-					  <TextBlock Grid.Row="2"
-								 Text="TxPDO / Inputs / 0x1C13"
-								 FontWeight="Bold"
-								 Margin="0,8,0,0" />
-
-					  <DataGrid Grid.Row="3"
-								ItemsSource="{Binding TxPdoMapRows}"
-								AutoGenerateColumns="False"
-								IsReadOnly="True"
-								GridLinesVisibility="All"
-								HeadersVisibility="All">
-
-						  <DataGrid.Columns>
-							  <DataGridTextColumn Header="#"
-												  Binding="{Binding No}" />
-
-							  <DataGridTextColumn Header="Address"
-												  Binding="{Binding AddressText}" />
-
-							  <DataGridTextColumn Header="Name"
-												  Binding="{Binding Name}" />
-
-							  <DataGridTextColumn Header="Type"
-												  Binding="{Binding DataType}" />
-
-							  <DataGridTextColumn Header="BitLen"
-												  Binding="{Binding BitLength}" />
-
-							  <DataGridTextColumn Header="SDO BitSize"
-												  Binding="{Binding SdoBitSize}" />
-
-							  <DataGridTextColumn Header="ByteOffset"
-												  Binding="{Binding ByteOffset}" />
-
-							  <DataGridTextColumn Header="BitInByte"
-												  Binding="{Binding BitInByte}" />
-
-							  <DataGridTextColumn Header="Raw"
-												  Binding="{Binding RawText}" />
-						  </DataGrid.Columns>
-					  </DataGrid>
-
-				  </Grid>
+						  <TextBlock Grid.Row="0"
+									 Grid.RowSpan="4"
+									 Text="PDO Map Nothing."
+									 IsVisible="{Binding HasNoPdoMapRows}"
+									 Foreground="Gray"
+									 VerticalAlignment="Center"
+									 HorizontalAlignment="Center" />
+					  </Grid>
+				  </TabItem>
 				 
 
-              </TabItem>
 
 
               <TabItem Header="Control">

@@ -1,4 +1,5 @@
-﻿using Avalonia.Media;
+﻿using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -438,6 +439,46 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public ObservableCollection<PdoMapUiRow> RxPdoMapRows { get; } = new ObservableCollection<PdoMapUiRow>();
     public ObservableCollection<PdoMapUiRow> TxPdoMapRows { get; } = new ObservableCollection<PdoMapUiRow>();
 
+    public bool HasRxPdoMapRows
+    {
+        get { return RxPdoMapRows.Count > 0; }
+    }
+
+    public bool HasTxPdoMapRows
+    {
+        get { return TxPdoMapRows.Count > 0; }
+    }
+    public bool HasNoPdoMapRows
+    {
+        get { return RxPdoMapRows.Count == 0 && TxPdoMapRows.Count == 0; }
+    }
+
+    public GridLength RxPdoMapRowsHeight
+    {
+        get
+        {
+            if (HasRxPdoMapRows)
+            {
+                return new GridLength(1, GridUnitType.Star);
+            }
+
+            return new GridLength(0);
+        }
+    }
+
+    public GridLength TxPdoMapRowsHeight
+    {
+        get
+        {
+            if (HasTxPdoMapRows)
+            {
+                return new GridLength(1, GridUnitType.Star);
+            }
+
+            return new GridLength(0);
+        }
+    }
+
 
 
     private void HandleResetPdoStats()
@@ -578,31 +619,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void UpdatePdoMapRows(IPDOView pdoView)
     {
-        /*
-        RxPdoMapRows.Clear();
-        TxPdoMapRows.Clear();
 
-        if (pdoView == null)
-        {
-            return;
-        }
-
-        if (pdoView.RxPdoMapRows != null)
-        {
-            for (int i = 0; i < pdoView.RxPdoMapRows.Count; i++)
-            {
-                RxPdoMapRows.Add(pdoView.RxPdoMapRows[i]);
-            }
-        }
-
-        if (pdoView.TxPdoMapRows != null)
-        {
-            for (int i = 0; i < pdoView.TxPdoMapRows.Count; i++)
-            {
-                TxPdoMapRows.Add(pdoView.TxPdoMapRows[i]);
-            }
-        }
-        */
         RxPdoMapRows.Clear();
         TxPdoMapRows.Clear();
 
@@ -633,7 +650,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
         }
 
-
+        OnPropertyChanged(nameof(HasRxPdoMapRows));
+        OnPropertyChanged(nameof(HasTxPdoMapRows));
+        OnPropertyChanged(nameof(HasNoPdoMapRows));
+        OnPropertyChanged(nameof(RxPdoMapRowsHeight));
+        OnPropertyChanged(nameof(TxPdoMapRowsHeight));
     }
 
     //SDO 관련
