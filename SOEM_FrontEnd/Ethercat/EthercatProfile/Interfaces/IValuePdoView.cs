@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
 {
@@ -13,13 +9,32 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
         long ValueSequence { get; }
 
         ValueSnapshotFrame GetValueSnapshot();
-
     }
 
     public enum ValuePdoDirection
     {
         Input = 0,   // TxPDO: slave -> master
         Output = 1   // RxPDO: master -> slave
+    }
+
+    public enum ValueRawType
+    {
+        Unknown = 0,
+
+        Int8 = 1,
+        UInt8 = 2,
+
+        Int16 = 3,
+        UInt16 = 4,
+
+        Int32 = 5,
+        UInt32 = 6,
+
+        Int64 = 7,
+        UInt64 = 8,
+
+        Real32 = 9,
+        Real64 = 10
     }
 
     public sealed class ValueChannelDefinition
@@ -41,7 +56,12 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
         public int ByteOffset { get; set; }
         public int BitInByte { get; set; }
 
-        public ValueRawKind RawKind { get; set; }
+        public ValueRawType RawType { get; set; }
+
+        public string DirectionText
+        {
+            get { return Direction.ToString(); }
+        }
 
         public string AddressText
         {
@@ -49,18 +69,6 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
             {
                 return "0x" + Index.ToString("X4") + ":" + SubIndex.ToString("X2");
             }
-        }
-    }
-
-    public sealed class ValueSnapshotFrame
-    {
-        public long Sequence { get; set; }
-
-        public ValueChannelSnapshot[] Channels { get; set; }
-
-        public ValueSnapshotFrame()
-        {
-            Channels = new ValueChannelSnapshot[0];
         }
     }
 
@@ -74,32 +82,24 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
 
         public ushort Index;
         public byte SubIndex;
-        public byte RawKind;
+
+        // ValueRawType as byte for external/MMF-friendly layout.
+        public byte RawType;
 
         public long RawSigned;
         public ulong RawUnsigned;
         public double RawFloat;
     }
 
-    public enum ValueRawKind
+    public sealed class ValueSnapshotFrame
     {
-        Unknown = 0,
+        public long Sequence { get; set; }
 
-        Int8 = 1,
-        UInt8 = 2,
+        public ValueChannelSnapshot[] Channels { get; set; }
 
-        Int16 = 3,
-        UInt16 = 4,
-
-        Int32 = 5,
-        UInt32 = 6,
-
-        Int64 = 7,
-        UInt64 = 8,
-
-        Real32 = 9,
-        Real64 = 10
+        public ValueSnapshotFrame()
+        {
+            Channels = new ValueChannelSnapshot[0];
+        }
     }
-
-
 }

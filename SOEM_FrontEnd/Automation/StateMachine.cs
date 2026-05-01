@@ -518,6 +518,7 @@ namespace SOEM_FrontEnd.Automation
 
                             if (is402 == true)
                             {
+                                //402 프로파일 판별.
                                 NormalMotorWithPPMode ppmode = new NormalMotorWithPPMode(rxSize: outBytes, txSize: inBytes, i, _ECClient);
 
                                 if (_sdoWorker != null)
@@ -534,15 +535,48 @@ namespace SOEM_FrontEnd.Automation
                             }
                             else
                             {
-                                NormalOProfile normalioprofile = new NormalOProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
-                                //Console.WriteLine($"Slave {i} - 402Drive Profile Set Fail NormalIO set.");
+                                //Value Profile 판별.
+                                bool hasValuePdo = false;
 
-                                normalioprofile.SetPdoMapping(rxAllMapList, txAllMapList);
+                                if (pdoMapReadOk)
+                                {
+                                    hasValuePdo = NormalValueProfile.HasValueCandidates(i, rxAllMapList, txAllMapList);
+                                }
 
-                                store.BaseProfile = normalioprofile;
+                                //값(Value 타입 프로파일이면,)
+                                if (hasValuePdo)
+                                {
+                                    NormalValueProfile valueProfile =
+                                        new NormalValueProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
 
-                                _log.LogInformation($"Slave {i} - 402Drive Profile Set Fail NormalIO set.");
+                                    valueProfile.SetPdoMapping(rxAllMapList, txAllMapList);
 
+                                    store.BaseProfile = valueProfile;
+
+                                    _log.LogInformation(
+                                        "Slave {Slave} - NormalValueProfile Set. RxMap={RxMap}, TxMap={TxMap}, ValueCount={ValueCount}",
+                                        i,
+                                        rxAllMapList.Count,
+                                        txAllMapList.Count,
+                                        valueProfile.ValueDefinitions.Count);
+                                }
+                                //이외에는 전부 Normal타입으로.
+                                else
+                                {
+                                    NormalOProfile normalIoProfile =
+                                        new NormalOProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
+
+                                    normalIoProfile.SetPdoMapping(rxAllMapList, txAllMapList);
+
+                                    store.BaseProfile = normalIoProfile;
+
+                                    _log.LogInformation(
+                                        "Slave {Slave} - NormalIO Profile Set. RxMap={RxMap}, TxMap={TxMap}, PdoMapReadOk={PdoMapReadOk}",
+                                        i,
+                                        rxAllMapList.Count,
+                                        txAllMapList.Count,
+                                        pdoMapReadOk);
+                                }
                             }
 
                             break;

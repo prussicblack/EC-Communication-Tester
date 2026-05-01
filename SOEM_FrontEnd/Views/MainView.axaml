@@ -418,6 +418,10 @@
                           <views:MotorControl DataContext="{Binding MotorControlVm}" />
                       </ContentControl>
 
+					  <ContentControl IsVisible="{Binding HasValueControl}">
+						  <views:ValueControl DataContext="{Binding ValueControlVm}" />
+					  </ContentControl>
+
                       <ContentControl IsVisible="{Binding HasIoControl}">
                           <Grid Margin="10"
                                 ColumnDefinitions="*,*"

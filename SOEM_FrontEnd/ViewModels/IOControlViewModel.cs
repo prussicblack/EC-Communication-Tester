@@ -12,7 +12,7 @@ using System.Windows.Input;
 
 namespace SOEM_FrontEnd.ViewModels
 {
-    public partial class IOControlViewModel : ViewModelBase
+    public class IOControlViewModel : ViewModelBase
     {
 
         private int _columns;

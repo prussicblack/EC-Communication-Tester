@@ -196,13 +196,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public MotorControlViewModel MotorControlVm
     {
-        get => _motorControlVm;
+        get { return _motorControlVm; }
         private set
         {
             if (SetProperty(ref _motorControlVm, value))
             {
                 OnPropertyChanged(nameof(HasMotorControl));
                 OnPropertyChanged(nameof(HasNoMotorControl));
+                OnPropertyChanged(nameof(HasNoControl));
             }
         }
     }
@@ -251,7 +252,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public bool HasNoControl
     {
-        get { return IsSlaveSelected && (MotorControlVm == null) && !HasIoControl; }
+        get
+        {
+            return IsSlaveSelected && MotorControlVm == null && !HasIoControl && !HasValueControl;
+        }
     }
 
     public bool HasIoOutput
@@ -262,6 +266,27 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public bool HasIoInput
     {
         get { return IoInputVm != null; }
+    }
+
+    //Value컨트롤용 프로퍼티 추가
+    private ValueControlViewModel _valueControlVm;
+
+    public ValueControlViewModel ValueControlVm
+    {
+        get { return _valueControlVm; }
+        private set
+        {
+            if (SetProperty(ref _valueControlVm, value))
+            {
+                OnPropertyChanged(nameof(HasValueControl));
+                OnPropertyChanged(nameof(HasNoControl));
+            }
+        }
+    }
+
+    public bool HasValueControl
+    {
+        get { return ValueControlVm != null; }
     }
 
     //마스터 통계용 UI
@@ -507,32 +532,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _lastPdoStatsUiLogTimestamp = 0;
     }
 
-    //public void AppendPdoStatsUiLog(string line)
-    //{
-    //    if (string.IsNullOrEmpty(line))
-    //    {
-    //        return;
-    //    }
-
-    //    PdoStatsUiLogs.Add(line);
-
-    //    while (PdoStatsUiLogs.Count > 200)
-    //    {
-    //        PdoStatsUiLogs.RemoveAt(0);
-    //    }
-    //}
-
-
-
-
-
-
     private void UpdateControlProfile()
     {
         var store = SelectedSlaveData;
         if (store == null)
         {
             MotorControlVm = null;
+            ValueControlVm = null;
             IoOutputVm = null;
             IoInputVm = null;
             _selectedPdoView = null;
@@ -551,13 +557,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         UpdatePdoMapRows(pdoView);
 
         //모터 우선확인.
-        var motor = store.BaseProfile as IMotorCommands;
+        IMotorCommands motor = store.BaseProfile as IMotorCommands;
+
         if (motor != null)
         {
             if (MotorControlVm == null)
+            {
                 MotorControlVm = new MotorControlViewModel();
+            }
 
             MotorControlVm.Attach(motor);
+
+            ValueControlVm = null;
             IoOutputVm = null;
             IoInputVm = null;
             return;
@@ -573,6 +584,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        //Value프로파일일때.
+        IValuePdoView valueView = store.BaseProfile as IValuePdoView;
+        if (valueView != null)
+        {
+            if (ValueControlVm == null)
+            {
+                ValueControlVm = new ValueControlViewModel();
+            }
+
+            ValueControlVm.Attach(valueView);
+
+            IoOutputVm = null;
+            IoInputVm = null;
+            return;
+        }
+
+        ValueControlVm = null;
+
+        //IO프로파일일때.
         int outBytes = pdoView.OutputSnapshot.Length;
         int inBytes = pdoView.InputSnapshot.Length;
 
@@ -820,7 +850,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             // MotorControl이 떠있을 때만 돌려도 되고, 항상 돌려도 됨
             if (MotorControlVm != null)
+            {
                 MotorControlVm.UiTick();
+            }
+            
+            if (ValueControlVm != null)
+            {
+                ValueControlVm.UiTick();
+            }
 
             if (_selectedPdoView != null)
             {
