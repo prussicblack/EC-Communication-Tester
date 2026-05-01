@@ -21,20 +21,24 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
     {
         Unknown = 0,
 
-        Int8 = 1,
-        UInt8 = 2,
+        Bool = 1,
+        BitField = 2,
+        RawBits = 3,
 
-        Int16 = 3,
-        UInt16 = 4,
+        Int8 = 10,
+        UInt8 = 11,
 
-        Int32 = 5,
-        UInt32 = 6,
+        Int16 = 12,
+        UInt16 = 13,
 
-        Int64 = 7,
-        UInt64 = 8,
+        Int32 = 14,
+        UInt32 = 15,
 
-        Real32 = 9,
-        Real64 = 10
+        Int64 = 16,
+        UInt64 = 17,
+
+        Real32 = 18,
+        Real64 = 19
     }
 
     public sealed class ValueChannelDefinition

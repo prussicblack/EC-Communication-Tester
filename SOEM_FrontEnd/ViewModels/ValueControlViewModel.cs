@@ -1,4 +1,5 @@
-﻿using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
+﻿using Avalonia.Controls;
+using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,20 +13,71 @@ namespace SOEM_FrontEnd.ViewModels
     {
         private IValuePdoView _valueView;
 
-        public ObservableCollection<ValueChannelRowViewModel> Channels { get; private set; }
+        private readonly List<ValueChannelRowViewModel> _allRows =
+            new List<ValueChannelRowViewModel>();
+
+        public ObservableCollection<ValueChannelRowViewModel> InputChannels { get; private set; }
+
+        public ObservableCollection<ValueChannelRowViewModel> OutputChannels { get; private set; }
+
+        public bool HasInputChannels
+        {
+            get { return InputChannels.Count > 0; }
+        }
+
+        public bool HasOutputChannels
+        {
+            get { return OutputChannels.Count > 0; }
+        }
+
+        public bool HasNoChannels
+        {
+            get { return InputChannels.Count == 0 && OutputChannels.Count == 0; }
+        }
+
+        public GridLength InputRowsHeight
+        {
+            get
+            {
+                if (HasInputChannels)
+                {
+                    return new GridLength(1, GridUnitType.Star);
+                }
+
+                return new GridLength(0);
+            }
+        }
+
+        public GridLength OutputRowsHeight
+        {
+            get
+            {
+                if (HasOutputChannels)
+                {
+                    return new GridLength(1, GridUnitType.Star);
+                }
+
+                return new GridLength(0);
+            }
+        }
 
         public ValueControlViewModel()
         {
-            Channels = new ObservableCollection<ValueChannelRowViewModel>();
+            InputChannels = new ObservableCollection<ValueChannelRowViewModel>();
+            OutputChannels = new ObservableCollection<ValueChannelRowViewModel>();
         }
 
         public void Attach(IValuePdoView valueView)
         {
             _valueView = valueView;
-            Channels.Clear();
+
+            _allRows.Clear();
+            InputChannels.Clear();
+            OutputChannels.Clear();
 
             if (_valueView == null)
             {
+                RaiseLayoutChanged();
                 return;
             }
 
@@ -33,14 +85,28 @@ namespace SOEM_FrontEnd.ViewModels
 
             if (definitions == null)
             {
+                RaiseLayoutChanged();
                 return;
             }
 
             for (int i = 0; i < definitions.Count; i++)
             {
-                Channels.Add(new ValueChannelRowViewModel(definitions[i]));
+                ValueChannelDefinition definition = definitions[i];
+
+                ValueChannelRowViewModel row = new ValueChannelRowViewModel(definition);
+                _allRows.Add(row);
+
+                if (definition.Direction == ValuePdoDirection.Input)
+                {
+                    InputChannels.Add(row);
+                }
+                else
+                {
+                    OutputChannels.Add(row);
+                }
             }
 
+            RaiseLayoutChanged();
             UiTick();
         }
 
@@ -60,7 +126,7 @@ namespace SOEM_FrontEnd.ViewModels
                 return;
             }
 
-            int count = Channels.Count;
+            int count = _allRows.Count;
 
             if (frame.Channels.Length < count)
             {
@@ -69,16 +135,23 @@ namespace SOEM_FrontEnd.ViewModels
 
             for (int i = 0; i < count; i++)
             {
-                Channels[i].UpdateSnapshot(frame.Channels[i]);
+                _allRows[i].UpdateSnapshot(frame.Channels[i]);
             }
+        }
+
+        private void RaiseLayoutChanged()
+        {
+            OnPropertyChanged(nameof(HasInputChannels));
+            OnPropertyChanged(nameof(HasOutputChannels));
+            OnPropertyChanged(nameof(HasNoChannels));
+            OnPropertyChanged(nameof(InputRowsHeight));
+            OnPropertyChanged(nameof(OutputRowsHeight));
         }
     }
 
     public sealed class ValueChannelRowViewModel : ViewModelBase
     {
         private readonly ValueChannelDefinition _definition;
-
-        private ValueChannelSnapshot _snapshot;
 
         private string _rawText = "";
 
@@ -130,7 +203,6 @@ namespace SOEM_FrontEnd.ViewModels
 
         public void UpdateSnapshot(ValueChannelSnapshot snapshot)
         {
-            _snapshot = snapshot;
             RawText = FormatRawText(snapshot);
         }
 
@@ -140,6 +212,15 @@ namespace SOEM_FrontEnd.ViewModels
 
             switch (rawType)
             {
+                case ValueRawType.Bool:
+                    return snapshot.RawUnsigned != 0 ? "ON" : "OFF";
+
+                case ValueRawType.BitField:
+                    return "0x" + snapshot.RawUnsigned.ToString("X");
+
+                case ValueRawType.RawBits:
+                    return "0x" + snapshot.RawUnsigned.ToString("X");
+
                 case ValueRawType.Int8:
                 case ValueRawType.Int16:
                 case ValueRawType.Int32:
@@ -156,7 +237,6 @@ namespace SOEM_FrontEnd.ViewModels
                 case ValueRawType.Real64:
                     return snapshot.RawFloat.ToString("F6");
 
-                case ValueRawType.Unknown:
                 default:
                     return "";
             }

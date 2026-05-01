@@ -8,16 +8,24 @@
 			 x:DataType="vm:ValueControlViewModel">
 
 	<Grid Margin="10"
-		 RowDefinitions="Auto,*"
-		 RowSpacing="6">
+	   RowSpacing="6">
+
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="{Binding OutputRowsHeight}"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="{Binding InputRowsHeight}"/>
+		</Grid.RowDefinitions>
 
 		<TextBlock Grid.Row="0"
-                   Text="Value PDO"
+                   Text="Outputs / RxPDO / Master → Slave"
                    FontWeight="Bold"
-                   FontSize="15" />
+                   FontSize="15"
+                   IsVisible="{Binding HasOutputChannels}" />
 
 		<DataGrid Grid.Row="1"
-                  ItemsSource="{Binding Channels}"
+                  ItemsSource="{Binding OutputChannels}"
+                  IsVisible="{Binding HasOutputChannels}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   GridLinesVisibility="All"
@@ -51,6 +59,58 @@
                                     Binding="{Binding RawText}" />
 			</DataGrid.Columns>
 		</DataGrid>
+
+		<TextBlock Grid.Row="2"
+                   Text="Inputs / TxPDO / Slave → Master"
+                   FontWeight="Bold"
+                   FontSize="15"
+                   Margin="0,8,0,0"
+                   IsVisible="{Binding HasInputChannels}" />
+
+		<DataGrid Grid.Row="3"
+                  ItemsSource="{Binding InputChannels}"
+                  IsVisible="{Binding HasInputChannels}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="All"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
+
+			<DataGrid.Columns>
+				<DataGridTextColumn Header="Dir"
+                                    Binding="{Binding DirectionText}" />
+
+				<DataGridTextColumn Header="CH"
+                                    Binding="{Binding ChannelNo}" />
+
+				<DataGridTextColumn Header="Address"
+                                    Binding="{Binding AddressText}" />
+
+				<DataGridTextColumn Header="Name"
+                                    Binding="{Binding Name}" />
+
+				<DataGridTextColumn Header="Type"
+                                    Binding="{Binding DataType}" />
+
+				<DataGridTextColumn Header="RawType"
+                                    Binding="{Binding RawTypeText}" />
+
+				<DataGridTextColumn Header="Byte"
+                                    Binding="{Binding ByteOffset}" />
+
+				<DataGridTextColumn Header="Raw"
+                                    Binding="{Binding RawText}" />
+			</DataGrid.Columns>
+		</DataGrid>
+
+		<TextBlock Grid.Row="0"
+                   Grid.RowSpan="4"
+                   Text="표시할 Value PDO가 없습니다."
+                   IsVisible="{Binding HasNoChannels}"
+                   Foreground="Gray"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
 	</Grid>
 	
 	

@@ -132,7 +132,16 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
                     channelNoByBaseIndex.Add(mapRow.Index, channelNo);
                 }
 
-                ValueRawType rawType = GetRawType(sdoRow.DataType, mapRow.BitLength);
+                string dataType = "";
+                string name = "";
+
+                if (sdoRow != null)
+                {
+                    dataType = sdoRow.DataType;
+                    name = sdoRow.DisplayName;
+                }
+
+                ValueRawType rawType = GetRawType(dataType, mapRow.BitLength);
 
                 ValueChannelDefinition definition = new ValueChannelDefinition
                 {
@@ -146,8 +155,8 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
                     Index = mapRow.Index,
                     SubIndex = mapRow.SubIndex,
 
-                    Name = sdoRow.DisplayName,
-                    DataType = sdoRow.DataType,
+                    Name = name,
+                    DataType = dataType,
 
                     BitLength = mapRow.BitLength,
                     ByteOffset = mapRow.ByteOffset,
@@ -165,11 +174,6 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
             snapshot = new ValueChannelSnapshot();
 
             if (definition == null)
-            {
-                return false;
-            }
-
-            if (definition.BitInByte != 0)
             {
                 return false;
             }
@@ -201,8 +205,50 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
             switch (definition.RawType)
             {
+                case ValueRawType.Bool:
+                    {
+                        int byteOffset = definition.ByteOffset;
+
+                        if (byteOffset < 0 || byteOffset >= data.Length)
+                        {
+                            return false;
+                        }
+
+                        byte mask = (byte)(1 << definition.BitInByte);
+                        bool on = (data[byteOffset] & mask) != 0;
+
+                        snapshot.RawUnsigned = on ? 1UL : 0UL;
+                        return true;
+                    }
+
+                case ValueRawType.BitField:
+                    {
+                        ulong raw = ReadBitField(data, definition.ByteOffset, definition.BitInByte, definition.BitLength);
+
+                        snapshot.RawUnsigned = raw;
+                        return true;
+                    }
+
+                case ValueRawType.RawBits:
+                    {
+                        ulong raw = ReadBitField(
+                            data,
+                            definition.ByteOffset,
+                            definition.BitInByte,
+                            definition.BitLength);
+
+                        snapshot.RawUnsigned = raw;
+                        return true;
+                    }
+
                 case ValueRawType.Int8:
                     {
+                        if (definition.BitInByte != 0)
+                        {
+                            return false;
+                        }
+
+
                         if (offset + 1 > data.Length)
                         {
                             return false;
@@ -214,6 +260,12 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
                 case ValueRawType.UInt8:
                     {
+                        if (definition.BitInByte != 0)
+                        {
+                            return false;
+                        }
+
+
                         if (offset + 1 > data.Length)
                         {
                             return false;
@@ -225,6 +277,12 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
                 case ValueRawType.Int16:
                     {
+                        if (definition.BitInByte != 0)
+                        {
+                            return false;
+                        }
+
+
                         if (offset + 2 > data.Length)
                         {
                             return false;
@@ -239,6 +297,11 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
                 case ValueRawType.UInt16:
                     {
+                        if (definition.BitInByte != 0)
+                        {
+                            return false;
+                        }
+
                         if (offset + 2 > data.Length)
                         {
                             return false;
@@ -253,6 +316,11 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
                 case ValueRawType.Int32:
                     {
+                        if (definition.BitInByte != 0)
+                        {
+                            return false;
+                        }
+
                         if (offset + 4 > data.Length)
                         {
                             return false;
@@ -267,6 +335,11 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
                 case ValueRawType.UInt32:
                     {
+                        if (definition.BitInByte != 0)
+                        {
+                            return false;
+                        }
+
                         if (offset + 4 > data.Length)
                         {
                             return false;
@@ -281,6 +354,11 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
                 case ValueRawType.Int64:
                     {
+                        if (definition.BitInByte != 0)
+                        {
+                            return false;
+                        }
+
                         if (offset + 8 > data.Length)
                         {
                             return false;
@@ -295,6 +373,11 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
                 case ValueRawType.UInt64:
                     {
+                        if (definition.BitInByte != 0)
+                        {
+                            return false;
+                        }
+
                         if (offset + 8 > data.Length)
                         {
                             return false;
@@ -309,6 +392,11 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
                 case ValueRawType.Real32:
                     {
+                        if (definition.BitInByte != 0)
+                        {
+                            return false;
+                        }
+
                         if (offset + 4 > data.Length)
                         {
                             return false;
@@ -323,6 +411,11 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
                 case ValueRawType.Real64:
                     {
+                        if (definition.BitInByte != 0)
+                        {
+                            return false;
+                        }
+
                         if (offset + 8 > data.Length)
                         {
                             return false;
@@ -334,9 +427,41 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
                         snapshot.RawFloat = BitConverter.Int64BitsToDouble(bits);
                         return true;
                     }
+
             }
 
             return false;
+        }
+
+        private static ulong ReadBitField(ReadOnlySpan<byte> data, int byteOffset, int bitInByte, int bitLength)
+        {
+            if (bitLength <= 0 || bitLength > 64)
+            {
+                return 0;
+            }
+
+            ulong value = 0;
+
+            for (int i = 0; i < bitLength; i++)
+            {
+                int absoluteBit = byteOffset * 8 + bitInByte + i;
+                int currentByte = absoluteBit / 8;
+                int currentBit = absoluteBit % 8;
+
+                if (currentByte < 0 || currentByte >= data.Length)
+                {
+                    break;
+                }
+
+                bool on = (data[currentByte] & (1 << currentBit)) != 0;
+
+                if (on)
+                {
+                    value |= 1UL << i;
+                }
+            }
+
+            return value;
         }
 
         public static bool HasValueCandidates(ushort slaveNo, List<uint> rxAllMap, List<uint> txAllMap)
@@ -399,32 +524,18 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
         private static bool IsValueCandidate(PdoMapRow mapRow, SDOFlatObject sdoRow)
         {
-            if (mapRow == null || sdoRow == null)
+            if (mapRow == null)
             {
                 return false;
             }
 
+            // Padding
             if (mapRow.Index == 0x0000)
             {
                 return false;
             }
 
-            if (mapRow.BitInByte != 0)
-            {
-                return false;
-            }
-
-            if (mapRow.BitLength != 8 &&
-                mapRow.BitLength != 16 &&
-                mapRow.BitLength != 32 &&
-                mapRow.BitLength != 64)
-            {
-                return false;
-            }
-
-            ValueRawType kind = GetRawType(sdoRow.DataType, mapRow.BitLength);
-
-            if (kind == ValueRawType.Unknown)
+            if (mapRow.BitLength <= 0 || mapRow.BitLength > 64)
             {
                 return false;
             }
@@ -464,12 +575,27 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
 
         private static ValueRawType GetRawType(string dataType, int bitLength)
         {
-            if (string.IsNullOrWhiteSpace(dataType))
+            if (bitLength <= 0 || bitLength > 64)
             {
                 return ValueRawType.Unknown;
             }
 
+            if (string.IsNullOrWhiteSpace(dataType))
+            {
+                return ValueRawType.RawBits;
+            }
+
             string text = dataType.Trim().ToUpperInvariant();
+
+            if (text == "BOOL" || text == "BOOLEAN")
+            {
+                return ValueRawType.Bool;
+            }
+
+            if (text == "BIT" || text.StartsWith("BIT"))
+            {
+                return ValueRawType.BitField;
+            }
 
             if ((text == "SINT" || text == "INT8" || text == "INTEGER8") && bitLength == 8)
             {
@@ -521,8 +647,8 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile
                 return ValueRawType.Real64;
             }
 
-            return ValueRawType.Unknown;
+            // 타입 이름은 모르지만 PDO map상 raw bit length는 있으므로 표시 가능
+            return ValueRawType.RawBits;
         }
     }
-
 }
