@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:vm="using:SOEM_FrontEnd.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="350"
+             x:Class="SOEM_FrontEnd.Views.ValueControl"
+			 x:DataType="vm:ValueControlViewModel">
+
+	<Grid Margin="10"
+		 RowDefinitions="Auto,*"
+		 RowSpacing="6">
+
+		<TextBlock Grid.Row="0"
+                   Text="Value PDO"
+                   FontWeight="Bold"
+                   FontSize="15" />
+
+		<DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Channels}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="All"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
+
+			<DataGrid.Columns>
+				<DataGridTextColumn Header="Dir"
+                                    Binding="{Binding DirectionText}" />
+
+				<DataGridTextColumn Header="CH"
+                                    Binding="{Binding ChannelNo}" />
+
+				<DataGridTextColumn Header="Address"
+                                    Binding="{Binding AddressText}" />
+
+				<DataGridTextColumn Header="Name"
+                                    Binding="{Binding Name}" />
+
+				<DataGridTextColumn Header="Type"
+                                    Binding="{Binding DataType}" />
+
+				<DataGridTextColumn Header="RawType"
+                                    Binding="{Binding RawTypeText}" />
+
+				<DataGridTextColumn Header="Byte"
+                                    Binding="{Binding ByteOffset}" />
+
+				<DataGridTextColumn Header="Raw"
+                                    Binding="{Binding RawText}" />
+			</DataGrid.Columns>
+		</DataGrid>
+	</Grid>
+	
+	
+</UserControl>
