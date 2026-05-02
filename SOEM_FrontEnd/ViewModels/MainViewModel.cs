@@ -923,13 +923,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         string matched = null;
 
+        
 
         for (int i = 0; i < NICList.Count; i++)
         {
-            if (string.IsNullOrWhiteSpace(adapterConfig.Name) == false &&
-                string.Equals(NICList.ToString(), adapterConfig.Name, StringComparison.OrdinalIgnoreCase))
+            string ifname = NICList[i].Substring(NICList[i].LastIndexOf(" - ") + (" - ".Length));
+
+            if (string.IsNullOrWhiteSpace(adapterConfig.Name) == false && string.Equals(ifname, adapterConfig.Name, StringComparison.OrdinalIgnoreCase))
             {
-                matched = adapterConfig.Name;
+                matched = NICList[i];
                 break;
             }
         }
@@ -950,7 +952,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _log.LogWarning("MiniENI slaves are empty.");
             return;
         }
-        if (miniEni.Slaves.Count != Datamap.Instance.SlaveCount)
+        if (miniEni.Slaves.Count + 1 != Datamap.Instance.SlaveCount)
         {
             _log.LogWarning("Slave count mismatch.");
         }
@@ -1048,6 +1050,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             project.ProjectName = "Current Project";
         }
+
+        if(StateMachine.CurrentSequence == eStateSequenceName.Op)
+        {
+            project.AutoMoveToOp = true;
+        }
+
 
         project.Adapter = CurrentAdapterConfig();
         project.Slaves.Clear();
