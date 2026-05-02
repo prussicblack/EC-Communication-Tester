@@ -194,6 +194,12 @@
 						  
                       </Grid>
                   </TabItem>
+
+				  <TabItem Header="MiniENI">
+					  <views:MiniEniView DataContext="{Binding MiniEniVm}" />
+				  </TabItem>
+				  
+				  
               </TabControl>
 
 

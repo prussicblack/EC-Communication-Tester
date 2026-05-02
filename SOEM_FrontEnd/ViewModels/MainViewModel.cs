@@ -8,6 +8,7 @@ using SOEM_FrontEnd.DataMap;
 using SOEM_FrontEnd.Ethercat;
 using SOEM_FrontEnd.Ethercat.ESI;
 using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
+using SOEM_FrontEnd.Ethercat.MiniENI;
 using SOEM_FrontEnd.Model;
 using SOEM_FrontEnd.Util;
 using SOEM_FrontEnd.Util.Logging;
@@ -23,6 +24,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Windows.Input;
 
 //#nullable enable
@@ -794,6 +796,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private DispatcherTimer _uiTimerLow;
 
+    //MiniEni용 뷰모델.
+    private MiniEniViewModel _miniEniVm;
+
+    public MiniEniViewModel MiniEniVm
+    {
+        get { return _miniEniVm; }
+        private set { SetProperty(ref _miniEniVm, value); }
+    }
+
     public MainViewModel()
     {
 
@@ -804,9 +815,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         StateMachine = new StateMachine(ECClient);
 
+        MiniEniVm = new MiniEniViewModel(CurrentENIConfig);
+
         CMD_Test = new RelayCommand(HandleTest);
 
         CMD_SelectNIC = new RelayCommand(HandleNIC);
+
 
         UpdateNicList();
 
@@ -885,6 +899,92 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         StateMachine.CurrentSequenceChanged += OnCurrentSequenceChanged;
         UpdateMasterEcStateUi(StateMachine.CurrentSequence);
+
+
+        //임시 ENI실행부. 귀찮아서...나중에 Automation으로 옮기기.
+        MiniENI miniEni = MiniENICatalog.Current;
+        if (miniEni == null)
+        {
+            _log.LogInformation("MiniENI is not loaded."); 
+            return;
+        }
+        if (miniEni.AutoOpenAdapter == false)
+        {
+            _log.LogInformation("MiniENI loaded. AutoOpenAdapter is disabled.");
+            return;
+        }
+
+        if (miniEni.Adapter == null)
+        {
+            _log.LogWarning("MiniENI adapter is empty.");
+            return;
+        }
+        EniAdapterConfig adapterConfig = miniEni.Adapter;
+
+        string matched = null;
+
+
+        for (int i = 0; i < NICList.Count; i++)
+        {
+            if (string.IsNullOrWhiteSpace(adapterConfig.Name) == false &&
+                string.Equals(NICList.ToString(), adapterConfig.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                matched = adapterConfig.Name;
+                break;
+            }
+        }
+        if (matched == null)
+        {
+            _log.LogWarning("Saved adapter not found.");
+            return;
+        }
+        
+        NICSelect = matched;
+
+        //Nic 선택
+        HandleNIC();
+
+        //슬레이브 체크
+        if (miniEni.Slaves == null)
+        {
+            _log.LogWarning("MiniENI slaves are empty.");
+            return;
+        }
+        if (miniEni.Slaves.Count != Datamap.Instance.SlaveCount)
+        {
+            _log.LogWarning("Slave count mismatch.");
+        }
+
+        for (int i = 0; i < miniEni.Slaves.Count; i++)
+        {
+            EniSlaveConfig expected = miniEni.Slaves[i];
+            SoemSlaveInfo actual = SlaveInfoData[expected.SlaveNo];
+
+
+            //벤더 ID체크.
+            if (HexEquals(expected.VendorId, actual.vendor) == false)
+            {
+                _log.LogWarning(expected.SlaveNo, "VendorId", expected.VendorId, actual.vendor);
+                return;
+            }
+            //product Code 체크.
+            if (HexEquals(expected.ProductCode, actual.product) == false)
+            {
+                _log.LogWarning(expected.SlaveNo, "ProductCode", expected.ProductCode, actual.product);
+                return;
+            }
+            //리비전넘버 체크.
+            if (HexEquals(expected.RevisionNo, actual.revision) == false)
+            {
+                _log.LogWarning(expected.SlaveNo, "RevisionNo", expected.RevisionNo, actual.revision);
+                return;
+            }
+        }
+
+        //OP로 이동.
+        StateMachine.MoveToOperate();
+
+
     }
 
 
@@ -923,6 +1023,188 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _sink.Dispose();
     }
 
+    private MiniENI CurrentENIConfig()
+    {
+        MiniENI current = MiniENICatalog.Current;
+
+        MiniENI project = new MiniENI();
+
+        if (current != null)
+        {
+            project.Version = current.Version;
+            project.ProjectName = current.ProjectName;
+            project.AutoOpenAdapter = current.AutoOpenAdapter;
+            project.AutoMoveToOp = current.AutoMoveToOp;
+        }
+        else
+        {
+            project.Version = 1;
+            project.ProjectName = "Current Project";
+            project.AutoOpenAdapter = true;
+            project.AutoMoveToOp = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(project.ProjectName))
+        {
+            project.ProjectName = "Current Project";
+        }
+
+        project.Adapter = CurrentAdapterConfig();
+        project.Slaves.Clear();
+
+        for (int i = 1; i < SlaveInfoData.Count; i++)
+        {
+            SoemSlaveInfo info = SlaveInfoData[i];
+
+            int inBytes = 0;
+            int outBytes = 0;
+            int inBits = 0;
+            int outBits = 0;
+
+            try
+            {
+                SOEMNative.soem_get_slave_inout_size(
+                    i,
+                    out inBytes,
+                    out outBytes,
+                    out inBits,
+                    out outBits);
+            }
+            catch
+            {
+                inBits = 0;
+                outBits = 0;
+            }
+
+            EniSlaveConfig slaveConfig = new EniSlaveConfig();
+
+            slaveConfig.SlaveNo = (ushort)i;
+            slaveConfig.Name = info.name ?? "";
+
+            slaveConfig.VendorId = "0x" + info.vendor.ToString("X8");
+            slaveConfig.ProductCode = "0x" + info.product.ToString("X8");
+            slaveConfig.RevisionNo = "0x" + info.revision.ToString("X8");
+
+            slaveConfig.InputBits = inBits;
+            slaveConfig.OutputBits = outBits;
+
+            slaveConfig.Profile = GetCurrentProfileName(i);
+
+            if (current != null && current.Slaves != null)
+            {
+                EniSlaveConfig oldConfig = FindMiniEniSlave(current, (ushort)i);
+
+                if (oldConfig != null)
+                {
+                    if (string.IsNullOrWhiteSpace(oldConfig.Profile) == false)
+                    {
+                        slaveConfig.Profile = oldConfig.Profile;
+                    }
+
+                    if (oldConfig.StartupSdos != null)
+                    {
+                        slaveConfig.StartupSdos.AddRange(oldConfig.StartupSdos);
+                    }
+
+                    if (oldConfig.PdoMapping != null)
+                    {
+                        slaveConfig.PdoMapping = oldConfig.PdoMapping;
+                    }
+                }
+            }
+
+            project.Slaves.Add(slaveConfig);
+        }
+
+        return project;
+    }
+
+    private static EniSlaveConfig FindMiniEniSlave(MiniENI project, ushort slaveNo)
+    {
+        if (project == null || project.Slaves == null)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < project.Slaves.Count; i++)
+        {
+            EniSlaveConfig slave = project.Slaves[i];
+
+            if (slave != null && slave.SlaveNo == slaveNo)
+            {
+                return slave;
+            }
+        }
+
+        return null;
+    }
+
+    private string GetCurrentProfileName(int slaveNo)
+    {
+        if (Datamap.Instance.IsInit() == false)
+        {
+            return "Auto";
+        }
+
+        SlaveStore store = Datamap.Instance.GetSlave(slaveNo);
+
+        if (store == null || store.BaseProfile == null)
+        {
+            return "Auto";
+        }
+
+        if (store.BaseProfile is IMotorCommands)
+        {
+            return "CiA402_PP";
+        }
+
+        if (store.BaseProfile is IValuePdoView)
+        {
+            return "NormalValue";
+        }
+
+        if (store.BaseProfile is IPDOView)
+        {
+            return "NormalIO";
+        }
+
+        return "Auto";
+    }
+
+
+
+    private EniAdapterConfig CurrentAdapterConfig()
+    {
+        EniAdapterConfig adapter = new EniAdapterConfig();
+
+        string selected = NICSelect;
+
+        if (string.IsNullOrWhiteSpace(selected))
+        {
+            return adapter;
+        }
+
+        string separator = " - ";
+        int pos = selected.LastIndexOf(separator, StringComparison.Ordinal);
+
+        if (pos >= 0)
+        {
+            adapter.Description = selected.Substring(0, pos);
+            adapter.Name = selected.Substring(pos + separator.Length);
+        }
+        else
+        {
+            adapter.Name = selected;
+            adapter.Description = "";
+        }
+
+        adapter.MacAddress = "";
+
+        return adapter;
+    }
+
+
+
     private void UpdateMasterEcStateUi(eStateSequenceName state)
     {
         switch (state)
@@ -953,6 +1235,40 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 MasterEcStateColor = "IndianRed";
                 break;
         }
+    }
+
+    private static bool HexEquals(string expectedText, uint actualValue)
+    {
+        uint expectedValue;
+
+        if (TryParseHexUInt32(expectedText, out expectedValue) == false)
+        {
+            return false;
+        }
+
+        return expectedValue == actualValue;
+    }
+    private static bool TryParseHexUInt32(string text, out uint value)
+    {
+        value = 0;
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        text = text.Trim();
+
+        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        {
+            text = text.Substring(2);
+        }
+
+        return uint.TryParse(
+            text,
+            System.Globalization.NumberStyles.HexNumber,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out value);
     }
 
 
@@ -1407,6 +1723,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance);
         SdoWorker.Start();
+
         StateMachine.AttachSdoWorker(SdoWorker);
 
         return;

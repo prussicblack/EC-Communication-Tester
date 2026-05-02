@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SOEM_FrontEnd.Ethercat.ESI;
+using SOEM_FrontEnd.Ethercat.MiniENI;
 using SOEM_FrontEnd.Util.Logging;
 using SOEM_FrontEnd.ViewModels;
 using SOEM_FrontEnd.Views;
@@ -110,6 +111,11 @@ public partial class App : Application
                 // ESI 로드/파싱
                 string path = AppDomain.CurrentDomain.BaseDirectory + "ESI";
                 ESICatalog.Initialize(path);
+
+                // ENI 로드/파싱
+                string miniEniPath = AppDomain.CurrentDomain.BaseDirectory +  "MiniENI";
+                MiniENICatalog.Initialize(miniEniPath);
+                MiniENICatalog.TryLoad("eni.json", out MiniENI param, out string message);
 
                 Report(vm, 0.30, "Initializing map...");
                 // EthercatMapStore.Instance.Init(...)
