@@ -1,21 +1,13 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using SOEM_FrontEnd.Ethercat.MiniENI;
 using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+
 using System.Windows.Input;
 
 namespace SOEM_FrontEnd.ViewModels;
 
 public sealed class MiniEniViewModel : ViewModelBase
 {
-    private static readonly JsonSerializerOptions JsonOptions =
-        new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.Never
-        };
 
     private readonly Func<MiniENI> _currentMiniEniFactory;
 
@@ -68,7 +60,7 @@ public sealed class MiniEniViewModel : ViewModelBase
             return;
         }
 
-        MiniEniJson = JsonSerializer.Serialize(current, JsonOptions);
+        MiniEniJson = MiniENIJson.Serialize(current);
         StatusText = "MiniENI loaded.";
     }
 
@@ -82,7 +74,7 @@ public sealed class MiniEniViewModel : ViewModelBase
                 return;
             }
 
-            MiniENI project = JsonSerializer.Deserialize<MiniENI>(MiniEniJson, JsonOptions);
+            MiniENI project = MiniENIJson.Deserialize(MiniEniJson);
 
             if (project == null)
             {
