@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:vm="clr-namespace:SOEM_FrontEnd.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="500"
+             x:Class="SOEM_FrontEnd.Views.MiniEniView"
+			 x:DataType="vm:MiniEniViewModel">
+
+	<Grid Margin="10" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8">
+
+		<StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+			<Button Content="Refresh" Command="{Binding RefreshCommand}" />
+
+			<Button Content="Save" Command="{Binding SaveCommand}" />
+			
+			<Button Content="Current Save" Command="{Binding SaveCurrentCommand}"/>
+			
+		</StackPanel>
+
+		<Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+			<TextBlock Grid.Column="0" Text="Path:" FontWeight="Bold" VerticalAlignment="Center" />
+
+			<TextBlock Grid.Column="1" Text="{Binding MiniEniPath}" TextWrapping="NoWrap" VerticalAlignment="Center" />
+		</Grid>
+
+		<ScrollViewer Grid.Row="2"
+					  HorizontalScrollBarVisibility="Auto"
+					  VerticalScrollBarVisibility="Auto">
+			<TextBox Text="{Binding MiniEniJson, Mode=TwoWay}"
+					 AcceptsReturn="True"
+					 TextWrapping="NoWrap"
+					 FontFamily="Consolas"
+					 FontSize="12"
+					 IsReadOnly="False" />
+		</ScrollViewer>
+
+		<TextBlock Grid.Row="3" Text="{Binding StatusText}" Foreground="Gray" />
+
+	</Grid>	
+	
+</UserControl>

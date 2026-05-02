@@ -31,6 +31,10 @@ namespace SOEM_FrontEnd.Automation
     public enum eStateSequenceName
     {
         None,
+        Disconnected,
+        Connected,
+        //이상은 접속관련,
+        //이하는 이더캣 Status관리.
         Init,
         PreOp,
         SafeOp,
