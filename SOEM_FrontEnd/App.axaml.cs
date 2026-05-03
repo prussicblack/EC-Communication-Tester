@@ -112,6 +112,7 @@ public partial class App : Application
                 string path = AppDomain.CurrentDomain.BaseDirectory + "ESI";
                 ESICatalog.Initialize(path);
 
+                Report(vm, 0.15, "Loading MiniENI...");
                 // ENI 로드/파싱
                 string miniEniPath = AppDomain.CurrentDomain.BaseDirectory +  "MiniENI";
                 MiniENICatalog.Initialize(miniEniPath);
