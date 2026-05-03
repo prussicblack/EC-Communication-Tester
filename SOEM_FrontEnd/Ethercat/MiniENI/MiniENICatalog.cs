@@ -5,8 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace SOEM_FrontEnd.Ethercat.MiniENI
@@ -20,13 +18,6 @@ namespace SOEM_FrontEnd.Ethercat.MiniENI
 
         private static MiniENI _current;
 
-        private static readonly JsonSerializerOptions _jsonOptions =
-            new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNameCaseInsensitive = true,
-                DefaultIgnoreCondition = JsonIgnoreCondition.Never
-            };
 
         public static MiniENI Current
         {
@@ -153,7 +144,7 @@ namespace SOEM_FrontEnd.Ethercat.MiniENI
                 }
 
                 string json = File.ReadAllText(path);
-                MiniENI loaded = JsonSerializer.Deserialize<MiniENI>(json, _jsonOptions);
+                MiniENI loaded = MiniENIJson.Deserialize(json);
 
                 if (loaded == null)
                 {
@@ -251,7 +242,9 @@ namespace SOEM_FrontEnd.Ethercat.MiniENI
                     Directory.CreateDirectory(_baseDirectory);
                 }
 
-                string json = JsonSerializer.Serialize(eni, _jsonOptions);
+                MiniENIJson.Normalize(eni);
+
+                string json = MiniENIJson.Serialize(eni);
                 File.WriteAllText(path, json);
 
                 lock (_lock)

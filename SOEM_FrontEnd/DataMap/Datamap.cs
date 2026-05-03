@@ -663,14 +663,19 @@ namespace SOEM_FrontEnd.DataMap
                         //row.CurrentValueText = "ABORT 0x" + p.AbortCode.ToString("X8");
                         //Console.WriteLine(row.CurrentValueRawHexText);
 
-                        _log.LogInformation(row.CurrentValueRawHexText);
+                        //_log.LogInformation(row.CurrentValueRawHexText);
+
+                        _log.LogWarning("SDO read Aborted. Slave={Slave}, Index=0x{Index:X4}, Sub=0x{Sub:X2}, Status={Status}, Error={Error}", row.SlaveNo, row.Index, row.SubIndex, p.ReadStatus, p.Error ?? "");
+
                     }
                     else if (p.ReadStatus == SDOReadStatus.Timeout)
                     {
                         //에러값 Value 에 기록금지.
                         //row.CurrentValueText = "TIMEOUT";
                         //Console.WriteLine(row.CurrentValueRawHexText);
-                        _log.LogInformation(row.CurrentValueRawHexText);
+                        //_log.LogInformation(row.CurrentValueRawHexText);
+
+                        _log.LogWarning("SDO read Timeout. Slave={Slave}, Index=0x{Index:X4}, Sub=0x{Sub:X2}, Status={Status}, Error={Error}", row.SlaveNo, row.Index, row.SubIndex, p.ReadStatus, p.Error ?? "");
 
                     }
                     else if (p.ReadStatus == SDOReadStatus.Error)
@@ -678,7 +683,9 @@ namespace SOEM_FrontEnd.DataMap
                         //에러값 Value 에 기록금지.
                         //row.CurrentValueText = "ERROR: " + (p.Error ?? "");
                         //Console.WriteLine(row.CurrentValueRawHexText);
-                        _log.LogInformation(row.CurrentValueRawHexText);
+                        //_log.LogInformation(row.CurrentValueRawHexText);
+
+                        _log.LogWarning("SDO read Error. Slave={Slave}, Index=0x{Index:X4}, Sub=0x{Sub:X2}, Status={Status}, Error={Error}", row.SlaveNo, row.Index, row.SubIndex, p.ReadStatus, p.Error ?? "");
 
                     }
                     else
@@ -1072,7 +1079,7 @@ namespace SOEM_FrontEnd.DataMap
                 if (_deviceInfo == null)
                 {
                     //Console.WriteLine($"_deviceInfo is Null");
-                    _log.LogInformation($"_deviceInfo is Null");
+                    _log.LogInformation($"{slaveNo}_deviceInfo is Null");
 
                     return;
                 }

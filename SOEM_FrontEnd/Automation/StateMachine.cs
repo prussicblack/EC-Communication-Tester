@@ -490,7 +490,7 @@ namespace SOEM_FrontEnd.Automation
                             //
                             store.BaseProfile = new NormalOProfile(rxSize: outBytes, txSize: inBytes, i, _ECClient);
                             //Console.WriteLine($"Slave {i} - NormalIO");
-                            _log.LogInformation("Slave {{i}} - NormalIO");
+                            _log.LogInformation($"Slave {i} - NormalIO");
                             break;
                         }
                     case DeviceMode.NormalPPMode: //어쨋건 체크는 해야지...나중에 전용 방어코드가 들어가긴 하겠는데.
