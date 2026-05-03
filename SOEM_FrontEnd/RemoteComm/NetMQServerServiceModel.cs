@@ -74,9 +74,7 @@ namespace SOEM_FrontEnd.NetMQ
                     {
                         string request;
 
-                        bool received = socket.TryReceiveFrameString(
-                            TimeSpan.FromMilliseconds(20),
-                            out request);
+                        bool received = socket.TryReceiveFrameString(TimeSpan.FromMilliseconds(20), out request);
 
                         if (!received)
                             continue;
