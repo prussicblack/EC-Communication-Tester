@@ -12,7 +12,6 @@ namespace SOEM_FrontEnd.NetMQ
 {
     public class NetMQClientTopicModel : IDisposable
     {
-        private PublisherSocket _publisher;
         private SubscriberSocket _subscriber;
         private CancellationTokenSource _cts;
         
@@ -26,17 +25,12 @@ namespace SOEM_FrontEnd.NetMQ
             
         }
 
-        public void Start(string pubIPPort = "localhost:5557", string subIPPort = "localhost:5556")
+        public void Start(string subIPPort = "localhost:5556")
         {
-            string pubConnect = $"tcp://{pubIPPort}";
             string subConnect = $"tcp://{subIPPort}";
 
             _cts = new CancellationTokenSource();
 
-            // 서버로 메시지 보내기
-            _publisher = new PublisherSocket();
-            _publisher.Connect(pubConnect);
-            OnClientLogProcess?.Invoke($"클라이언트단 연결시도{pubConnect} - {subConnect}");
 
             // 서버 메시지 수신
             Task.Run(() =>
@@ -67,11 +61,6 @@ namespace SOEM_FrontEnd.NetMQ
             string subConnect = $"tcp://{subIPPort}";
 
             _cts = new CancellationTokenSource();
-
-            // 서버로 메시지 보내기
-            _publisher = new PublisherSocket();
-            _publisher.Connect(pubConnect);
-            OnClientLogProcess?.Invoke($"클라이언트단 연결시도{pubConnect} - {subConnect}");
 
             // 서버 메시지 수신
             Task.Run(() =>
@@ -104,37 +93,10 @@ namespace SOEM_FrontEnd.NetMQ
             }, _cts.Token);
         }
 
-        public void SendToServer(string message)
-        {
-            _publisher?.SendFrame(message);
-            OnClientLogProcess?.Invoke($"클라이언트단 메세지 전송함 - {message}");
-        }
-
-        public void TrySendServer(string message)
-        {
-            try
-            {
-                bool ret = (bool)_publisher?.TrySendFrame(TimeSpan.FromMilliseconds(1), message);
-                if (ret == true)
-                {
-                    OnClientLogProcess?.Invoke("클라이언트단 메세지 전송함");
-                }
-                else
-                {
-                    OnClientLogProcess?.Invoke("클라이언트단 메세지 전송실패");
-                }
-
-            }
-            catch (InvalidOperationException ex)
-            {
-
-            }
-        }
 
         public void Stop()
         {
             _cts?.Cancel();
-            _publisher?.Dispose();
             _subscriber?.Dispose();
         }
 

@@ -21,147 +21,135 @@ namespace SOEM_FrontEnd.NetMQ
 
     public class NetMQServerServiceModel : IDisposable
     {
-        private ResponseSocket _responseSocket;
+        private readonly object _syncRoot;
+        private Thread _workerThread;
         private CancellationTokenSource _cts;
+        private Func<string, string> _handler;
+        private bool _isRunning;
 
-        public event Action<string> OnRequestReceived;
+        public event Action<string> OnLog;
 
-        public event Action<string> OnLogProcess;
-
-        private Func<string, string> _onRequestHandler;
         public NetMQServerServiceModel()
         {
-            
-            
+            _syncRoot = new object();
         }
 
-
-        public void Start(string bindAddress = "0.0.0.0:5555")
+        public void SetHandler(Func<string, string> handler)
         {
-            string ServiceBindIPPort = $"tcp://{bindAddress}";
+            _handler = handler;
+        }
 
-            
-            _cts = new CancellationTokenSource();
-            Task.Run(() =>
+        public bool Start(string bindAddress)
+        {
+            lock (_syncRoot)
             {
-                _responseSocket = new ResponseSocket();
-                _responseSocket.Bind(ServiceBindIPPort);
+                if (_isRunning)
+                    return false;
 
-                OnLogProcess?.Invoke("서비스 시작됨");
+                _cts = new CancellationTokenSource();
 
-                while (!_cts.IsCancellationRequested)
+                _workerThread = new Thread(() => WorkerMain(bindAddress, _cts.Token));
+                _workerThread.IsBackground = true;
+                _workerThread.Name = "NetMQ Command Server";
+                _workerThread.Start();
+
+                _isRunning = true;
+                return true;
+            }
+        }
+
+        private void WorkerMain(string bindAddress, CancellationToken token)
+        {
+            string endpoint = "tcp://" + bindAddress;
+
+            try
+            {
+                using (ResponseSocket socket = new ResponseSocket())
                 {
-                    try
-                    {
-                        string message = _responseSocket.ReceiveFrameString();
-                        OnRequestReceived?.Invoke(message);
+                    socket.Bind(endpoint);
 
-                        // 응답 전송
-                        _responseSocket.SendFrame($"Echo: {message}");
-                        OnLogProcess?.Invoke($"응답 반환됨{message}");
-                    }
-                    catch
+                    OnLog?.Invoke("Command server started. " + endpoint);
+
+                    while (!token.IsCancellationRequested)
                     {
-                        
+                        string request;
+
+                        bool received = socket.TryReceiveFrameString(
+                            TimeSpan.FromMilliseconds(20),
+                            out request);
+
+                        if (!received)
+                            continue;
+
+                        string reply = HandleRequestSafe(request);
+
+                        socket.SendFrame(reply);
                     }
                 }
-            }, _cts.Token);
-        }
-
-        public void StartSafe(string bindAddress = "0.0.0.0:5555")
-        {
-            string ServiceBindIPPort = $"tcp://{bindAddress}";
-
-
-            _cts = new CancellationTokenSource();
-            Task.Run(() =>
+            }
+            catch (Exception ex)
             {
-                _responseSocket = new ResponseSocket();
-                _responseSocket.Bind(ServiceBindIPPort);
-
-                OnLogProcess?.Invoke("서비스 시작됨");
-
-                while (!_cts.IsCancellationRequested)
-                {
-                    try
-                    {
-                        //string message = _responseSocket.ReceiveFrameString();
-
-                        bool ret = _responseSocket.TryReceiveFrameString(TimeSpan.FromMilliseconds(1), out string message);
-                        if (ret == true)
-                        {
-                            OnRequestReceived?.Invoke(message);
-
-                            // 응답 전송
-                            _responseSocket.SendFrame($"Echo: {message}");
-                            OnLogProcess?.Invoke($"응답 반환됨{message}");
-                        }
-                    }
-                    catch
-                    {
-
-                    }
-                }
-            }, _cts.Token);
-        }
-
-        public void StartSafeCallback(string bindAddress = "0.0.0.0:5555")
-        {
-            string ServiceBindIPPort = $"tcp://{bindAddress}";
-
-
-            _cts = new CancellationTokenSource();
-            Task.Run(() =>
+                OnLog?.Invoke("Command server error. " + ex.Message);
+            }
+            finally
             {
-                _responseSocket = new ResponseSocket();
-                _responseSocket.Bind(ServiceBindIPPort);
-
-                OnLogProcess?.Invoke("서비스 시작됨");
-
-                while (!_cts.IsCancellationRequested)
-                {
-                    try
-                    {
-                        //string message = _responseSocket.ReceiveFrameString();
-
-                        bool ret = _responseSocket.TryReceiveFrameString(TimeSpan.FromMilliseconds(1), out string message);
-                        if (ret == true)
-                        {
-                            OnRequestReceived?.Invoke(message);
-
-                            // 응답 전송
-                            //_responseSocket.SendFrame($"Echo: {message}");
-                            string Reply = _onRequestHandler?.Invoke(message) ?? "No handler";
-
-                            _responseSocket.SendFrame(Reply);
-
-                            OnLogProcess?.Invoke($"응답 반환됨{Reply}");
-                        }
-                    }
-                    catch
-                    {
-
-                    }
-                }
-            }, _cts.Token);
+                OnLog?.Invoke("Command server stopped.");
+            }
         }
-        public void SetRequestHandler(Func<string, string> handler)
+
+        private string HandleRequestSafe(string request)
         {
-            _onRequestHandler = handler;
-        }
+            try
+            {
+                Func<string, string> handler = _handler;
 
+                if (handler == null)
+                    return "{\"ok\":false,\"error\":\"No handler\"}";
+
+                string reply = handler(request);
+
+                if (string.IsNullOrEmpty(reply))
+                    return "{\"ok\":false,\"error\":\"Empty reply\"}";
+
+                return reply;
+            }
+            catch (Exception ex)
+            {
+                OnLog?.Invoke("Command handler error. " + ex.Message);
+                return "{\"ok\":false,\"error\":\"Handler exception\"}";
+            }
+        }
 
         public void Stop()
         {
-            _cts?.Cancel();
-            _responseSocket?.Dispose();
+            lock (_syncRoot)
+            {
+                if (!_isRunning)
+                    return;
+
+                _isRunning = false;
+
+                if (_cts != null)
+                    _cts.Cancel();
+
+                if (_workerThread != null && _workerThread.IsAlive)
+                    _workerThread.Join(1000);
+
+                if (_cts != null)
+                {
+                    _cts.Dispose();
+                    _cts = null;
+                }
+
+                _workerThread = null;
+            }
         }
 
-        public void Dispose() => Stop();
-
-
-
-
-
+        public void Dispose()
+        {
+            Stop();
+        }
     }
+
 }
+
