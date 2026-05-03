@@ -955,6 +955,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (miniEni.Slaves.Count + 1 != Datamap.Instance.SlaveCount)
         {
             _log.LogWarning("Slave count mismatch.");
+            return;
         }
 
         for (int i = 0; i < miniEni.Slaves.Count; i++)

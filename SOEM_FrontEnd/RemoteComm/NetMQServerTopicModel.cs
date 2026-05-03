@@ -1,24 +1,16 @@
 ﻿using NetMQ;
 using NetMQ.Sockets;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace SOEM_FrontEnd.NetMQ
 {
-    public class NetMQServerTopicModel : IDisposable
+    public sealed class NetMQServerTopicModel : IDisposable
     {
         private readonly object _syncRoot;
         private readonly Func<TelemetryFrame> _snapshotProvider;
+
         private Thread _thread;
         private CancellationTokenSource _cts;
         private bool _isRunning;
@@ -28,18 +20,29 @@ namespace SOEM_FrontEnd.NetMQ
         public NetMQServerTopicModel(Func<TelemetryFrame> snapshotProvider)
         {
             if (snapshotProvider == null)
+            {
                 throw new ArgumentNullException(nameof(snapshotProvider));
+            }
 
             _snapshotProvider = snapshotProvider;
             _syncRoot = new object();
         }
 
-        public bool Start(string endpoint, int publishPeriodMs)
+        public bool Start(string bindAddress = "0.0.0.0:5556", int publishPeriodMs = 50)
         {
             lock (_syncRoot)
             {
                 if (_isRunning)
+                {
                     return false;
+                }
+
+                if (publishPeriodMs <= 0)
+                {
+                    publishPeriodMs = 50;
+                }
+
+                string endpoint = NormalizeEndpoint(bindAddress);
 
                 _cts = new CancellationTokenSource();
 
@@ -64,31 +67,14 @@ namespace SOEM_FrontEnd.NetMQ
 
                     OnLog?.Invoke("Telemetry publisher started. Endpoint=" + endpoint);
 
-                    Stopwatch stopwatch = Stopwatch.StartNew();
-                    long nextTick = stopwatch.ElapsedMilliseconds;
-
-                    while (!token.IsCancellationRequested)
+                    while (token.IsCancellationRequested == false)
                     {
-                        long now = stopwatch.ElapsedMilliseconds;
+                        PublishOnce(socket);
 
-                        if (now < nextTick)
+                        if (token.WaitHandle.WaitOne(publishPeriodMs))
                         {
-                            int sleepMs = (int)(nextTick - now);
-
-                            if (sleepMs > 1)
-                                Thread.Sleep(sleepMs - 1);
-
-                            continue;
+                            break;
                         }
-
-                        nextTick += publishPeriodMs;
-
-                        TelemetryFrame frame = _snapshotProvider();
-
-                        string json = JsonSerializer.Serialize(frame,TelemetryJsonContext.Default.TelemetryFrame);
-
-                        socket.SendMoreFrame("telemetry");
-                        socket.SendFrame(json);
                     }
                 }
             }
@@ -102,20 +88,51 @@ namespace SOEM_FrontEnd.NetMQ
             }
         }
 
+        private void PublishOnce(PublisherSocket socket)
+        {
+            TelemetryFrame frame = _snapshotProvider();
+
+            string json = JsonSerializer.Serialize(frame, TelemetryJsonContext.Default.TelemetryFrame);
+
+            socket.SendMoreFrame("telemetry.snapshot");
+            socket.SendFrame(json);
+        }
+
+        private static string NormalizeEndpoint(string bindAddress)
+        {
+            if (string.IsNullOrWhiteSpace(bindAddress))
+            {
+                return "tcp://0.0.0.0:5556";
+            }
+
+            if (bindAddress.StartsWith("tcp://", StringComparison.OrdinalIgnoreCase))
+            {
+                return bindAddress;
+            }
+
+            return "tcp://" + bindAddress;
+        }
+
         public void Stop()
         {
             lock (_syncRoot)
             {
-                if (!_isRunning)
+                if (_isRunning == false)
+                {
                     return;
+                }
 
                 _isRunning = false;
 
                 if (_cts != null)
+                {
                     _cts.Cancel();
+                }
 
                 if (_thread != null && _thread.IsAlive)
+                {
                     _thread.Join(1000);
+                }
 
                 if (_cts != null)
                 {
@@ -131,8 +148,5 @@ namespace SOEM_FrontEnd.NetMQ
         {
             Stop();
         }
-
-
     }
-
 }
