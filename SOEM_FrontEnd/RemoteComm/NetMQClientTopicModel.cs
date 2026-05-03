@@ -7,7 +7,6 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Media.Animation;
 
 namespace SOEM_FrontEnd.NetMQ
 {
