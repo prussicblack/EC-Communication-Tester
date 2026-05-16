@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace SOEM_FrontEnd.Ethercat
 {
@@ -271,7 +272,16 @@ namespace SOEM_FrontEnd.Ethercat
 
         private void SafeUpdatePending(SDOKey key, bool isRead)
         {
-            _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdatePending(key, isRead);
+            //try
+            //{
+                _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdatePending(key, isRead);
+            //}
+            //catch (Exception e)
+            //{
+            //에러 잡아야됨.
+
+            //}
+
         }
 
         private void ThreadMain()

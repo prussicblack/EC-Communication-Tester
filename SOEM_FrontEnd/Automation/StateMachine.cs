@@ -459,17 +459,6 @@ namespace SOEM_FrontEnd.Automation
 
         private bool MoveToSafeOPCore()
         {
-            bool ret;
-
-            
-            ret = _ECClient.RebuildPdoMap();
-            if (ret == false)
-            {
-                _log.LogError("Ensure SAFE-OP failed");
-                DumpSlaveStates("MoveToSafeOPCore");
-
-                return false;
-            }
 
             //Datamap에서 Slave 생성지점.
             var map = Datamap.Instance;
@@ -613,6 +602,20 @@ namespace SOEM_FrontEnd.Automation
 
             }
 
+
+            //파나소닉 대응으로 뒤로 이동...
+            bool ret;
+
+            ret = _ECClient.RebuildPdoMap();
+
+            if (ret == false)
+            {
+                _log.LogError("Ensure SAFE-OP failed");
+                DumpSlaveStates("MoveToSafeOPCore");
+
+                return false;
+            }
+
             ret = _ECClient.EnsureState(EcClient.EC_STATE_SAFE_OP, 2000); //safeop이행.
 
             if (ret == false)
@@ -627,6 +630,7 @@ namespace SOEM_FrontEnd.Automation
             SetCurrentState(eStateSequenceName.SafeOp);
 
             return true;
+            
         }
 
         private bool MoveToOperateCore()
