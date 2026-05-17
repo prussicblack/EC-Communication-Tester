@@ -27,6 +27,8 @@ namespace SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces
         bool JogPlus();
         bool JogMinus();
 
+        bool JogStop();
+
         bool AlarmClear();
         bool ServoOn();
         bool ServoOff();

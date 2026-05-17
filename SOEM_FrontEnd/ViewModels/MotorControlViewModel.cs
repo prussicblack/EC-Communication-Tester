@@ -393,7 +393,7 @@ public partial class MotorControlViewModel : ViewModelBase
         if (_motor == null)
             return;
 
-        _motor.Stop();
+        _motor.JogStop();
     }
 
 

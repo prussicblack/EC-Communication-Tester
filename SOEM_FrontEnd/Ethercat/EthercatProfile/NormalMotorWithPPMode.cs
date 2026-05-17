@@ -45,6 +45,20 @@ namespace SOEM_FrontEnd.Ethercat
         //서보 IO리미트 전체.
         private int _off60FDio = -1; //Tx: Servo IO Status.
 
+        //모드가 있는경우 문제가 발생하는거 같음.
+        private int _off6060mode = -1;        // Rx: Modes of operation
+        private int _off6061modeDisplay = -1; // Tx: Modes of operation display
+
+        private sbyte _pdoModeCommand = 1; // 1=PP, 6=Homing
+
+        //max Torque가 PDO맵에 있는경우 문제가 발생...
+        private int _off6072maxTorque = -1; // Rx: Max torque
+        private const ushort TEMP_MAX_TORQUE_6072 = 0x1388; // 5000
+
+        //max Speed도 PDO맵에 있는경우 문제가 되네...?
+        private int _off6080maxMotorSpeed = -1; // Rx: Max motor speed, UDINT
+        private const uint TEMP_MAX_SPEED_6080 = 3000000u;  // 임시값. 너무 크면 낮춰도 됨.
+
 
         //SDO 핫패스.
         private SDOPoint _sdo6060; // Mode of operation
@@ -71,6 +85,9 @@ namespace SOEM_FrontEnd.Ethercat
         //홈기동용 Write Buffer.
         private readonly byte[] _i8WriteBuffer = new byte[1];
         private readonly byte[] _i32WriteBuffer = new byte[4];
+
+        //정확한 정지용으로.
+        private bool _reqAnchorActualPosition;
 
 
         private readonly EcClient _ECClient;
@@ -179,18 +196,48 @@ namespace SOEM_FrontEnd.Ethercat
             //SlaveStore가 Dic으로 저장되어있기 때문에, 매번 호출하게되면 Dic을 조회해서 찾게됨.
             //이 경우 시간이 오래걸리는 문제로 미리 주소를 찍어놓고 호출하게됨.
 
-            byte[] raw = new byte[1];
-            raw[0] = 1;
+            //byte[] raw = new byte[1];
+            //raw[0] = 1;
 
-            bool ok = WriteSdoByWorker(0x6060, 0x00, raw);
-            if (ok == false)
-                return false;
+            //bool ok = WriteSdoByWorker(0x6060, 0x00, raw);
+            //if (ok == false)
+            //    return false;
+
+
+            _pdoModeCommand = 1;
+
+            // 0x6060이 RxPDO에 매핑되어 있으면 SDO write보다 PDO output image를 먼저 채운다.
+            // 그렇지 않으면 기존처럼 SDO로 6060=1을 쓴다.
+            if (_off6060mode >= 0 && (uint)_off6060mode < (uint)Output.Length)
+            {
+                Output[_off6060mode] = 1;
+            }
+            else
+            {
+                byte[] raw = new byte[1];
+                raw[0] = 1;
+
+                bool ok = WriteSdoByWorker(0x6060, 0x00, raw);
+                if (ok == false)
+                {
+                    return false;
+                }
+            }
+
+            // TEMP: 0x6072 Max torque가 RxPDO에 매핑된 경우,
+            // SDO가 아니라 PDO Output image에 값을 넣어야 유지됨.
+            WriteTemporaryMaxTorquePdo();
+
+            WriteTemporaryMaxMotorSpeedPdo();
+
 
             SlaveStore slaveStore = Datamap.Instance.GetSlave(_SlaveNo);
             if (slaveStore == null)
                 return false;
 
             BindSdoHotRefs(Datamap.Instance.GetSlave(_SlaveNo));
+
+           
 
             return true;
         }
@@ -264,6 +311,15 @@ namespace SOEM_FrontEnd.Ethercat
             _off6041sw = TryGetByteOffset(_txMapTable, 0x6041, 0x00);
             _off6064ap = TryGetByteOffset(_txMapTable, 0x6064, 0x00);
 
+            _off6060mode = TryGetByteOffset(_rxMapTable, 0x6060, 0x00);
+            _off6061modeDisplay = TryGetByteOffset(_txMapTable, 0x6061, 0x00);
+
+            _off6072maxTorque = TryGetByteOffset(_rxMapTable, 0x6072, 0x00);
+
+            _off6080maxMotorSpeed = TryGetByteOffset(_rxMapTable, 0x6080, 0x00);
+
+
+
             return _off6040cw >= 0 && _off607Atp >= 0 && _off6041sw >= 0;
         }
 
@@ -293,6 +349,40 @@ namespace SOEM_FrontEnd.Ethercat
             return true;
         }
 
+        private void WriteTemporaryMaxTorquePdo()
+        {
+            if (_off6072maxTorque < 0)
+            {
+                return;
+            }
+
+            if ((uint)_off6072maxTorque + 2u > (uint)Output.Length)
+            {
+                return;
+            }
+
+            BinaryPrimitives.WriteUInt16LittleEndian(
+                Output.Slice(_off6072maxTorque, 2),
+                TEMP_MAX_TORQUE_6072);
+        }
+
+        private void WriteTemporaryMaxMotorSpeedPdo()
+        {
+            if (_off6080maxMotorSpeed < 0)
+            {
+                return;
+            }
+
+            if ((uint)_off6080maxMotorSpeed + 4u > (uint)Output.Length)
+            {
+                return;
+            }
+
+            BinaryPrimitives.WriteUInt32LittleEndian(
+                Output.Slice(_off6080maxMotorSpeed, 4),
+                TEMP_MAX_SPEED_6080);
+        }
+
 
 
         private static int TryGetByteOffset(Dictionary<OdKey, PdoField> dict, ushort idx, byte sub)
@@ -301,6 +391,24 @@ namespace SOEM_FrontEnd.Ethercat
                 return f.ByteOffset;
             return -1;
         }
+
+        private void WritePdoModeCommand()
+        {
+            if (_off6060mode < 0)
+            {
+                return;
+            }
+
+            if ((uint)_off6060mode >= (uint)Output.Length)
+            {
+                return;
+            }
+
+            Output[_off6060mode] = unchecked((byte)_pdoModeCommand);
+        }
+
+
+
 
 
         //내부사용메소드
@@ -584,6 +692,13 @@ namespace SOEM_FrontEnd.Ethercat
             WaitSetPointAckClear,
             WaitTargetReached,
 
+            // Jog Stop 시 현재 위치를 새 Absolute PP target으로 latch해서
+            // 이전 relative jog target을 제거하기 위한 시퀀스.
+            JogAnchorWaitAckClear,
+            JogAnchorQueue,
+            JogAnchorWaitAck,
+            JogAnchorDone,
+
             //이하는 홈 기동용 시퀀스.
             QueueModeHoming,
             WaitModeHoming,
@@ -666,7 +781,16 @@ namespace SOEM_FrontEnd.Ethercat
 
             bool swTargetReached = HasSW(sw, StatusWordBit.TargetReached);
 
-            _isServoOn = swOperationEnabled && !swFault;
+            bool swVoltageEnabled = HasSW(sw, StatusWordBit.VoltageEnabled);
+            bool swQuickStop = HasSW(sw, StatusWordBit.QuickStop);
+            bool swRemote = HasSW(sw, StatusWordBit.Remote);
+
+
+            //_isServoOn = swOperationEnabled && !swFault;
+
+            //조건 추가.
+            _isServoOn = swReadyToSwitchOn && swSwitchOn && swVoltageEnabled && swOperationEnabled  && !swFault;
+
             _isError = swFault;
             _isSetPointAck = swSetPointAck;
             _isTargetReached = swTargetReached;
@@ -721,32 +845,49 @@ namespace SOEM_FrontEnd.Ethercat
             }
 
             // Stop 요청 처리
+            // Stop 요청 처리
             if (_reqStop)
             {
                 _reqStop = false;
 
+                bool reqAnchorActualPosition = _reqAnchorActualPosition;
+                _reqAnchorActualPosition = false;
+
                 _reqMove = false;
                 _jogActive = false;
                 _jogDirection = 0;
-                _haltActive = true;
 
                 cw = ClearCW(cw, ControlWordBit.NewSetPoint);
+                cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
+                cw = ClearCW(cw, ControlWordBit.Relative);
 
-                if (_moveState != MoveState.Idle)
+                if (reqAnchorActualPosition)
                 {
-                    if (_motion == MotionCommand.Home)
+                    // Jog release에서는 단순 Halt만 걸면 이전 relative PP target이
+                    // 드라이브 내부에 남을 수 있다.
+                    // 따라서 현재 위치를 새 Absolute target으로 latch하는 상태로 보낸다.
+                    _haltActive = true;
+                    _motion = MotionCommand.None;
+                    _moveState = MoveState.JogAnchorWaitAckClear;
+                }
+                else
+                {
+                    _haltActive = true;
+
+                    if (_moveState != MoveState.Idle)
                     {
-                        _homeRestoreThenFault = false;
-                        _moveState = MoveState.QueueModePP;
-                    }
-                    else
-                    {
-                        _motion = MotionCommand.None;
-                        _moveState = MoveState.Idle;
+                        if (_motion == MotionCommand.Home)
+                        {
+                            _homeRestoreThenFault = false;
+                            _moveState = MoveState.QueueModePP;
+                        }
+                        else
+                        {
+                            _motion = MotionCommand.None;
+                            _moveState = MoveState.Idle;
+                        }
                     }
                 }
-
-
             }
 
             // 현재 Halt 상태 반영
@@ -768,7 +909,9 @@ namespace SOEM_FrontEnd.Ethercat
 
                     if (direction != 0)
                     {
-                        _haltActive = false;
+                        // 여기서 Halt를 풀면 이전 상대이동 명령이 먼저 재개될 수 있음.
+                        // Halt 해제는 QueuePdoStart에서 새 target을 쓴 뒤에 한다.
+                        //_haltActive = false;
                         _IsAbsMove = false;
                         _moveTarget = direction > 0 ? _jogStepPulse : -_jogStepPulse;
                         _reqMove = true;
@@ -782,8 +925,24 @@ namespace SOEM_FrontEnd.Ethercat
             if ((uint)_off6040cw + 2u > (uint)Output.Length)
                 return;
 
+
+            // 6060이 RxPDO에 매핑된 드라이브는 SDO로 쓴 mode가 PDO output에 의해 덮일 수 있다.
+            // 따라서 매 cycle 현재 mode command를 명시적으로 써준다.
+            WritePdoModeCommand();
+
+            // TEMP: MINAS A6BE 테스트용.
+            // 0x6072 Max torque가 RxPDO에 매핑되어 있으면,
+            // Output image에 계속 써줘야 0으로 덮이지 않음.
+            WriteTemporaryMaxTorquePdo();
+
+            //MaxSpeed도 마찬가지...
+            WriteTemporaryMaxMotorSpeedPdo();
+
+
+
             //6.최종 Controlword를 outputs(RxPDO)로 기록
             BinaryPrimitives.WriteUInt16LittleEndian(Output.Slice(_off6040cw, 2), cw);
+
 
         }
 
@@ -843,14 +1002,21 @@ namespace SOEM_FrontEnd.Ethercat
             }
 
             // 보통 PP에서는 Relative/ChangeNow/Halt 정도는 유지해도 OK.
-            ushort keepMask = (ushort)(ControlWordBit.Relative | ControlWordBit.ChangeSetImmediately | ControlWordBit.Halt);
-
-
-            ushort cw = (ushort)(cwBase | (prevCw & keepMask));
+            //ushort keepMask = (ushort)(ControlWordBit.Relative | ControlWordBit.ChangeSetImmediately);
+            //ushort cw = (ushort)(cwBase | (prevCw & keepMask));
 
             // 펄스/핸드셰이크 비트는 prev에서 절대 이어받지 않게 "정규화"
+            //cw = ClearCW(cw, ControlWordBit.NewSetPoint);
+            //cw = ClearCW(cw, ControlWordBit.FaultReset);
+
+
+            ushort cw = cwBase;
+
             cw = ClearCW(cw, ControlWordBit.NewSetPoint);
             cw = ClearCW(cw, ControlWordBit.FaultReset);
+            cw = ClearCW(cw, ControlWordBit.Relative);
+            cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
+            cw = ClearCW(cw, ControlWordBit.Halt);
 
             return cw;
         }
@@ -1028,6 +1194,12 @@ namespace SOEM_FrontEnd.Ethercat
 
                         BinaryPrimitives.WriteInt32LittleEndian(Output.Slice(_off607Atp, 4), _moveTarget);
 
+                        // 새 target을 PDO image에 쓴 뒤에만 Halt를 해제한다.
+                        // 그래야 이전 Jog 상대이동 명령이 재개되지 않음.
+                        _haltActive = false;
+                        cw = ClearCW(cw, ControlWordBit.Halt);
+
+
                         if (_IsAbsMove == true)
                         {
                             cw = ClearCW(cw, ControlWordBit.Relative);
@@ -1133,9 +1305,119 @@ namespace SOEM_FrontEnd.Ethercat
 
                         break;
                     }
+                //Jog간의 버그 수정.
+                case MoveState.JogAnchorWaitAckClear:
+                    {
+                        // 이전 PP command의 NewSetPoint/Ack가 내려간 뒤
+                        // 현재 위치 anchor command를 넣는다.
+                        cw = ClearCW(cw, ControlWordBit.NewSetPoint);
+                        cw = ClearCW(cw, ControlWordBit.Relative);
+                        cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
+
+                        // 이 구간에서는 Halt 유지.
+                        // 이전 relative jog target이 재개되지 않게 막는다.
+                        cw = SetCW(cw, ControlWordBit.Halt);
+
+                        if (swSetPointAck == false)
+                        {
+                            _moveState = MoveState.JogAnchorQueue;
+                        }
+
+                        break;
+                    }
+
+                case MoveState.JogAnchorQueue:
+                    {
+                        if (swFault)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        if (swOperationEnabled == false)
+                        {
+                            break;
+                        }
+
+                        if (_off6064ap < 0 || (uint)_off6064ap + 4u > (uint)Input.Length)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        if (_off607Atp < 0 || (uint)_off607Atp + 4u > (uint)Output.Length)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
+                        int actualPosition = BinaryPrimitives.ReadInt32LittleEndian(
+                            Input.Slice(_off6064ap, 4));
+
+                        BinaryPrimitives.WriteInt32LittleEndian(
+                            Output.Slice(_off607Atp, 4),
+                            actualPosition);
+
+                        _moveTarget = actualPosition;
+                        _IsAbsMove = true;
+
+                        // 현재 위치를 새 Absolute PP target으로 latch한다.
+                        // 여기서만 Halt를 푼다.
+                        _haltActive = false;
+
+                        cw = ClearCW(cw, ControlWordBit.Halt);
+                        cw = ClearCW(cw, ControlWordBit.Relative);
+                        cw = SetCW(cw, ControlWordBit.ChangeSetImmediately);
+                        cw = SetCW(cw, ControlWordBit.NewSetPoint);
+
+                        _moveState = MoveState.JogAnchorWaitAck;
+                        break;
+                    }
+
+                case MoveState.JogAnchorWaitAck:
+                    {
+                        cw = ClearCW(cw, ControlWordBit.Halt);
+                        cw = ClearCW(cw, ControlWordBit.Relative);
+                        cw = SetCW(cw, ControlWordBit.ChangeSetImmediately);
+                        cw = SetCW(cw, ControlWordBit.NewSetPoint);
+
+                        if (swSetPointAck)
+                        {
+                            _moveState = MoveState.JogAnchorDone;
+                        }
+
+                        break;
+                    }
+
+                case MoveState.JogAnchorDone:
+                    {
+                        cw = ClearCW(cw, ControlWordBit.Halt);
+                        cw = ClearCW(cw, ControlWordBit.Relative);
+                        cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
+                        cw = ClearCW(cw, ControlWordBit.NewSetPoint);
+
+                        if (swSetPointAck == false)
+                        {
+                            _motion = MotionCommand.None;
+                            _moveState = MoveState.Idle;
+                        }
+
+                        break;
+                    }
+
+
                 //홈 시퀀스 케이스 추가.
                 case MoveState.QueueModeHoming:
                     {
+                        _pdoModeCommand = 6;
+
+                        if (_off6060mode >= 0 && (uint)_off6060mode < (uint)Output.Length)
+                        {
+                            Output[_off6060mode] = 6;
+                            _moveState = MoveState.QueueHomeMethod;
+                            break;
+                        }
+
                         if (TryQueueWriteI8(0x6060, 0x00, 6, _sdo6060) == false)
                         {
                             _moveState = MoveState.Fault;
@@ -1370,6 +1652,15 @@ namespace SOEM_FrontEnd.Ethercat
 
                 case MoveState.QueueModePP:
                     {
+                        _pdoModeCommand = 1;
+
+                        if (_off6060mode >= 0 && (uint)_off6060mode < (uint)Output.Length)
+                        {
+                            Output[_off6060mode] = 1;
+                            _moveState = MoveState.Done;
+                            break;
+                        }
+
                         if (TryQueueWriteI8(0x6060, 0x00, 1, _sdo6060) == false)
                         {
                             _moveState = MoveState.Fault;
@@ -1443,7 +1734,7 @@ namespace SOEM_FrontEnd.Ethercat
             if (_reqMove)
                 return false;
 
-            _haltActive = false;   // Stop 상태 해제
+            //_haltActive = false;   // Stop 상태 해제
             _moveTarget = position;
             _IsAbsMove = true;
             _motion = MotionCommand.MoveAbs;
@@ -1466,7 +1757,7 @@ namespace SOEM_FrontEnd.Ethercat
             if (_reqMove)
                 return false;
 
-            _haltActive = false;   // Stop 상태 해제
+            //_haltActive = false;   // Stop 상태 해제
             _moveTarget = position;
             _IsAbsMove = false;
 
@@ -1508,7 +1799,7 @@ namespace SOEM_FrontEnd.Ethercat
 
             _jogDirection = 1;
             _jogActive = true;
-            _haltActive = false;
+            //_haltActive = false;
 
             _motion = MotionCommand.Jog;
 
@@ -1530,7 +1821,7 @@ namespace SOEM_FrontEnd.Ethercat
 
             _jogDirection = -1;
             _jogActive = true;
-            _haltActive = false;
+            //_haltActive = false;
 
             _motion = MotionCommand.Jog;
 
@@ -1541,7 +1832,10 @@ namespace SOEM_FrontEnd.Ethercat
         {
             _jogActive = false;
             _jogDirection = 0;
+
+            _reqAnchorActualPosition = true;
             _reqStop = true;
+
             return true;
         }
 
@@ -1557,6 +1851,13 @@ namespace SOEM_FrontEnd.Ethercat
             {
                 return false;
             }
+
+            _reqStop = false;
+            _haltActive = false;
+
+            _jogActive = false;
+            _jogDirection = 0;
+
             _reqEnable = true;
             return true;
 
