@@ -22,10 +22,31 @@ namespace SOEM_FrontEnd.Ethercat
     //IEthercatStateTransition에서 preop, safeop, op 간 이동시 매크로 작성.
     //IMotorCommands에서 ViewModel 통신담당. 
 
-
-
     public sealed class NormalMotorWithPPMode : PDOBase, IEthercatStateTransition, IMotorCommands
     {
+
+        #region Constants
+
+        //402 전이 기본 CW 값
+        private const ushort CW_SHUTDOWN = 0x0006;
+        private const ushort CW_SWITCHON = 0x0007;
+        private const ushort CW_ENABLEOP = 0x000F;
+
+        #endregion
+
+        #region Fields
+
+        #region Fields - Core
+
+        private readonly ushort _SlaveNo;
+        private readonly EcClient _ECClient;
+        private SDOSubWorker _sdoWorker;
+
+        private readonly byte[] _u32WriteBuffer = new byte[4];
+
+        #endregion
+
+        #region Fields - PDO Mapping
 
         private Dictionary<OdKey, PdoField> _rxMapTable = new Dictionary<OdKey, PdoField>(); // outputs
 
@@ -34,7 +55,6 @@ namespace SOEM_FrontEnd.Ethercat
         //rxMapTable 0x6040(CW), 0x607a(Target Position) 존재.
         //txMapTable 0x6041(SW), 0x6064(Actual Position) 존재.
 
-        private readonly ushort _SlaveNo;
 
         private int _off6040cw = -1; // Rx Offset.(매번 lookup 참조가 아니라 빠르게 접근용)
         private int _off6041sw = -1; // Tx Offset.
@@ -49,8 +69,6 @@ namespace SOEM_FrontEnd.Ethercat
         private int _off6060mode = -1;        // Rx: Modes of operation
         private int _off6061modeDisplay = -1; // Tx: Modes of operation display
 
-        private sbyte _pdoModeCommand = 1; // 1=PP, 6=Homing
-
         //max Torque가 PDO맵에 있는경우 문제가 발생...
         private int _off6072maxTorque = -1; // Rx: Max torque
         private const ushort TEMP_MAX_TORQUE_6072 = 0x1388; // 5000
@@ -59,6 +77,9 @@ namespace SOEM_FrontEnd.Ethercat
         private int _off6080maxMotorSpeed = -1; // Rx: Max motor speed, UDINT
         private const uint TEMP_MAX_SPEED_6080 = 3000000u;  // 임시값. 너무 크면 낮춰도 됨.
 
+        #endregion
+
+        #region Fields - SDO Hot References
 
         //SDO 핫패스.
         private SDOPoint _sdo6060; // Mode of operation
@@ -74,29 +95,109 @@ namespace SOEM_FrontEnd.Ethercat
         private SDOPoint _sdo6083; //Profile Acceleration
         private SDOPoint _sdo6084; //Profile Deceleration
 
-        private SDOSubWorker _sdoWorker;
+        //홈기동용 Write Buffer.
+        private readonly byte[] _i8WriteBuffer = new byte[1];
+        private readonly byte[] _i32WriteBuffer = new byte[4];
 
-        private readonly byte[] _u32WriteBuffer = new byte[4];
+        #endregion
+
+        #region Fields - Runtime State
+
+        private sbyte _pdoModeCommand = 1; // 1=PP, 6=Homing
+
+        //PDO Received에서 사용되는 필드.
+        private bool _waitFaultClear;
+        private int _faultResetHold;     // 안전용: 최대 몇 cycle까지만 1 유지 (예: 3)
+
+        private bool _haltActive;
+
+        private volatile bool _reqMove;
+        private volatile int _moveTarget;
+
+        private volatile bool _reqStop;
+
+        private volatile bool _reqFaultReset;
+        private volatile bool _reqEnable;
+        private volatile bool _IsAbsMove;
+
+        private MoveState _moveState = MoveState.Idle;
+
+        private bool _isServoOn;
+        private bool _isError;
+        private bool _isTargetReached;
+        private bool _isSetPointAck;
+        private ushort _statusWordCache;
+
+        private MotionCommand _motion = MotionCommand.None;
+
+        #endregion
+
+        #region Fields - Motion Profile
 
         private uint _profileVelocity = 0;
         private uint _profileAcceleration = 0;
         private uint _profileDeceleration = 0;
 
-        //홈기동용 Write Buffer.
-        private readonly byte[] _i8WriteBuffer = new byte[1];
-        private readonly byte[] _i32WriteBuffer = new byte[4];
+        private volatile bool _profileDirty = true;
+        private uint _appliedProfileVelocity;
+        private uint _appliedProfileAcceleration;
+        private uint _appliedProfileDeceleration;
+
+        #endregion
+
+        #region Fields - Jog
 
         //정확한 정지용으로.
         private bool _reqAnchorActualPosition;
 
+        //Jog용으로..
+        private volatile bool _jogActive;
+        private volatile int _jogDirection;   // +1 / -1
+        private int _jogStepPulse;
 
-        private readonly EcClient _ECClient;
+        #endregion
+
+        #region Fields - Servo IO Status
+
+        //ServoIO 표기용.
+        private bool _isNlimOn;
+        private bool _isPlimOn;
+        private bool _isHomeOn;
+
+        #endregion
+
+        #region Fields - Home
+
+        //홈 기동용 파라미터 필드.
+        private sbyte _homeMethod = 35;
+        private uint _homeSearchSwitchSpeed = 1000;
+        private uint _homeSearchZeroSpeed = 500;
+        private uint _homeAcceleration = 1000;
+        private int _homeOffset = 0;
+
+        private bool _isHomed;
+        private bool _homeRestoreThenFault;
+
+        #endregion
+
+        #endregion
+
+        #region Constructor / Attach
+
+        public NormalMotorWithPPMode(int rxSize, int txSize, ushort slaveNo, EcClient ECClient) : base(rxSize, txSize)
+        {
+            _SlaveNo = slaveNo;
+            _ECClient = ECClient;
+        }
 
         public void AttachSdoWorker(SDOSubWorker sdoWorker)
         {
             _sdoWorker = sdoWorker;
         }
 
+        #endregion
+
+        #region IMotorCommands
 
         //IMotorCommands 구현부.
         //public int AxisID => throw new NotImplementedException();
@@ -129,42 +230,189 @@ namespace SOEM_FrontEnd.Ethercat
         }
 
 
-        private int getActualPosition()
+        //IMotorCommand 구현부.
+        public bool MoveABS(int position)
         {
-            bool ret = TryReadActualPosition6064(out int actualPos);
-            if (ret == true)
+            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+                return false;
+
+            if (_moveState != MoveState.Idle)
+                return false;
+
+            if (_reqMove)
+                return false;
+
+            //_haltActive = false;   // Stop 상태 해제
+            _moveTarget = position;
+            _IsAbsMove = true;
+            _motion = MotionCommand.MoveAbs;
+
+
+            //마지막에 위에것이 확정되었다는 의미로...
+            _reqMove = true;
+
+            return true;
+        }
+
+        public bool MoveINC(int position)
+        {
+            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+                return false;
+
+            if (_moveState != MoveState.Idle)
+                return false;
+
+            if (_reqMove)
+                return false;
+
+            //_haltActive = false;   // Stop 상태 해제
+            _moveTarget = position;
+            _IsAbsMove = false;
+
+            _motion = MotionCommand.MoveInc;
+
+            //마지막에 위에것이 확정되었다는 의미로...
+            _reqMove = true;
+
+            return true;
+        }
+
+        public bool QuickStop()
+        {
+            //나중에 빠른정지 추가.
+            return Stop();
+        }
+
+        public bool Stop()
+        {
+            _jogActive = false;
+            _jogDirection = 0;
+            _reqStop = true;
+            return true;
+        }
+
+        public bool JogPlus()
+        {
+            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+                return false;
+
+            if (_isServoOn == false || _isError == true)
+                return false;
+
+            //stepPulse = speedPulsePerSec * (loopPeriodSec * leadLoopCount) 주의 발행주기가 8루프보단 길어야 되서 10으로 처리. 10/1000 은 10ms위치에 목적point발행.
+            _jogStepPulse = (int)(_profileVelocity * 10 / 1000);
+
+            if (_jogStepPulse < 1)
+                _jogStepPulse = 1;
+
+            _jogDirection = 1;
+            _jogActive = true;
+            //_haltActive = false;
+
+            _motion = MotionCommand.Jog;
+
+            return true;
+        }
+
+        public bool JogMinus()
+        {
+            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+                return false;
+
+            if (_isServoOn == false || _isError == true)
+                return false;
+
+            _jogStepPulse = (int)(_profileVelocity * 10 / 1000);
+
+            if (_jogStepPulse < 1)
+                _jogStepPulse = 1;
+
+            _jogDirection = -1;
+            _jogActive = true;
+            //_haltActive = false;
+
+            _motion = MotionCommand.Jog;
+
+            return true;
+        }
+
+        public bool JogStop()
+        {
+            _jogActive = false;
+            _jogDirection = 0;
+
+            _reqAnchorActualPosition = true;
+            _reqStop = true;
+
+            return true;
+        }
+
+        public bool AlarmClear()
+        {
+            _reqFaultReset = true;
+            return true;
+        }
+
+        public bool ServoOn()
+        {
+            if (_isError == true)
             {
-                return actualPos;
+                return false;
             }
 
-            return 0;
+            _reqStop = false;
+            _haltActive = false;
+
+            _jogActive = false;
+            _jogDirection = 0;
+
+            _reqEnable = true;
+            return true;
 
         }
 
-        public NormalMotorWithPPMode(int rxSize, int txSize, ushort slaveNo, EcClient ECClient) : base(rxSize, txSize)
+        public bool ServoOff()
         {
-            _SlaveNo = slaveNo;
-            _ECClient = ECClient;
+            _jogActive = false;
+            _jogDirection = 0;
+            _reqEnable = false;
+            return true;
         }
 
-        private bool WriteSdoByWorker(ushort index, byte subIndex, byte[] raw)
+        public bool Home()
         {
-            if (_sdoWorker == null)
+            if (_isServoOn == false || _isError == true)
                 return false;
 
-            if (_sdoWorker.IsRunning == false)
+            if (_moveState != MoveState.Idle)
                 return false;
 
-            if (raw == null || raw.Length == 0)
+            if (_reqMove)
                 return false;
 
-            bool ok = _sdoWorker.EnqueueWriteAsync(_SlaveNo, index, subIndex, raw)
-                .GetAwaiter()
-                .GetResult();
+            _jogActive = false;
+            _jogDirection = 0;
+            _haltActive = false;
 
-            return ok;
+            _motion = MotionCommand.Home;
+
+            _reqMove = true;
+
+            return true;
         }
 
+        public void SetHomeProfile(sbyte method, uint searchSwitchSpeed, uint searchZeroSpeed, uint acceleration, int homeOffset)
+        {
+            _homeMethod = method;
+            _homeSearchSwitchSpeed = searchSwitchSpeed;
+            _homeSearchZeroSpeed = searchZeroSpeed;
+            _homeAcceleration = acceleration;
+            _homeOffset = homeOffset;
+        }
+
+        #endregion
+
+        #region EtherCAT State Transition
 
         bool IEthercatStateTransition.PrepareSafeOp(int timeoutMs)
         {
@@ -237,10 +485,14 @@ namespace SOEM_FrontEnd.Ethercat
 
             BindSdoHotRefs(Datamap.Instance.GetSlave(_SlaveNo));
 
-           
+
 
             return true;
         }
+
+        #endregion
+
+        #region PDO Mapping
 
         public override void SetPdoMapping(List<uint> rxAllMap, List<uint> txAllMap)
         {
@@ -280,28 +532,6 @@ namespace SOEM_FrontEnd.Ethercat
             }
         }
 
-
-        public void BindSdoHotRefs(SlaveStore slave)
-        {
-            if (slave == null)
-                return;
-
-            //Dic으로 구성된 데이터 구조라 RT에서 읽기가 안정적이지 않음.
-            _sdo6060 = slave.TryGetSdo(0x6060, 0x00);
-            _sdo6098 = slave.TryGetSdo(0x6098, 0x00);
-
-            _sdo6081 = slave.TryGetSdo(0x6081, 0x00);
-            _sdo6083 = slave.TryGetSdo(0x6083, 0x00);
-            _sdo6084 = slave.TryGetSdo(0x6084, 0x00);
-
-
-            //홈 기동용 핫패스 바인딩.
-            _sdo6099_01 = slave.TryGetSdo(0x6099, 0x01);
-            _sdo6099_02 = slave.TryGetSdo(0x6099, 0x02);
-            _sdo609A = slave.TryGetSdo(0x609A, 0x00);
-            _sdo607C = slave.TryGetSdo(0x607C, 0x00);
-
-        }
 
         public bool TryResolve402()
         {
@@ -349,386 +579,9 @@ namespace SOEM_FrontEnd.Ethercat
             return true;
         }
 
-        private void WriteTemporaryMaxTorquePdo()
-        {
-            if (_off6072maxTorque < 0)
-            {
-                return;
-            }
+        #endregion
 
-            if ((uint)_off6072maxTorque + 2u > (uint)Output.Length)
-            {
-                return;
-            }
-
-            BinaryPrimitives.WriteUInt16LittleEndian(
-                Output.Slice(_off6072maxTorque, 2),
-                TEMP_MAX_TORQUE_6072);
-        }
-
-        private void WriteTemporaryMaxMotorSpeedPdo()
-        {
-            if (_off6080maxMotorSpeed < 0)
-            {
-                return;
-            }
-
-            if ((uint)_off6080maxMotorSpeed + 4u > (uint)Output.Length)
-            {
-                return;
-            }
-
-            BinaryPrimitives.WriteUInt32LittleEndian(
-                Output.Slice(_off6080maxMotorSpeed, 4),
-                TEMP_MAX_SPEED_6080);
-        }
-
-
-
-        private static int TryGetByteOffset(Dictionary<OdKey, PdoField> dict, ushort idx, byte sub)
-        {
-            if (dict.TryGetValue(new OdKey(idx, sub), out var f))
-                return f.ByteOffset;
-            return -1;
-        }
-
-        private void WritePdoModeCommand()
-        {
-            if (_off6060mode < 0)
-            {
-                return;
-            }
-
-            if ((uint)_off6060mode >= (uint)Output.Length)
-            {
-                return;
-            }
-
-            Output[_off6060mode] = unchecked((byte)_pdoModeCommand);
-        }
-
-
-
-
-
-        //내부사용메소드
-        private bool TryReadTxI32(ushort idx, byte sub, out int value)
-        {
-            value = 0;
-
-            if (!_txMapTable.TryGetValue(new OdKey(idx, sub), out var f))
-                return false;
-
-            // PDO는 보통 byte-aligned로 매핑됨 (0x6064는 INT32=32bit)
-            if (f.BitLen != 32 || f.BitInByte != 0)
-                return false;
-
-            var span = InputSnapshot.Span; // Slave→Master (TxPDO) snapshot
-            int off = f.ByteOffset;
-            if ((uint)off + 4u > (uint)span.Length)
-                return false;
-
-            value = BinaryPrimitives.ReadInt32LittleEndian(span.Slice(off, 4));
-
-            return true;
-        }
-
-        private bool TryReadTxU16(ushort idx, byte sub, out ushort value)
-        {
-            value = 0;
-
-            if (!_txMapTable.TryGetValue(new OdKey(idx, sub), out var f))
-                return false;
-
-            if (f.BitLen != 16 || f.BitInByte != 0)
-                return false;
-
-            var span = InputSnapshot.Span;
-            int off = f.ByteOffset;
-
-            if ((uint)off + 2u > (uint)span.Length)
-                return false;
-
-            value = BinaryPrimitives.ReadUInt16LittleEndian(span.Slice(off, 2));
-            return true;
-        }
-
-        private static void MarkWritePending(SDOPoint point)
-        {
-            if (point == null)
-                return;
-
-            point.WriteStatus = SDOWriteStatus.Pending;
-            point.AbortCode = 0;
-            point.Error = null;
-        }
-
-        private bool TryQueueWriteU32(ushort index, byte subIndex, uint value, SDOPoint point)
-        {
-            if (_sdoWorker == null)
-                return false;
-
-            if (point == null)
-                return false;
-
-            MarkWritePending(point);
-
-            BinaryPrimitives.WriteUInt32LittleEndian(_u32WriteBuffer.AsSpan(0, 4), value);
-            _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _u32WriteBuffer);
-            return true;
-        }
-
-        private bool TryQueueWriteU32(ushort index, uint value, SDOPoint point)
-        {
-            return TryQueueWriteU32(index, 0x00, value, point);
-        }
-
-        private bool TryQueueWriteI8(ushort index, byte subIndex, sbyte value, SDOPoint point)
-        {
-            if (_sdoWorker == null)
-                return false;
-
-            if (point == null)
-                return false;
-
-            MarkWritePending(point);
-
-            _i8WriteBuffer[0] = unchecked((byte)value);
-            _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _i8WriteBuffer);
-            return true;
-        }
-
-        private bool TryQueueWriteI32(ushort index, byte subIndex, int value, SDOPoint point)
-        {
-            if (_sdoWorker == null)
-                return false;
-
-            if (point == null)
-                return false;
-
-            MarkWritePending(point);
-
-            BinaryPrimitives.WriteInt32LittleEndian(_i32WriteBuffer.AsSpan(0, 4), value);
-            _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _i32WriteBuffer);
-            return true;
-        }
-
-
-
-        private static bool TryReadHotU32(SDOPoint point, out uint value)
-        {
-            value = 0;
-
-            if (point == null)
-                return false;
-
-            byte[] raw = point.LastRaw;
-            if (raw == null)
-                return false;
-
-            if (raw.Length < 4)
-                return false;
-
-            value = BinaryPrimitives.ReadUInt32LittleEndian(raw.AsSpan(0, 4));
-            return true;
-        }
-
-        //현재위치 파생.
-        private bool TryReadActualPosition6064(out int actualPos)
-        {
-            return TryReadTxI32(0x6064, 0x00, out actualPos);
-        }
-
-
-        //PPMode ControlWord Bit Offset
-        //만약 비트 마스크용이라면, [Flags]사용.
-        [Flags]
-        private enum ControlWordBit : ushort
-        {
-            //PPMode전용 맵.
-            SwitchOn = 1 << 0,
-            EnableVoltage = 1 << 1,
-            QuickStop = 1 << 2,
-            EnableOperation = 1 << 3,
-            NewSetPoint = 1 << 4, //새로운 위치로 이동 수행.
-            ChangeSetImmediately = 1 << 5, //0-위치 이동 중 새 명령이 들어왔을때 현재 명령 완료 후 재수행.(정지-이동) 1-현재명령 무시 후 새 명령실행. (정지없이 이동)
-            Relative = 1 << 6, //0-abs move, 1-inc move
-            FaultReset = 1 << 7,
-            Halt = 1 << 8, //0-운전개시 및 계속수행, 1-위치이동 취소, Halt Option Code에 따라 운전 정지.
-            PushMode = 1 << 12, //0-일반 위치 이동. 1-위치이동이 Push명령으로 동작.(모터를 목표 위치까지 토크모드로 이송)
-            NonStopPush = 1 << 13 //0-Push명령 실행 시 작업물이 감지되면 멈추고 Push명령 해제. 1-Push명령시 작업물이 감지되면 멈추고 사라지면 다시 이동. Halt 명령 받으면 Push명령 해제됨.
-        }
-
-
-        //PPMode StatusWord Bit Offset
-        [Flags]
-        private enum StatusWordBit : ushort
-        {
-            //PPMode전용 맵.
-            ReadySwitchOn = 1 << 0,
-            SwitchedOn = 1 << 1,
-            OperationEnabled = 1 << 2,
-            Fault = 1 << 3,
-            VoltageEnabled = 1 << 4,
-            QuickStop = 1 << 5,
-            SwitchOnDisabled = 1 << 6,
-            PushState = 1 << 8, //0-TargetReached==0 모터가 일반 위치 이동 명령 수행중. 1-TargetReached==0 모터가 Push명령을 수행중
-            Remote = 1 << 9, // 1-ControlWord 가 정상적으로 처리됨
-            TargetReached = 1 << 10,
-            //0-ControlWord의 Halt==0 목표 위치에 도달하지 못함. 
-            //0-ControlWord의 Halt==1 제어기가 정지 중입니다.
-            //1-ControlWord의 Halt==0 목표 위치에 도착했습니다.
-            //1-ControlWord의 Halt==1 제어기가 정지했습니다.
-            InternalLimitActive = 1 << 11, //0-SoftwareLimit이 감지되지 않았습니다. 1-SoftwareLimit이 감지되었습니다.
-            SetPointAcknowledge = 1 << 12, //0-ControlWord의 NewSetPoint가 0이고 새 위치값의 입력이 가능합니다. 1-ControlWord의 NewSetPoint가 1이고 이전 위치값의 명령을 실행중입니다.
-            FollowingError = 1 << 13, //1-위치편차 이상 발생.
-            PushDetected = 1 << 14, //1-PushMode중 작업물 감지상태
-            SafetyActivated = 1 << 15 //1-Safety기능이 활성화되어 정지상태.
-        }
-        //PP모드 Bit12 = SetPointAcknowledge
-        //Home모드 Bit12 = Homing attained
-
-        //PP모드 Bit13 = Following error
-        //Home모드 Bit13 = Homing error
-
-
-        //비트 마스크 헬퍼. 여기서만 사용할것.
-        private static bool HasSW(ushort sw, StatusWordBit mask) => (sw & (ushort)mask) != 0;
-        private static ushort SetCW(ushort cw, ControlWordBit mask) => (ushort)(cw | (ushort)mask);
-        private static ushort ClearCW(ushort cw, ControlWordBit mask) => (ushort)(cw & (ushort)~(ushort)mask);
-
-        //홈 기동용 StatusWord Helper
-        private static bool HasHomingAttained(ushort sw)
-        {
-            return (sw & (1 << 12)) != 0;
-        }
-
-        private static bool HasHomingError(ushort sw)
-        {
-            return (sw & (1 << 13)) != 0;
-        }
-
-
-        //402 전이 기본 CW 값
-        private const ushort CW_SHUTDOWN = 0x0006;
-        private const ushort CW_SWITCHON = 0x0007;
-        private const ushort CW_ENABLEOP = 0x000F;
-
-        //PDO Received에서 사용되는 필드.
-        private bool _waitFaultClear;
-        private int _faultResetHold;     // 안전용: 최대 몇 cycle까지만 1 유지 (예: 3)
-
-        private bool _haltActive;
-
-        private volatile bool _reqMove;
-        private volatile int _moveTarget;
-
-        private volatile bool _reqStop;
-
-        private volatile bool _reqFaultReset;
-        private volatile bool _reqEnable;
-        private volatile bool _IsAbsMove;
-
-        private MoveState _moveState = MoveState.Idle;
-
-        private bool _isServoOn;
-        private bool _isError;
-        private bool _isTargetReached;
-        private bool _isSetPointAck;
-        private ushort _statusWordCache;
-
-        //Jog용으로..
-        private volatile bool _jogActive;
-        private volatile int _jogDirection;   // +1 / -1
-        private int _jogStepPulse;
-
-        private volatile bool _profileDirty = true;
-        private uint _appliedProfileVelocity;
-        private uint _appliedProfileAcceleration;
-        private uint _appliedProfileDeceleration;
-
-        //ServoIO 표기용.
-        private bool _isNlimOn;
-        private bool _isPlimOn;
-        private bool _isHomeOn;
-
-
-        //홈 기동용 파라미터 필드.
-        private sbyte _homeMethod = 35;
-        private uint _homeSearchSwitchSpeed = 1000;
-        private uint _homeSearchZeroSpeed = 500;
-        private uint _homeAcceleration = 1000;
-        private int _homeOffset = 0;
-
-        private bool _isHomed;
-        private bool _homeRestoreThenFault;
-
-        private MotionCommand _motion = MotionCommand.None;
-
-        private enum MotionCommand
-        {
-            None = 0,
-            MoveAbs,
-            MoveInc,
-            Jog,
-            Home
-        }
-
-        private enum MoveState
-        {
-            Idle = 0,
-
-            QueueWrite6081,
-            WaitWrite6081,
-
-            QueueWrite6083,
-            WaitWrite6083,
-
-            QueueWrite6084,
-            WaitWrite6084,
-
-            QueuePdoStart,
-            WaitSetPointAck,
-            WaitSetPointAckClear,
-            WaitTargetReached,
-
-            // Jog Stop 시 현재 위치를 새 Absolute PP target으로 latch해서
-            // 이전 relative jog target을 제거하기 위한 시퀀스.
-            JogAnchorWaitAckClear,
-            JogAnchorQueue,
-            JogAnchorWaitAck,
-            JogAnchorDone,
-
-            //이하는 홈 기동용 시퀀스.
-            QueueModeHoming,
-            WaitModeHoming,
-
-            QueueHomeMethod,
-            WaitHomeMethod,
-
-            QueueHomeSpeedSwitch,
-            WaitHomeSpeedSwitch,
-
-            QueueHomeSpeedZero,
-            WaitHomeSpeedZero,
-
-            QueueHomeAcceleration,
-            WaitHomeAcceleration,
-
-            QueueHomeOffset,
-            WaitHomeOffset,
-
-            QueuePdoHomeStart,
-            WaitHomeComplete,
-
-            QueueModePP,
-            WaitModePP,
-
-            Done,
-            Fault
-        }
-
-
+        #region PDO Runtime
 
         public override void OnAfterPdoReceived()
         {
@@ -777,7 +630,7 @@ namespace SOEM_FrontEnd.Ethercat
             bool swOperationEnabled = HasSW(sw, StatusWordBit.OperationEnabled);
             bool swFault = HasSW(sw, StatusWordBit.Fault);
 
-            bool swSetPointAck = HasSW(sw, StatusWordBit.SetPointAcknowledge); 
+            bool swSetPointAck = HasSW(sw, StatusWordBit.SetPointAcknowledge);
 
             bool swTargetReached = HasSW(sw, StatusWordBit.TargetReached);
 
@@ -789,7 +642,7 @@ namespace SOEM_FrontEnd.Ethercat
             //_isServoOn = swOperationEnabled && !swFault;
 
             //조건 추가.
-            _isServoOn = swReadyToSwitchOn && swSwitchOn && swVoltageEnabled && swOperationEnabled  && !swFault;
+            _isServoOn = swReadyToSwitchOn && swSwitchOn && swVoltageEnabled && swOperationEnabled && !swFault;
 
             _isError = swFault;
             _isSetPointAck = swSetPointAck;
@@ -1021,6 +874,10 @@ namespace SOEM_FrontEnd.Ethercat
             return cw;
         }
 
+        #endregion
+
+        #region Motion State Machine
+
         private void ProcessMoveAbsStateMachine(ref ushort cw, bool swSetPointAck, bool swTargetReached, bool swFault, bool swOperationEnabled, ushort sw)
         {
             uint readValue;
@@ -1138,7 +995,7 @@ namespace SOEM_FrontEnd.Ethercat
                         break;
                     }
 
-            
+
 
                 case MoveState.QueueWrite6084:
                     {
@@ -1150,7 +1007,7 @@ namespace SOEM_FrontEnd.Ethercat
 
                         _moveState = MoveState.WaitWrite6084;
                         break;
-                        
+
                     }
 
                 case MoveState.WaitWrite6084:
@@ -1295,7 +1152,7 @@ namespace SOEM_FrontEnd.Ethercat
                         {
                             cw = SetCW(cw, ControlWordBit.Relative);
                         }
-                        
+
                         cw = ClearCW(cw, ControlWordBit.NewSetPoint);
 
                         if (swTargetReached)
@@ -1721,187 +1578,399 @@ namespace SOEM_FrontEnd.Ethercat
         }
 
 
+        #endregion
 
-        //IMotorCommand 구현부.
-        public bool MoveABS(int position)
+        #region SDO Helpers
+
+        private bool WriteSdoByWorker(ushort index, byte subIndex, byte[] raw)
         {
-            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+            if (_sdoWorker == null)
                 return false;
 
-            if (_moveState != MoveState.Idle)
+            if (_sdoWorker.IsRunning == false)
                 return false;
 
-            if (_reqMove)
+            if (raw == null || raw.Length == 0)
                 return false;
 
-            //_haltActive = false;   // Stop 상태 해제
-            _moveTarget = position;
-            _IsAbsMove = true;
-            _motion = MotionCommand.MoveAbs;
+            bool ok = _sdoWorker.EnqueueWriteAsync(_SlaveNo, index, subIndex, raw)
+                .GetAwaiter()
+                .GetResult();
+
+            return ok;
+        }
+
+        public void BindSdoHotRefs(SlaveStore slave)
+        {
+            if (slave == null)
+                return;
+
+            //Dic으로 구성된 데이터 구조라 RT에서 읽기가 안정적이지 않음.
+            _sdo6060 = slave.TryGetSdo(0x6060, 0x00);
+            _sdo6098 = slave.TryGetSdo(0x6098, 0x00);
+
+            _sdo6081 = slave.TryGetSdo(0x6081, 0x00);
+            _sdo6083 = slave.TryGetSdo(0x6083, 0x00);
+            _sdo6084 = slave.TryGetSdo(0x6084, 0x00);
 
 
-            //마지막에 위에것이 확정되었다는 의미로...
-            _reqMove = true;
-            
+            //홈 기동용 핫패스 바인딩.
+            _sdo6099_01 = slave.TryGetSdo(0x6099, 0x01);
+            _sdo6099_02 = slave.TryGetSdo(0x6099, 0x02);
+            _sdo609A = slave.TryGetSdo(0x609A, 0x00);
+            _sdo607C = slave.TryGetSdo(0x607C, 0x00);
+
+        }
+
+        private static void MarkWritePending(SDOPoint point)
+        {
+            if (point == null)
+                return;
+
+            point.WriteStatus = SDOWriteStatus.Pending;
+            point.AbortCode = 0;
+            point.Error = null;
+        }
+
+        private bool TryQueueWriteU32(ushort index, byte subIndex, uint value, SDOPoint point)
+        {
+            if (_sdoWorker == null)
+                return false;
+
+            if (point == null)
+                return false;
+
+            MarkWritePending(point);
+
+            BinaryPrimitives.WriteUInt32LittleEndian(_u32WriteBuffer.AsSpan(0, 4), value);
+            _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _u32WriteBuffer);
             return true;
         }
 
-        public bool MoveINC(int position)
+        private bool TryQueueWriteU32(ushort index, uint value, SDOPoint point)
         {
-            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+            return TryQueueWriteU32(index, 0x00, value, point);
+        }
+
+        private bool TryQueueWriteI8(ushort index, byte subIndex, sbyte value, SDOPoint point)
+        {
+            if (_sdoWorker == null)
                 return false;
 
-            if (_moveState != MoveState.Idle)
+            if (point == null)
                 return false;
 
-            if (_reqMove)
-                return false;
+            MarkWritePending(point);
 
-            //_haltActive = false;   // Stop 상태 해제
-            _moveTarget = position;
-            _IsAbsMove = false;
-
-            _motion = MotionCommand.MoveInc;
-
-            //마지막에 위에것이 확정되었다는 의미로...
-            _reqMove = true;
-
+            _i8WriteBuffer[0] = unchecked((byte)value);
+            _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _i8WriteBuffer);
             return true;
         }
 
-        public bool QuickStop()
+        private bool TryQueueWriteI32(ushort index, byte subIndex, int value, SDOPoint point)
         {
-            //나중에 빠른정지 추가.
-            return Stop();
-        }
-
-        public bool Stop()
-        {
-            _jogActive = false;
-            _jogDirection = 0;
-            _reqStop = true;
-            return true;
-        }
-
-        public bool JogPlus()
-        {
-            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+            if (_sdoWorker == null)
                 return false;
 
-            if (_isServoOn == false || _isError == true)
+            if (point == null)
                 return false;
 
-            //stepPulse = speedPulsePerSec * (loopPeriodSec * leadLoopCount) 주의 발행주기가 8루프보단 길어야 되서 10으로 처리. 10/1000 은 10ms위치에 목적point발행.
-            _jogStepPulse = (int)(_profileVelocity * 10 / 1000);
+            MarkWritePending(point);
 
-            if (_jogStepPulse < 1)
-                _jogStepPulse = 1;
-
-            _jogDirection = 1;
-            _jogActive = true;
-            //_haltActive = false;
-
-            _motion = MotionCommand.Jog;
-
+            BinaryPrimitives.WriteInt32LittleEndian(_i32WriteBuffer.AsSpan(0, 4), value);
+            _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _i32WriteBuffer);
             return true;
         }
 
-        public bool JogMinus()
+
+
+        private static bool TryReadHotU32(SDOPoint point, out uint value)
         {
-            if (_profileVelocity == 0 || _profileAcceleration == 0 || _profileDeceleration == 0)
+            value = 0;
+
+            if (point == null)
                 return false;
 
-            if (_isServoOn == false || _isError == true)
+            byte[] raw = point.LastRaw;
+            if (raw == null)
                 return false;
 
-            _jogStepPulse = (int)(_profileVelocity * 10 / 1000);
+            if (raw.Length < 4)
+                return false;
 
-            if (_jogStepPulse < 1)
-                _jogStepPulse = 1;
-
-            _jogDirection = -1;
-            _jogActive = true;
-            //_haltActive = false;
-
-            _motion = MotionCommand.Jog;
-
+            value = BinaryPrimitives.ReadUInt32LittleEndian(raw.AsSpan(0, 4));
             return true;
         }
 
-        public bool JogStop()
+        #endregion
+
+        #region PDO Helpers
+
+        private void WriteTemporaryMaxTorquePdo()
         {
-            _jogActive = false;
-            _jogDirection = 0;
-
-            _reqAnchorActualPosition = true;
-            _reqStop = true;
-
-            return true;
-        }
-
-        public bool AlarmClear()
-        {
-            _reqFaultReset = true;
-            return true;
-        }
-
-        public bool ServoOn()
-        {
-            if (_isError == true)
+            if (_off6072maxTorque < 0)
             {
-                return false;
+                return;
             }
 
-            _reqStop = false;
-            _haltActive = false;
+            if ((uint)_off6072maxTorque + 2u > (uint)Output.Length)
+            {
+                return;
+            }
 
-            _jogActive = false;
-            _jogDirection = 0;
+            BinaryPrimitives.WriteUInt16LittleEndian(
+                Output.Slice(_off6072maxTorque, 2),
+                TEMP_MAX_TORQUE_6072);
+        }
 
-            _reqEnable = true;
-            return true;
+        private void WriteTemporaryMaxMotorSpeedPdo()
+        {
+            if (_off6080maxMotorSpeed < 0)
+            {
+                return;
+            }
+
+            if ((uint)_off6080maxMotorSpeed + 4u > (uint)Output.Length)
+            {
+                return;
+            }
+
+            BinaryPrimitives.WriteUInt32LittleEndian(
+                Output.Slice(_off6080maxMotorSpeed, 4),
+                TEMP_MAX_SPEED_6080);
+        }
+
+
+
+        private static int TryGetByteOffset(Dictionary<OdKey, PdoField> dict, ushort idx, byte sub)
+        {
+            if (dict.TryGetValue(new OdKey(idx, sub), out var f))
+                return f.ByteOffset;
+            return -1;
+        }
+
+        private void WritePdoModeCommand()
+        {
+            if (_off6060mode < 0)
+            {
+                return;
+            }
+
+            if ((uint)_off6060mode >= (uint)Output.Length)
+            {
+                return;
+            }
+
+            Output[_off6060mode] = unchecked((byte)_pdoModeCommand);
+        }
+
+
+
+
+
+
+        #endregion
+
+        #region Read Helpers
+
+        private int getActualPosition()
+        {
+            bool ret = TryReadActualPosition6064(out int actualPos);
+            if (ret == true)
+            {
+                return actualPos;
+            }
+
+            return 0;
 
         }
 
-        public bool ServoOff()
+        //내부사용메소드
+        private bool TryReadTxI32(ushort idx, byte sub, out int value)
         {
-            _jogActive = false;
-            _jogDirection = 0;
-            _reqEnable = false;
-            return true;
-        }
+            value = 0;
 
-        public bool Home()
-        {
-            if (_isServoOn == false || _isError == true)
+            if (!_txMapTable.TryGetValue(new OdKey(idx, sub), out var f))
                 return false;
 
-            if (_moveState != MoveState.Idle)
+            // PDO는 보통 byte-aligned로 매핑됨 (0x6064는 INT32=32bit)
+            if (f.BitLen != 32 || f.BitInByte != 0)
                 return false;
 
-            if (_reqMove)
+            var span = InputSnapshot.Span; // Slave→Master (TxPDO) snapshot
+            int off = f.ByteOffset;
+            if ((uint)off + 4u > (uint)span.Length)
                 return false;
 
-            _jogActive = false;
-            _jogDirection = 0;
-            _haltActive = false;
-
-            _motion = MotionCommand.Home;
-
-            _reqMove = true;
+            value = BinaryPrimitives.ReadInt32LittleEndian(span.Slice(off, 4));
 
             return true;
         }
 
-        public void SetHomeProfile(sbyte method, uint searchSwitchSpeed, uint searchZeroSpeed, uint acceleration, int homeOffset)
+        private bool TryReadTxU16(ushort idx, byte sub, out ushort value)
         {
-            _homeMethod = method;
-            _homeSearchSwitchSpeed = searchSwitchSpeed;
-            _homeSearchZeroSpeed = searchZeroSpeed;
-            _homeAcceleration = acceleration;
-            _homeOffset = homeOffset;
+            value = 0;
+
+            if (!_txMapTable.TryGetValue(new OdKey(idx, sub), out var f))
+                return false;
+
+            if (f.BitLen != 16 || f.BitInByte != 0)
+                return false;
+
+            var span = InputSnapshot.Span;
+            int off = f.ByteOffset;
+
+            if ((uint)off + 2u > (uint)span.Length)
+                return false;
+
+            value = BinaryPrimitives.ReadUInt16LittleEndian(span.Slice(off, 2));
+            return true;
         }
 
+        //현재위치 파생.
+        private bool TryReadActualPosition6064(out int actualPos)
+        {
+            return TryReadTxI32(0x6064, 0x00, out actualPos);
+        }
+
+        #endregion
+
+        #region Bit Helpers
+
+        //비트 마스크 헬퍼. 여기서만 사용할것.
+        private static bool HasSW(ushort sw, StatusWordBit mask) => (sw & (ushort)mask) != 0;
+        private static ushort SetCW(ushort cw, ControlWordBit mask) => (ushort)(cw | (ushort)mask);
+        private static ushort ClearCW(ushort cw, ControlWordBit mask) => (ushort)(cw & (ushort)~(ushort)mask);
+
+        //홈 기동용 StatusWord Helper
+        private static bool HasHomingAttained(ushort sw)
+        {
+            return (sw & (1 << 12)) != 0;
+        }
+
+        private static bool HasHomingError(ushort sw)
+        {
+            return (sw & (1 << 13)) != 0;
+        }
+
+
+        #endregion
+
+        #region Nested Types
+
+        //PPMode ControlWord Bit Offset
+        //만약 비트 마스크용이라면, [Flags]사용.
+        [Flags]
+        private enum ControlWordBit : ushort
+        {
+            //PPMode전용 맵.
+            SwitchOn = 1 << 0,
+            EnableVoltage = 1 << 1,
+            QuickStop = 1 << 2,
+            EnableOperation = 1 << 3,
+            NewSetPoint = 1 << 4, //새로운 위치로 이동 수행.
+            ChangeSetImmediately = 1 << 5, //0-위치 이동 중 새 명령이 들어왔을때 현재 명령 완료 후 재수행.(정지-이동) 1-현재명령 무시 후 새 명령실행. (정지없이 이동)
+            Relative = 1 << 6, //0-abs move, 1-inc move
+            FaultReset = 1 << 7,
+            Halt = 1 << 8, //0-운전개시 및 계속수행, 1-위치이동 취소, Halt Option Code에 따라 운전 정지.
+            PushMode = 1 << 12, //0-일반 위치 이동. 1-위치이동이 Push명령으로 동작.(모터를 목표 위치까지 토크모드로 이송)
+            NonStopPush = 1 << 13 //0-Push명령 실행 시 작업물이 감지되면 멈추고 Push명령 해제. 1-Push명령시 작업물이 감지되면 멈추고 사라지면 다시 이동. Halt 명령 받으면 Push명령 해제됨.
+        }
+
+
+        //PPMode StatusWord Bit Offset
+        [Flags]
+        private enum StatusWordBit : ushort
+        {
+            //PPMode전용 맵.
+            ReadySwitchOn = 1 << 0,
+            SwitchedOn = 1 << 1,
+            OperationEnabled = 1 << 2,
+            Fault = 1 << 3,
+            VoltageEnabled = 1 << 4,
+            QuickStop = 1 << 5,
+            SwitchOnDisabled = 1 << 6,
+            PushState = 1 << 8, //0-TargetReached==0 모터가 일반 위치 이동 명령 수행중. 1-TargetReached==0 모터가 Push명령을 수행중
+            Remote = 1 << 9, // 1-ControlWord 가 정상적으로 처리됨
+            TargetReached = 1 << 10,
+            //0-ControlWord의 Halt==0 목표 위치에 도달하지 못함. 
+            //0-ControlWord의 Halt==1 제어기가 정지 중입니다.
+            //1-ControlWord의 Halt==0 목표 위치에 도착했습니다.
+            //1-ControlWord의 Halt==1 제어기가 정지했습니다.
+            InternalLimitActive = 1 << 11, //0-SoftwareLimit이 감지되지 않았습니다. 1-SoftwareLimit이 감지되었습니다.
+            SetPointAcknowledge = 1 << 12, //0-ControlWord의 NewSetPoint가 0이고 새 위치값의 입력이 가능합니다. 1-ControlWord의 NewSetPoint가 1이고 이전 위치값의 명령을 실행중입니다.
+            FollowingError = 1 << 13, //1-위치편차 이상 발생.
+            PushDetected = 1 << 14, //1-PushMode중 작업물 감지상태
+            SafetyActivated = 1 << 15 //1-Safety기능이 활성화되어 정지상태.
+        }
+        //PP모드 Bit12 = SetPointAcknowledge
+        //Home모드 Bit12 = Homing attained
+
+        //PP모드 Bit13 = Following error
+        //Home모드 Bit13 = Homing error
+
+        private enum MotionCommand
+        {
+            None = 0,
+            MoveAbs,
+            MoveInc,
+            Jog,
+            Home
+        }
+
+        private enum MoveState
+        {
+            Idle = 0,
+
+            QueueWrite6081,
+            WaitWrite6081,
+
+            QueueWrite6083,
+            WaitWrite6083,
+
+            QueueWrite6084,
+            WaitWrite6084,
+
+            QueuePdoStart,
+            WaitSetPointAck,
+            WaitSetPointAckClear,
+            WaitTargetReached,
+
+            // Jog Stop 시 현재 위치를 새 Absolute PP target으로 latch해서
+            // 이전 relative jog target을 제거하기 위한 시퀀스.
+            JogAnchorWaitAckClear,
+            JogAnchorQueue,
+            JogAnchorWaitAck,
+            JogAnchorDone,
+
+            //이하는 홈 기동용 시퀀스.
+            QueueModeHoming,
+            WaitModeHoming,
+
+            QueueHomeMethod,
+            WaitHomeMethod,
+
+            QueueHomeSpeedSwitch,
+            WaitHomeSpeedSwitch,
+
+            QueueHomeSpeedZero,
+            WaitHomeSpeedZero,
+
+            QueueHomeAcceleration,
+            WaitHomeAcceleration,
+
+            QueueHomeOffset,
+            WaitHomeOffset,
+
+            QueuePdoHomeStart,
+            WaitHomeComplete,
+
+            QueueModePP,
+            WaitModePP,
+
+            Done,
+            Fault
+        }
 
 
         public readonly struct PdoMapEntry
@@ -1953,6 +2022,7 @@ namespace SOEM_FrontEnd.Ethercat
             public int BitInByte => BitOffset & 7;
         }
 
+        #endregion
 
     }
 }
