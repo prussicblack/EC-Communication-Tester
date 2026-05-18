@@ -285,9 +285,14 @@ namespace SOEM_FrontEnd.Ethercat
 
         public bool Stop()
         {
+            bool isJogStop = _jogActive || _motion == MotionCommand.Jog;
+
             _jogActive = false;
             _jogDirection = 0;
+
+            _reqAnchorActualPosition = isJogStop;
             _reqStop = true;
+
             return true;
         }
 
@@ -338,13 +343,7 @@ namespace SOEM_FrontEnd.Ethercat
 
         public bool JogStop()
         {
-            _jogActive = false;
-            _jogDirection = 0;
-
-            _reqAnchorActualPosition = true;
-            _reqStop = true;
-
-            return true;
+            return Stop();
         }
 
         public bool AlarmClear()
@@ -698,7 +697,6 @@ namespace SOEM_FrontEnd.Ethercat
             }
 
             // Stop 요청 처리
-            // Stop 요청 처리
             if (_reqStop)
             {
                 _reqStop = false;
@@ -716,16 +714,53 @@ namespace SOEM_FrontEnd.Ethercat
 
                 if (reqAnchorActualPosition)
                 {
-                    // Jog release에서는 단순 Halt만 걸면 이전 relative PP target이
-                    // 드라이브 내부에 남을 수 있다.
-                    // 따라서 현재 위치를 새 Absolute target으로 latch하는 상태로 보낸다.
-                    _haltActive = true;
+                    // Jog 중 Stop은 일반 Halt가 아니라 현재 위치 anchor stop으로 처리한다.
+                    // 이유:
+                    // PP Relative Jog 중 Halt만 걸면 드라이브 내부에 이전 relative target이 남아서,
+                    // 다음 Jog 방향 전환 시 이전 방향이 잠깐 재개될 수 있음.
+
+                    bool anchorOk =
+                        _off6064ap >= 0 &&
+                        (uint)_off6064ap + 4u <= (uint)Input.Length &&
+                        _off607Atp >= 0 &&
+                        (uint)_off607Atp + 4u <= (uint)Output.Length;
+
+                    if (anchorOk)
+                    {
+                        int actualPosition = BinaryPrimitives.ReadInt32LittleEndian(
+                            Input.Slice(_off6064ap, 4));
+
+                        BinaryPrimitives.WriteInt32LittleEndian(
+                            Output.Slice(_off607Atp, 4),
+                            actualPosition);
+
+                        _moveTarget = actualPosition;
+                        _IsAbsMove = true;
+
+                        // 현재 위치를 새 Absolute target으로 즉시 latch.
+                        // 상태머신 없이 1 cycle NewSetPoint pulse를 만든다.
+                        _haltActive = false;
+
+                        cw = ClearCW(cw, ControlWordBit.Halt);
+                        cw = ClearCW(cw, ControlWordBit.Relative);
+                        cw = SetCW(cw, ControlWordBit.ChangeSetImmediately);
+                        cw = SetCW(cw, ControlWordBit.NewSetPoint);
+                    }
+                    else
+                    {
+                        // 현재 위치 anchor가 불가능하면 일반 Halt로 fallback.
+                        _haltActive = true;
+                        cw = SetCW(cw, ControlWordBit.Halt);
+                    }
+
                     _motion = MotionCommand.None;
-                    _moveState = MoveState.JogAnchorWaitAckClear;
+                    _moveState = MoveState.Idle;
                 }
                 else
                 {
+                    // 일반 Stop은 Halt 처리.
                     _haltActive = true;
+                    cw = SetCW(cw, ControlWordBit.Halt);
 
                     if (_moveState != MoveState.Idle)
                     {
@@ -1162,107 +1197,6 @@ namespace SOEM_FrontEnd.Ethercat
 
                         break;
                     }
-                //Jog간의 버그 수정.
-                case MoveState.JogAnchorWaitAckClear:
-                    {
-                        // 이전 PP command의 NewSetPoint/Ack가 내려간 뒤
-                        // 현재 위치 anchor command를 넣는다.
-                        cw = ClearCW(cw, ControlWordBit.NewSetPoint);
-                        cw = ClearCW(cw, ControlWordBit.Relative);
-                        cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
-
-                        // 이 구간에서는 Halt 유지.
-                        // 이전 relative jog target이 재개되지 않게 막는다.
-                        cw = SetCW(cw, ControlWordBit.Halt);
-
-                        if (swSetPointAck == false)
-                        {
-                            _moveState = MoveState.JogAnchorQueue;
-                        }
-
-                        break;
-                    }
-
-                case MoveState.JogAnchorQueue:
-                    {
-                        if (swFault)
-                        {
-                            _moveState = MoveState.Fault;
-                            break;
-                        }
-
-                        if (swOperationEnabled == false)
-                        {
-                            break;
-                        }
-
-                        if (_off6064ap < 0 || (uint)_off6064ap + 4u > (uint)Input.Length)
-                        {
-                            _moveState = MoveState.Fault;
-                            break;
-                        }
-
-                        if (_off607Atp < 0 || (uint)_off607Atp + 4u > (uint)Output.Length)
-                        {
-                            _moveState = MoveState.Fault;
-                            break;
-                        }
-
-                        int actualPosition = BinaryPrimitives.ReadInt32LittleEndian(
-                            Input.Slice(_off6064ap, 4));
-
-                        BinaryPrimitives.WriteInt32LittleEndian(
-                            Output.Slice(_off607Atp, 4),
-                            actualPosition);
-
-                        _moveTarget = actualPosition;
-                        _IsAbsMove = true;
-
-                        // 현재 위치를 새 Absolute PP target으로 latch한다.
-                        // 여기서만 Halt를 푼다.
-                        _haltActive = false;
-
-                        cw = ClearCW(cw, ControlWordBit.Halt);
-                        cw = ClearCW(cw, ControlWordBit.Relative);
-                        cw = SetCW(cw, ControlWordBit.ChangeSetImmediately);
-                        cw = SetCW(cw, ControlWordBit.NewSetPoint);
-
-                        _moveState = MoveState.JogAnchorWaitAck;
-                        break;
-                    }
-
-                case MoveState.JogAnchorWaitAck:
-                    {
-                        cw = ClearCW(cw, ControlWordBit.Halt);
-                        cw = ClearCW(cw, ControlWordBit.Relative);
-                        cw = SetCW(cw, ControlWordBit.ChangeSetImmediately);
-                        cw = SetCW(cw, ControlWordBit.NewSetPoint);
-
-                        if (swSetPointAck)
-                        {
-                            _moveState = MoveState.JogAnchorDone;
-                        }
-
-                        break;
-                    }
-
-                case MoveState.JogAnchorDone:
-                    {
-                        cw = ClearCW(cw, ControlWordBit.Halt);
-                        cw = ClearCW(cw, ControlWordBit.Relative);
-                        cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
-                        cw = ClearCW(cw, ControlWordBit.NewSetPoint);
-
-                        if (swSetPointAck == false)
-                        {
-                            _motion = MotionCommand.None;
-                            _moveState = MoveState.Idle;
-                        }
-
-                        break;
-                    }
-
-
                 //홈 시퀀스 케이스 추가.
                 case MoveState.QueueModeHoming:
                     {
@@ -1935,13 +1869,6 @@ namespace SOEM_FrontEnd.Ethercat
             WaitSetPointAck,
             WaitSetPointAckClear,
             WaitTargetReached,
-
-            // Jog Stop 시 현재 위치를 새 Absolute PP target으로 latch해서
-            // 이전 relative jog target을 제거하기 위한 시퀀스.
-            JogAnchorWaitAckClear,
-            JogAnchorQueue,
-            JogAnchorWaitAck,
-            JogAnchorDone,
 
             //이하는 홈 기동용 시퀀스.
             QueueModeHoming,
