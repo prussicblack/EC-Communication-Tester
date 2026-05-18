@@ -341,10 +341,11 @@ namespace SOEM_FrontEnd.Ethercat
             return true;
         }
 
-        public bool JogStop()
-        {
-            return Stop();
-        }
+        //안쓸거임. stop로 통일.
+        //public bool JogStop()
+        //{
+        //    return Stop();
+        //}
 
         public bool AlarmClear()
         {
