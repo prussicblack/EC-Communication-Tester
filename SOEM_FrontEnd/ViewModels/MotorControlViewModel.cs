@@ -575,10 +575,14 @@ public partial class MotorControlViewModel : ViewModelBase
             return null;
         }
 
-        IReadOnlyList<SDOFlatObject> rows =
-            _store.SdoStore.Rows;
+        IReadOnlyList<SDOFlatObject> rows = _store.SdoStore.Rows;
 
         if (rows == null)
+        {
+            return null;
+        }
+
+        if (rows.Count == 0)
         {
             return null;
         }
@@ -586,6 +590,11 @@ public partial class MotorControlViewModel : ViewModelBase
         for (int i = 0; i < rows.Count; i++)
         {
             SDOFlatObject row = rows[i];
+
+            if (row == null)
+            {
+                continue;
+            }
 
             if (row.Index == index &&
                 row.SubIndex == subIndex)

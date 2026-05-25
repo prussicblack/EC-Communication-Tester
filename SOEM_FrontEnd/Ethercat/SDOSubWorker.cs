@@ -6,6 +6,8 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
+using SOEM_FrontEnd.Util.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace SOEM_FrontEnd.Ethercat
 {
@@ -18,6 +20,9 @@ namespace SOEM_FrontEnd.Ethercat
     ///같은 SDOKey가 이미 큐/대기 중이면, 새 작업을 넣지 않고 대기자만 합친다.
     ///실제 SOEM SDO 호출은 1회만 수행하고, 결과를 대기자 모두에게 전달한다.
     /// </summary>
+    /// 
+
+
     public sealed class SDOSubWorker : IDisposable
     {
         private enum SdoOp
@@ -65,8 +70,13 @@ namespace SOEM_FrontEnd.Ethercat
             public List<TaskCompletionSource<bool>> Waiters; // null 가능 (fire-and-forget만 들어온 경우)
         }
 
+        //로그 추가
+        private readonly Microsoft.Extensions.Logging.ILogger _log;
+
         public SDOSubWorker(EcClient ec, Datamap datamap, int boundedCapacity = 4096)
         {
+            _log = OPLogger.CreateLogger("SOEM_FrontEnd");
+
             if (ec == null) throw new ArgumentNullException(nameof(ec));
             if (datamap == null) throw new ArgumentNullException(nameof(datamap));
             if (boundedCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(boundedCapacity));
@@ -272,15 +282,34 @@ namespace SOEM_FrontEnd.Ethercat
 
         private void SafeUpdatePending(SDOKey key, bool isRead)
         {
-            //try
-            //{
-                _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdatePending(key, isRead);
-            //}
-            //catch (Exception e)
-            //{
-            //에러 잡아야됨.
+            SlaveStore slave = _dataMap.GetSlave(key.SlaveNo);
 
-            //}
+            if (slave == null)
+            {
+                _log.LogWarning($"SafeUpdatePending skipped. Slave null. SlaveNo={key.SlaveNo}");
+
+                return;
+            }
+
+            if (slave.SdoStore == null)
+            {
+                _log.LogWarning($"SafeUpdatePending skipped. SdoStore null. SlaveNo={key.SlaveNo}");
+
+                return;
+            }
+
+            try
+            {
+                slave.SdoStore.UpdatePending(key, isRead);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(
+                    ex,
+                    $"SafeUpdatePending failed. SlaveNo={key.SlaveNo}, " +
+                    $"Index=0x{key.Index:X4}, " +
+                    $"SubIndex=0x{key.SubIndex:X2}");
+            }
 
         }
 

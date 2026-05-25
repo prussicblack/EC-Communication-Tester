@@ -8,7 +8,7 @@ namespace SOEM_FrontEnd.ViewModels
     public sealed class MotorPDORowViewModel : ViewModelBase
     {
         private readonly PdoMapRow _mapRow;
-        private readonly bool _isRx;
+        //private readonly bool _isRx;
 
         private string _rawHex = "";
         private string _valueText = "";
@@ -26,7 +26,7 @@ namespace SOEM_FrontEnd.ViewModels
             }
 
             _mapRow = mapRow;
-            _isRx = isRx;
+            //_isRx = isRx;
             IsRx = isRx;
             _sdorow = sdorow;
 
@@ -91,7 +91,8 @@ namespace SOEM_FrontEnd.ViewModels
                     return _sdorow.DisplayName ?? "";
                 }
 
-                return "";
+                // ESI 없음 fallback
+                return string.Format("0x{0:X4}:{1:X2}", _mapRow.Index, _mapRow.SubIndex);
             }
         }
 
@@ -135,7 +136,7 @@ namespace SOEM_FrontEnd.ViewModels
                     return "";
                 }
 
-                return _sdorow.DataType;
+                return _sdorow.DataType ?? "";
             }
         }
 
