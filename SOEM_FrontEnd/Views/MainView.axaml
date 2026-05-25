@@ -8,11 +8,6 @@
 			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="550"
              x:Class="SOEM_FrontEnd.Views.MainView"
              x:DataType="vm:MainViewModel">
-  <Design.DataContext>
-    <!-- This only sets the DataContext for the previewer in an IDE,
-         to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-    <vm:MainViewModel />
-  </Design.DataContext>
 
   <Grid>
       <Grid.RowDefinitions>
@@ -120,7 +115,8 @@
 
 								  <TextBlock Text="PDO Runtime" FontWeight="Bold" FontSize="15" />
 
-								  <Grid ColumnDefinitions="140,120,140,120" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="8">
+								  <Grid ColumnDefinitions="140,120,140,120" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="8">
+
 									  <TextBlock Grid.Row="0" Grid.Column="0" Text="Running" />
 									  <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PdoIsRunning}" />
 
@@ -143,38 +139,48 @@
 									  <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding PdoAvgPeriodUs, StringFormat='{}{0} us'}" />
 
 									  <TextBlock Grid.Row="3" Grid.Column="2" Text="Last WKC" />
-									  <TextBlock Grid.Row="3" Grid.Column="3"
-												 Text="{Binding PdoWkcText}" />
+									  <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding PdoWkcText}" />
 
 									  <TextBlock Grid.Row="4" Grid.Column="0" Text="WKC Error" />
 									  <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding PdoWkcErrorCount}" />
 
-									  <TextBlock Grid.Row="4" Grid.Column="2" Text="Overrun" />
-									  <TextBlock Grid.Row="4" Grid.Column="3" Text="{Binding PdoOverrunCount}" />
+									  <TextBlock Grid.Row="4" Grid.Column="2" Text="Deadline Miss" />
+									  <TextBlock Grid.Row="4" Grid.Column="3" Text="{Binding PdoDeadlineMissCount}" />
 
-									  <TextBlock Grid.Row="5" Grid.Column="0" Text="Last Update" />
-									  <TextBlock Grid.Row="5" Grid.Column="1"
+									  <TextBlock Grid.Row="5" Grid.Column="0" Text="Body ≥80%" />
+									  <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding PdoBodyLoad80Count}" />
+
+									  <TextBlock Grid.Row="5" Grid.Column="2" Text="Body ≥90%" />
+									  <TextBlock Grid.Row="5" Grid.Column="3" Text="{Binding PdoBodyLoad90Count}" />
+
+									  <TextBlock Grid.Row="6" Grid.Column="0" Text="Body ≥99%" />
+									  <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding PdoBodyLoad99Count}" />
+
+									  <TextBlock Grid.Row="6" Grid.Column="2" Text="Severe Late" />
+									  <TextBlock Grid.Row="6" Grid.Column="3" Text="{Binding PdoSevereLateCount}" />
+
+									  <TextBlock Grid.Row="7" Grid.Column="0" Text="Last Update" />
+									  <TextBlock Grid.Row="7" Grid.Column="1"
 												 Grid.ColumnSpan="3"
 												 Text="{Binding PdoLastUpdateText}" />
 
-									  <TextBlock Grid.Row="6" Grid.Column="0" Text="Max Wait" />
-									  <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding PdoMaxWaitUs, StringFormat='{}{0} us'}" />
+									  <TextBlock Grid.Row="8" Grid.Column="0" Text="Max Wait" />
+									  <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding PdoMaxWaitUs, StringFormat='{}{0} us'}" />
 
-									  <TextBlock Grid.Row="6" Grid.Column="2" Text="Max Body" />
-									  <TextBlock Grid.Row="6" Grid.Column="3" Text="{Binding PdoMaxBodyUs, StringFormat='{}{0} us'}" />
+									  <TextBlock Grid.Row="8" Grid.Column="2" Text="Max Body" />
+									  <TextBlock Grid.Row="8" Grid.Column="3" Text="{Binding PdoMaxBodyUs, StringFormat='{}{0} us'}" />
 
-									  <TextBlock Grid.Row="7" Grid.Column="0" Text="Max Tx+Send" />
-									  <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding PdoMaxTxSendUs, StringFormat='{}{0} us'}" />
+									  <TextBlock Grid.Row="9" Grid.Column="0" Text="Max Tx+Send" />
+									  <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding PdoMaxTxSendUs, StringFormat='{}{0} us'}" />
 
-									  <TextBlock Grid.Row="7" Grid.Column="2" Text="Max Recv" />
-									  <TextBlock Grid.Row="7" Grid.Column="3" Text="{Binding PdoMaxRecvUs, StringFormat='{}{0} us'}" />
+									  <TextBlock Grid.Row="9" Grid.Column="2" Text="Max Recv" />
+									  <TextBlock Grid.Row="9" Grid.Column="3" Text="{Binding PdoMaxRecvUs, StringFormat='{}{0} us'}" />
 
-									  <TextBlock Grid.Row="8" Grid.Column="0" Text="Max Post" />
-									  <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding PdoMaxPostUs, StringFormat='{}{0} us'}" />
+									  <TextBlock Grid.Row="10" Grid.Column="0" Text="Max Post" />
+									  <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding PdoMaxPostUs, StringFormat='{}{0} us'}" />
 
-									  <TextBlock Grid.Row="8" Grid.Column="2" Text="Max Housekeeping" />
-									  <TextBlock Grid.Row="8" Grid.Column="3" Text="{Binding PdoMaxHousekeepingUs, StringFormat='{}{0} us'}" />
-									  
+									  <TextBlock Grid.Row="10" Grid.Column="2" Text="Max Housekeeping" />
+									  <TextBlock Grid.Row="10" Grid.Column="3" Text="{Binding PdoMaxHousekeepingUs, StringFormat='{}{0} us'}" />
 								  </Grid>
 
 								  <StackPanel Orientation="Horizontal"

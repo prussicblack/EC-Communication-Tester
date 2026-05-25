@@ -3,6 +3,7 @@ using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
 using SOEM_FrontEnd.Model;
 using SOEM_FrontEnd.Util;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -36,6 +37,7 @@ namespace SOEM_FrontEnd.Ethercat
         public double SpikeThresholdUs { get; set; } = 5000.0;
         public int SpikeRingCapacity => _spikeRing.Length;
 
+        private const double DeadlineMissToleranceUs = 100.0;
 
         //통계를 위한 필드 추가.
         //RT 통계 누적용(accumulator)
@@ -50,8 +52,6 @@ namespace SOEM_FrontEnd.Ethercat
         private double _accMinJitterUs = double.MaxValue;
         private double _accMaxJitterUs = double.MinValue;
         private double _accSumAbsJitterUs;
-
-        private long _accLateCycleCount;
 
         private int _accLastSendRc;
         private int _accMinSendRc = int.MaxValue;
@@ -88,7 +88,12 @@ namespace SOEM_FrontEnd.Ethercat
         private double _pubMaxJitterUs;
         private double _pubAvgAbsJitterUs;
 
-        private long _pubLateCycleCount;
+        private long _pubBodyLoad80Count;
+        private long _pubBodyLoad90Count;
+        private long _pubBodyLoad99Count;
+
+        private long _pubDeadlineMissCount;
+        private long _pubSevereLateCount;
 
         private int _pubLastSendRc;
         private int _pubMinSendRc;
@@ -106,6 +111,14 @@ namespace SOEM_FrontEnd.Ethercat
         private double _pubMaxRecvUs;
         private double _pubMaxPostUs;
         private double _pubMaxHousekeepingUs;
+
+        private long _accBodyLoad80Count;
+        private long _accBodyLoad90Count;
+        private long _accBodyLoad99Count;
+
+        private long _accDeadlineMissCount;
+        private long _accSevereLateCount;
+
 
         //통계 리셋.
         private volatile bool _reqStatsReset;
@@ -311,7 +324,12 @@ namespace SOEM_FrontEnd.Ethercat
             _accMaxJitterUs = double.MinValue;
             _accSumAbsJitterUs = 0.0;
 
-            _accLateCycleCount = 0;
+            _accBodyLoad80Count = 0;
+            _accBodyLoad90Count = 0;
+            _accBodyLoad99Count = 0;
+
+            _accDeadlineMissCount = 0;
+            _accSevereLateCount = 0;
 
             _accLastSendRc = 0;
             _accMinSendRc = int.MaxValue;
@@ -346,7 +364,12 @@ namespace SOEM_FrontEnd.Ethercat
             _pubMaxJitterUs = 0.0;
             _pubAvgAbsJitterUs = 0.0;
 
-            _pubLateCycleCount = 0;
+            _pubBodyLoad80Count = 0;
+            _pubBodyLoad90Count = 0;
+            _pubBodyLoad99Count = 0;
+
+            _pubDeadlineMissCount = 0;
+            _pubSevereLateCount = 0;
 
             _pubLastSendRc = 0;
             _pubMinSendRc = 0;
@@ -404,10 +427,36 @@ namespace SOEM_FrontEnd.Ethercat
             {
                 _accMaxJitterUs = jitterUs;
             }
+            double bodyLoadRatio = 0.0;
 
-            if (dtUs > targetPeriodUs)
+            if (targetPeriodUs > 0.0)
             {
-                _accLateCycleCount++;
+                bodyLoadRatio = bodyUs / targetPeriodUs;
+            }
+
+            if (bodyLoadRatio >= 0.80)
+            {
+                _accBodyLoad80Count++;
+            }
+
+            if (bodyLoadRatio >= 0.90)
+            {
+                _accBodyLoad90Count++;
+            }
+
+            if (bodyLoadRatio >= 0.99)
+            {
+                _accBodyLoad99Count++;
+            }
+
+            if (dtUs > targetPeriodUs + DeadlineMissToleranceUs)
+            {
+                _accDeadlineMissCount++;
+            }
+
+            if (dtUs >= targetPeriodUs * 2.0)
+            {
+                _accSevereLateCount++;
             }
 
             _accLastSendRc = sendRc;
@@ -518,7 +567,12 @@ namespace SOEM_FrontEnd.Ethercat
             _pubMaxJitterUs = _accMaxJitterUs == double.MinValue ? 0.0 : _accMaxJitterUs;
             _pubAvgAbsJitterUs = _accLoopCount > 0 ? (_accSumAbsJitterUs / (double)_accLoopCount) : 0.0;
 
-            _pubLateCycleCount = _accLateCycleCount;
+            _pubBodyLoad80Count = _accBodyLoad80Count;
+            _pubBodyLoad90Count = _accBodyLoad90Count;
+            _pubBodyLoad99Count = _accBodyLoad99Count;
+
+            _pubDeadlineMissCount = _accDeadlineMissCount;
+            _pubSevereLateCount = _accSevereLateCount;
 
             _pubLastSendRc = _accLastSendRc;
             _pubMinSendRc = _accMinSendRc == int.MaxValue ? 0 : _accMinSendRc;
@@ -562,7 +616,11 @@ namespace SOEM_FrontEnd.Ethercat
                 double maxJitterUs = _pubMaxJitterUs;
                 double avgAbsJitterUs = _pubAvgAbsJitterUs;
 
-                long lateCycleCount = _pubLateCycleCount;
+                long bodyLoad80Count = _pubBodyLoad80Count;
+                long bodyLoad90Count = _pubBodyLoad90Count;
+                long bodyLoad99Count = _pubBodyLoad99Count;
+                long deadlineMissCount = _pubDeadlineMissCount;
+                long severeLateCount = _pubSevereLateCount;
 
                 int lastSendRc = _pubLastSendRc;
                 int minSendRc = _pubMinSendRc;
@@ -587,8 +645,39 @@ namespace SOEM_FrontEnd.Ethercat
                     continue;
                 }
 
-                return new PdoRtStats(loopCount, lastDtUs, minDtUs, maxDtUs, avgDtUs, lastJitterUs, minJitterUs, maxJitterUs, avgAbsJitterUs, lateCycleCount, lastSendRc,
-                    minSendRc, maxSendRc, sendErrorCount, lastReceiveRc, minReceiveRc, maxReceiveRc, receiveErrorCount, maxBodyUs, maxWaitUs, maxTxSendUs, maxRecvUs, maxPostUs, maxHousekeepingUs);
+                PdoRtStats stats = new PdoRtStats(
+                    loopCount,
+                    lastDtUs,
+                    minDtUs,
+                    maxDtUs,
+                    avgDtUs,
+                    lastJitterUs,
+                    minJitterUs,
+                    maxJitterUs,
+                    avgAbsJitterUs,
+
+                    bodyLoad80Count,
+                    bodyLoad90Count,
+                    bodyLoad99Count,
+                    deadlineMissCount,
+                    severeLateCount,
+
+                    lastSendRc,
+                    minSendRc,
+                    maxSendRc,
+                    sendErrorCount,
+                    lastReceiveRc,
+                    minReceiveRc,
+                    maxReceiveRc,
+                    receiveErrorCount,
+                    maxBodyUs,
+                    maxWaitUs,
+                    maxTxSendUs,
+                    maxRecvUs,
+                    maxPostUs,
+                    maxHousekeepingUs);
+
+                return stats;
             }
         }
         public int GetRecentSpikes(Span<PdoRtSpikeSample> destination)
@@ -627,10 +716,37 @@ namespace SOEM_FrontEnd.Ethercat
     //통계기능 추가.
     public readonly struct PdoRtStats
     {
-        public PdoRtStats(long loopCount, double lastDtUs, double minDtUs, double maxDtUs, double avgDtUs, double lastJitterUs, double minJitterUs,
-            double maxJitterUs, double avgAbsJitterUs, long lateCycleCount, int lastSendRc, int minSendRc, int maxSendRc, long sendErrorCount,
-            int lastReceiveRc, int minReceiveRc, int maxReceiveRc, long receiveErrorCount, double maxBodyUs, double maxWaitUs, double maxTxSendUs,
-            double maxRecvUs, double maxPostUs, double maxHousekeepingUs)
+        public PdoRtStats(
+            long loopCount,
+            double lastDtUs,
+            double minDtUs,
+            double maxDtUs,
+            double avgDtUs,
+            double lastJitterUs,
+            double minJitterUs,
+            double maxJitterUs,
+            double avgAbsJitterUs,
+
+            long bodyLoad80Count,
+            long bodyLoad90Count,
+            long bodyLoad99Count,
+            long deadlineMissCount,
+            long severeLateCount,
+
+            int lastSendRc,
+            int minSendRc,
+            int maxSendRc,
+            long sendErrorCount,
+            int lastReceiveRc,
+            int minReceiveRc,
+            int maxReceiveRc,
+            long receiveErrorCount,
+            double maxBodyUs,
+            double maxWaitUs,
+            double maxTxSendUs,
+            double maxRecvUs,
+            double maxPostUs,
+            double maxHousekeepingUs)
         {
             LoopCount = loopCount;
 
@@ -644,7 +760,12 @@ namespace SOEM_FrontEnd.Ethercat
             MaxJitterUs = maxJitterUs;
             AvgAbsJitterUs = avgAbsJitterUs;
 
-            LateCycleCount = lateCycleCount;
+            BodyLoad80Count = bodyLoad80Count;
+            BodyLoad90Count = bodyLoad90Count;
+            BodyLoad99Count = bodyLoad99Count;
+
+            DeadlineMissCount = deadlineMissCount;
+            SevereLateCount = severeLateCount;
 
             LastSendRc = lastSendRc;
             MinSendRc = minSendRc;
@@ -676,7 +797,12 @@ namespace SOEM_FrontEnd.Ethercat
         public double MaxJitterUs { get; }
         public double AvgAbsJitterUs { get; }
 
-        public long LateCycleCount { get; }
+        public long BodyLoad80Count { get; }
+        public long BodyLoad90Count { get; }
+        public long BodyLoad99Count { get; }
+
+        public long DeadlineMissCount { get; }
+        public long SevereLateCount { get; }
 
         public int LastSendRc { get; }
         public int MinSendRc { get; }

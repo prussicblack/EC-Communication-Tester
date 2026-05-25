@@ -11,8 +11,7 @@ public partial class MainWindow : Window
 {
     private AboutWindow _about;
 
-    public static readonly StyledProperty<Thickness> WindowPaddingProperty =
-       AvaloniaProperty.Register<MainWindow, Thickness>(nameof(WindowPadding));
+    //public static readonly StyledProperty<Thickness> WindowPaddingProperty = AvaloniaProperty.Register<MainWindow, Thickness>(nameof(WindowPadding));
 
     //종료시 shutdown호출을 위한 코드.
     private bool _disposedViewModel;
@@ -33,11 +32,11 @@ public partial class MainWindow : Window
         base.OnClosing(e);
     }
 
-    public Thickness WindowPadding
-    {
-        get { return GetValue(WindowPaddingProperty); }
-        set { SetValue(WindowPaddingProperty, value); }
-    }
+    //public Thickness WindowPadding
+    //{
+    //    get { return GetValue(WindowPaddingProperty); }
+    //    set { SetValue(WindowPaddingProperty, value); }
+    //}
 
     public MainWindow()
     {
@@ -79,11 +78,23 @@ public partial class MainWindow : Window
     }
     private void UpdatePadding()
     {
-        // 최대화일 때 보정
+        Thickness padding;
+
         if (WindowState == WindowState.Maximized)
-            WindowPadding = new Thickness(5);
+        {
+            padding = new Thickness(5);
+        }
         else
-            WindowPadding = new Thickness(0);
+        {
+            padding = new Thickness(0);
+        }
+
+        //WindowPadding = padding;
+
+        if (RootBorder != null)
+        {
+            RootBorder.Padding = padding;
+        }
     }
 
 }

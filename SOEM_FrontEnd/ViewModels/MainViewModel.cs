@@ -387,12 +387,41 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         set { SetProperty(ref _pdoWkcErrorCount, value); }
     }
 
-    private long _pdoOverrunCount;
-    public long PdoOverrunCount
+    private long _pdoBodyLoad80Count;
+    public long PdoBodyLoad80Count
     {
-        get { return _pdoOverrunCount; }
-        set { SetProperty(ref _pdoOverrunCount, value); }
+        get { return _pdoBodyLoad80Count; }
+        set { SetProperty(ref _pdoBodyLoad80Count, value); }
     }
+
+    private long _pdoBodyLoad90Count;
+    public long PdoBodyLoad90Count
+    {
+        get { return _pdoBodyLoad90Count; }
+        set { SetProperty(ref _pdoBodyLoad90Count, value); }
+    }
+
+    private long _pdoBodyLoad99Count;
+    public long PdoBodyLoad99Count
+    {
+        get { return _pdoBodyLoad99Count; }
+        set { SetProperty(ref _pdoBodyLoad99Count, value); }
+    }
+
+    private long _pdoDeadlineMissCount;
+    public long PdoDeadlineMissCount
+    {
+        get { return _pdoDeadlineMissCount; }
+        set { SetProperty(ref _pdoDeadlineMissCount, value); }
+    }
+
+    private long _pdoSevereLateCount;
+    public long PdoSevereLateCount
+    {
+        get { return _pdoSevereLateCount; }
+        set { SetProperty(ref _pdoSevereLateCount, value); }
+    }
+
 
     private string _pdoLastUpdateText = "";
     public string PdoLastUpdateText
@@ -523,7 +552,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         PdoLastWkc = 0;
         PdoExpectedWkc = 0;
         PdoWkcErrorCount = 0;
-        PdoOverrunCount = 0;
+        //PdoOverrunCount = 0;
         PdoLastUpdateText = "";
         PdoMaxWaitUs = 0;
         PdoMaxBodyUs = 0;
@@ -1861,7 +1890,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         PdoExpectedWkc = 0;
 
         PdoWkcErrorCount = stats.ReceiveErrorCount;
-        PdoOverrunCount = stats.LateCycleCount;
+        PdoBodyLoad80Count = stats.BodyLoad80Count;
+        PdoBodyLoad90Count = stats.BodyLoad90Count;
+        PdoBodyLoad99Count = stats.BodyLoad99Count;
+
+        PdoDeadlineMissCount = stats.DeadlineMissCount;
+        PdoSevereLateCount = stats.SevereLateCount;
+
         PdoMaxWaitUs = (long)stats.MaxWaitUs;
         PdoMaxBodyUs = (long)stats.MaxBodyUs;
         PdoMaxTxSendUs = (long)stats.MaxTxSendUs;
@@ -1903,22 +1938,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ((long)stats.MinDtUs).ToString() + "/" +
             ((long)stats.AvgDtUs).ToString() + "/" +
             ((long)stats.MaxDtUs).ToString() +
-            ", Jitter(us)=" +
-            ((long)stats.LastJitterUs).ToString() + "/" +
-            ((long)stats.MinJitterUs).ToString() + "/" +
-            ((long)stats.AvgAbsJitterUs).ToString() + "/" +
-            ((long)stats.MaxJitterUs).ToString() +
+            ", BodyMax(us)=" + ((long)stats.MaxBodyUs).ToString() +
+            ", BodyLoad80=" + stats.BodyLoad80Count +
+            ", BodyLoad90=" + stats.BodyLoad90Count +
+            ", BodyLoad99=" + stats.BodyLoad99Count +
+            ", DeadlineMiss=" + stats.DeadlineMissCount.ToString() +
+            ", SevereLate=" + stats.SevereLateCount.ToString() +
             ", RecvWKC=" + stats.LastReceiveRc.ToString() +
-            ", RecvErr=" + stats.ReceiveErrorCount.ToString() +
-            ", SendRc=" + stats.LastSendRc.ToString() +
-            ", SendErr=" + stats.SendErrorCount.ToString() +
-            ", Late=" + stats.LateCycleCount.ToString() +
-            ", MaxPhase(us)=Wait:" + ((long)stats.MaxWaitUs).ToString() +
-            "/Body:" + ((long)stats.MaxBodyUs).ToString() +
-            "/TxSend:" + ((long)stats.MaxTxSendUs).ToString() +
-            "/Recv:" + ((long)stats.MaxRecvUs).ToString() +
-            "/Post:" + ((long)stats.MaxPostUs).ToString() +
-            "/House:" + ((long)stats.MaxHousekeepingUs).ToString();
+            ", RecvErr=" + stats.ReceiveErrorCount.ToString();
 
         _log.LogInformation(message);
     }

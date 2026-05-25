@@ -11,9 +11,9 @@
 		ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaChromeHints="PreferSystemChrome"
         ExtendClientAreaTitleBarHeightHint="36">
-	
-	
-	<Border Padding="{Binding $parent[views:MainWindow].WindowPadding}">
+
+
+    <Border x:Name="RootBorder">
 
 		<DockPanel>
 		<!-- Title bar area -->

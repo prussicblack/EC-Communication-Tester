@@ -283,14 +283,14 @@
 
 					<!-- Motor PDO List -->
 					<Border Grid.Row="3"
-							Grid.Column="0"
-							Grid.ColumnSpan="4"
-							Margin="0,8,0,0"
-							BorderBrush="#D0D4DA"
-							BorderThickness="1"
-							Padding="4"
-							HorizontalAlignment="Stretch"
-							VerticalAlignment="Stretch">
+			Grid.Column="0"
+			Grid.ColumnSpan="4"
+			Margin="0,8,0,0"
+			BorderBrush="#D0D4DA"
+			BorderThickness="1"
+			Padding="4"
+			HorizontalAlignment="Stretch"
+			VerticalAlignment="Stretch">
 
 						<Grid RowDefinitions="Auto,*"
 							  RowSpacing="4">
@@ -315,12 +315,12 @@
 										<DataGridTextColumn Header="Dir"
 															Binding="{Binding Direction}"
 															IsReadOnly="True"
-															Width="60"/>
+															Width="75"/>
 
 										<DataGridTextColumn Header="Obj"
 															Binding="{Binding AddressText}"
 															IsReadOnly="True"
-															Width="85"/>
+															Width="110"/>
 
 										<DataGridTextColumn Header="Name"
 															Binding="{Binding Name}"
@@ -330,17 +330,17 @@
 										<DataGridTextColumn Header="Type"
 															Binding="{Binding DataType}"
 															IsReadOnly="True"
-															Width="70"/>
+															Width="75"/>
 
 										<DataGridTextColumn Header="Bit"
 															Binding="{Binding BitLength}"
 															IsReadOnly="True"
-															Width="45"/>
+															Width="65"/>
 
 										<DataGridTextColumn Header="Off"
 															Binding="{Binding ByteOffset}"
 															IsReadOnly="True"
-															Width="45"/>
+															Width="65"/>
 
 										<DataGridTextColumn Header="Raw"
 															Binding="{Binding RawHex}"
@@ -362,19 +362,22 @@
 											<DataGridTemplateColumn.CellTemplate>
 												<DataTemplate>
 													<TextBox Text="{Binding WriteValueText, Mode=TwoWay}"
-															 IsEnabled="{Binding CanWrite}"
-															 Watermark=""/>
+															 IsEnabled="{Binding CanWrite}" />
 												</DataTemplate>
 											</DataGridTemplateColumn.CellTemplate>
 										</DataGridTemplateColumn>
 
 										<DataGridTemplateColumn Header="Set"
-																Width="55">
+																Width="65">
 											<DataGridTemplateColumn.CellTemplate>
 												<DataTemplate>
 													<Button Content="Set"
 															Command="{Binding SetPDOWriteCommand}"
 															IsEnabled="{Binding CanWrite}"
+															HorizontalAlignment="Stretch"
+															VerticalAlignment="Stretch"
+															VerticalContentAlignment="Center"
+															HorizontalContentAlignment="Center"
 															Padding="6,2"/>
 												</DataTemplate>
 											</DataGridTemplateColumn.CellTemplate>

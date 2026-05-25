@@ -1296,7 +1296,7 @@ namespace SOEM_FrontEnd.DataMap
 
                     //Console.WriteLine("Not initialized.");
 
-                    _log.LogInformation("Not initialized.");
+                    //_log.LogInformation("Not initialized.");
                 }
 
                 return _slaves[slaveNo];
