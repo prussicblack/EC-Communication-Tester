@@ -1,7 +1,9 @@
-﻿using SOEM_FrontEnd.DataMap;
+﻿using CommunityToolkit.Mvvm.Input;
+using SOEM_FrontEnd.DataMap;
 using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
 using System;
 using System.Buffers.Binary;
+using System.Windows.Input;
 
 namespace SOEM_FrontEnd.ViewModels
 {
@@ -17,8 +19,12 @@ namespace SOEM_FrontEnd.ViewModels
 
         private SDOFlatObject _sdorow;
 
+        public delegate bool PDOWriteHandler(MotorPDORowViewModel row, string valueText, out string message);
 
-        public MotorPDORowViewModel(PdoMapRow mapRow, bool isRx, SDOFlatObject sdorow)
+        private readonly PDOWriteHandler _writeHandler;
+
+
+        public MotorPDORowViewModel(PdoMapRow mapRow, bool isRx, SDOFlatObject sdorow, PDOWriteHandler writeHandler)
         {
             if (mapRow == null)
             {
@@ -29,6 +35,7 @@ namespace SOEM_FrontEnd.ViewModels
             //_isRx = isRx;
             IsRx = isRx;
             _sdorow = sdorow;
+            _writeHandler = writeHandler;
 
             if (isRx)
             {
@@ -48,11 +55,18 @@ namespace SOEM_FrontEnd.ViewModels
             BitInByte = mapRow.BitInByte;
 
             AccessText = ResolveAccessText(mapRow.Index, isRx);
+
+            SetPDOWriteCommand = new RelayCommand(HandleSetPDOWrite);
+
         }
 
         private MotorPDORowViewModel()
         {
+            _mapRow = null;
+            _writeHandler = null;
+
             //Design Time용
+            SetPDOWriteCommand = new RelayCommand(HandleSetPDOWrite);
         }
 
         public bool IsRx { get; private set; }
@@ -110,6 +124,67 @@ namespace SOEM_FrontEnd.ViewModels
         }
 
 
+        private string _writeValueText = "";
+        public string WriteValueText
+        {
+            get { return _writeValueText; }
+            set { SetProperty(ref _writeValueText, value); }
+        }
+
+        private string _writeResultText = "";
+        public string WriteResultText
+        {
+            get { return _writeResultText; }
+            private set { SetProperty(ref _writeResultText, value); }
+        }
+
+        public bool CanWrite
+        {
+            get { return AccessText == "Config"; }
+        }
+        public string DataType
+        {
+            get
+            {
+                if (_sdorow == null)
+                {
+                    return "";
+                }
+
+                return _sdorow.DataType ?? "";
+            }
+        }
+
+        public ICommand SetPDOWriteCommand { get; }
+
+        private void HandleSetPDOWrite()
+        {
+            if (CanWrite == false)
+            {
+                WriteResultText = "Locked";
+                return;
+            }
+
+            if (_writeHandler == null)
+            {
+                WriteResultText = "No writer";
+                return;
+            }
+
+            string message;
+            bool ok = _writeHandler(this, WriteValueText, out message);
+
+            if (ok)
+            {
+                WriteResultText = "OK";
+            }
+            else
+            {
+                WriteResultText = message;
+            }
+        }
+
+
         public static MotorPDORowViewModel CreateDesignRow(string direction, string addressText, string name, byte bitLength, 
             int byteOffset, string rawHex, string valueText, string accessText)
         {
@@ -127,22 +202,13 @@ namespace SOEM_FrontEnd.ViewModels
             return row;
         }
 
-        public string DataType
-        {
-            get
-            {
-                if (_sdorow == null)
-                {
-                    return "";
-                }
-
-                return _sdorow.DataType ?? "";
-            }
-        }
-
-
         public void Update(ReadOnlyMemory<byte> snapshot)
         {
+            if (_mapRow == null)
+            {
+                return;
+            }
+
             ReadOnlySpan<byte> span = snapshot.Span;
 
             if (_mapRow.BitInByte != 0)
@@ -280,6 +346,10 @@ namespace SOEM_FrontEnd.ViewModels
                 case 0x6040: // Controlword
                 case 0x607A: // Target Position
                 case 0x6060: // Mode Of Operation
+
+                case 0x6081: // Profile Velocity
+                case 0x6083: // Profile Acceleration
+                case 0x6084: // Profile Deceleration
                     return "Locked";
             }
 

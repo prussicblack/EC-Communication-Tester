@@ -22,7 +22,7 @@ namespace SOEM_FrontEnd.Ethercat
     //IEthercatStateTransition에서 preop, safeop, op 간 이동시 매크로 작성.
     //IMotorCommands에서 ViewModel 통신담당. 
 
-    public sealed class NormalMotorWithPPMode : PDOBase, IEthercatStateTransition, IMotorCommands
+    public sealed class NormalMotorWithPPMode : PDOBase, IEthercatStateTransition, IMotorCommands, IPDOParameterWriter
     {
 
         #region Constants
@@ -76,6 +76,11 @@ namespace SOEM_FrontEnd.Ethercat
         //max Speed도 PDO맵에 있는경우 문제가 되네...?
         private int _off6080maxMotorSpeed = -1; // Rx: Max motor speed, UDINT
         private const uint TEMP_MAX_SPEED_6080 = 3000000u;  // 임시값. 너무 크면 낮춰도 됨.
+
+        private int _off6081profileVelocity = -1;
+        private int _off6083profileAcceleration = -1;
+        private int _off6084profileDeceleration = -1;
+
 
         #endregion
 
@@ -486,11 +491,13 @@ namespace SOEM_FrontEnd.Ethercat
             BindSdoHotRefs(Datamap.Instance.GetSlave(_SlaveNo));
 
 
-
             return true;
         }
 
         #endregion
+
+
+        
 
         #region PDO Mapping
 
@@ -548,7 +555,9 @@ namespace SOEM_FrontEnd.Ethercat
 
             _off6080maxMotorSpeed = TryGetByteOffset(_rxMapTable, 0x6080, 0x00);
 
-
+            _off6081profileVelocity = TryGetByteOffset(_rxMapTable, 0x6081, 0x00);
+            _off6083profileAcceleration = TryGetByteOffset(_rxMapTable, 0x6083, 0x00);
+            _off6084profileDeceleration = TryGetByteOffset(_rxMapTable, 0x6084, 0x00);
 
             return _off6040cw >= 0 && _off607Atp >= 0 && _off6041sw >= 0;
         }
@@ -946,11 +955,11 @@ namespace SOEM_FrontEnd.Ethercat
 
                         if (_motion == MotionCommand.Home)
                         {
-                            if (_sdo6060 == null || _sdo6098 == null || _sdo6099_01 == null || _sdo6099_02 == null || _sdo609A == null || _sdo607C == null)
-                            {
-                                _moveState = MoveState.Fault;
-                                break;
-                            }
+                            //if (_sdo6060 == null || _sdo6098 == null || _sdo6099_01 == null || _sdo6099_02 == null || _sdo609A == null || _sdo607C == null)
+                            //{
+                            //    _moveState = MoveState.Fault;
+                            //    break;
+                            //}
 
                             _isHomed = false;
                             _homeRestoreThenFault = false;
@@ -979,6 +988,21 @@ namespace SOEM_FrontEnd.Ethercat
 
                 case MoveState.QueueWrite6081:
                     {
+                        // 6081 Profile Velocity가 RxPDO에 매핑되어 있으면 SDO 대신 PDO output image에 쓴다.
+                        if (TryWriteRxPdoU32(0x6081, 0x00, _profileVelocity))
+                        {
+                            _moveState = MoveState.QueueWrite6083;
+                            break;
+                        }
+
+                        // RxPDO에 없으면 기존 SDO hot-ref 경로 사용.
+                        // SDOPoint가 없으면 완료 추적이 안 되므로 여기서는 Fault 처리.
+                        if (_sdo6081 == null)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
                         if (TryQueueWriteU32(0x6081, _profileVelocity, _sdo6081) == false)
                         {
                             _moveState = MoveState.Fault;
@@ -991,8 +1015,16 @@ namespace SOEM_FrontEnd.Ethercat
 
                 case MoveState.WaitWrite6081:
                     {
-                        if (_sdo6081.WriteStatus == SDOWriteStatus.Pending || _sdo6081.WriteStatus == SDOWriteStatus.None)
+                        if (_sdo6081 == null)
+                        {
+                            _moveState = MoveState.Fault;
                             break;
+                        }
+
+                        if (_sdo6081.WriteStatus == SDOWriteStatus.Pending || _sdo6081.WriteStatus == SDOWriteStatus.None)
+                        {
+                            break;
+                        }
 
                         if (_sdo6081.WriteStatus != SDOWriteStatus.Ok)
                         {
@@ -1006,6 +1038,19 @@ namespace SOEM_FrontEnd.Ethercat
 
                 case MoveState.QueueWrite6083:
                     {
+                        // 6083 Profile Acceleration이 RxPDO에 매핑되어 있으면 PDO write.
+                        if (TryWriteRxPdoU32(0x6083, 0x00, _profileAcceleration))
+                        {
+                            _moveState = MoveState.QueueWrite6084;
+                            break;
+                        }
+
+                        if (_sdo6083 == null)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
                         if (TryQueueWriteU32(0x6083, _profileAcceleration, _sdo6083) == false)
                         {
                             _moveState = MoveState.Fault;
@@ -1018,8 +1063,16 @@ namespace SOEM_FrontEnd.Ethercat
 
                 case MoveState.WaitWrite6083:
                     {
-                        if (_sdo6083.WriteStatus == SDOWriteStatus.Pending || _sdo6083.WriteStatus == SDOWriteStatus.None)
+                        if (_sdo6083 == null)
+                        {
+                            _moveState = MoveState.Fault;
                             break;
+                        }
+
+                        if (_sdo6083.WriteStatus == SDOWriteStatus.Pending || _sdo6083.WriteStatus == SDOWriteStatus.None)
+                        {
+                            break;
+                        }
 
                         if (_sdo6083.WriteStatus != SDOWriteStatus.Ok)
                         {
@@ -1035,6 +1088,20 @@ namespace SOEM_FrontEnd.Ethercat
 
                 case MoveState.QueueWrite6084:
                     {
+                        // 6084 Profile Deceleration이 RxPDO에 매핑되어 있으면 PDO write.
+                        if (TryWriteRxPdoU32(0x6084, 0x00, _profileDeceleration))
+                        {
+                            MarkProfileApplied();
+                            _moveState = MoveState.QueuePdoStart;
+                            break;
+                        }
+
+                        if (_sdo6084 == null)
+                        {
+                            _moveState = MoveState.Fault;
+                            break;
+                        }
+
                         if (TryQueueWriteU32(0x6084, _profileDeceleration, _sdo6084) == false)
                         {
                             _moveState = MoveState.Fault;
@@ -1048,8 +1115,17 @@ namespace SOEM_FrontEnd.Ethercat
 
                 case MoveState.WaitWrite6084:
                     {
-                        if (_sdo6084.WriteStatus == SDOWriteStatus.Pending || _sdo6084.WriteStatus == SDOWriteStatus.None)
+                        if (_sdo6084 == null)
+                        {
+                            _moveState = MoveState.Fault;
                             break;
+                        }
+
+                        if (_sdo6084.WriteStatus == SDOWriteStatus.Pending ||
+                            _sdo6084.WriteStatus == SDOWriteStatus.None)
+                        {
+                            break;
+                        }
 
                         if (_sdo6084.WriteStatus != SDOWriteStatus.Ok)
                         {
@@ -1057,10 +1133,7 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
-                        _appliedProfileVelocity = _profileVelocity;
-                        _appliedProfileAcceleration = _profileAcceleration;
-                        _appliedProfileDeceleration = _profileDeceleration;
-                        _profileDirty = false;
+                        MarkProfileApplied();
 
                         _moveState = MoveState.QueuePdoStart;
                         break;
@@ -1216,14 +1289,25 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
+                        if (_sdo6060 == null)
+                        {
+                            _moveState = MoveState.QueueHomeMethod;
+                            break;
+                        }
+
                         _moveState = MoveState.WaitModeHoming;
                         break;
                     }
 
                 case MoveState.WaitModeHoming:
                     {
-                        if (_sdo6060.WriteStatus == SDOWriteStatus.Pending ||
-                            _sdo6060.WriteStatus == SDOWriteStatus.None)
+                        if (_sdo6060 == null)
+                        {
+                            _moveState = MoveState.QueueHomeMethod;
+                            break;
+                        }
+
+                        if (_sdo6060.WriteStatus == SDOWriteStatus.Pending || _sdo6060.WriteStatus == SDOWriteStatus.None)
                         {
                             break;
                         }
@@ -1246,14 +1330,25 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
+                        if (_sdo6098 == null)
+                        {
+                            _moveState = MoveState.QueueHomeSpeedSwitch;
+                            break;
+                        }
+
                         _moveState = MoveState.WaitHomeMethod;
                         break;
                     }
 
                 case MoveState.WaitHomeMethod:
                     {
-                        if (_sdo6098.WriteStatus == SDOWriteStatus.Pending ||
-                            _sdo6098.WriteStatus == SDOWriteStatus.None)
+                        if (_sdo6098 == null)
+                        {
+                            _moveState = MoveState.QueueHomeSpeedSwitch;
+                            break;
+                        }
+
+                        if (_sdo6098.WriteStatus == SDOWriteStatus.Pending || _sdo6098.WriteStatus == SDOWriteStatus.None)
                         {
                             break;
                         }
@@ -1276,14 +1371,25 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
+                        if (_sdo6099_01 == null)
+                        {
+                            _moveState = MoveState.QueueHomeSpeedZero;
+                            break;
+                        }
+
                         _moveState = MoveState.WaitHomeSpeedSwitch;
                         break;
                     }
 
                 case MoveState.WaitHomeSpeedSwitch:
                     {
-                        if (_sdo6099_01.WriteStatus == SDOWriteStatus.Pending ||
-                            _sdo6099_01.WriteStatus == SDOWriteStatus.None)
+                        if (_sdo6099_01 == null)
+                        {
+                            _moveState = MoveState.QueueHomeSpeedZero;
+                            break;
+                        }
+
+                        if (_sdo6099_01.WriteStatus == SDOWriteStatus.Pending || _sdo6099_01.WriteStatus == SDOWriteStatus.None)
                         {
                             break;
                         }
@@ -1306,14 +1412,25 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
+                        if (_sdo6099_02 == null)
+                        {
+                            _moveState = MoveState.QueueHomeAcceleration;
+                            break;
+                        }
+
                         _moveState = MoveState.WaitHomeSpeedZero;
                         break;
                     }
 
                 case MoveState.WaitHomeSpeedZero:
                     {
-                        if (_sdo6099_02.WriteStatus == SDOWriteStatus.Pending ||
-                            _sdo6099_02.WriteStatus == SDOWriteStatus.None)
+                        if (_sdo6099_02 == null)
+                        {
+                            _moveState = MoveState.QueueHomeAcceleration;
+                            break;
+                        }
+
+                        if (_sdo6099_02.WriteStatus == SDOWriteStatus.Pending || _sdo6099_02.WriteStatus == SDOWriteStatus.None)
                         {
                             break;
                         }
@@ -1336,14 +1453,25 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
+                        if (_sdo609A == null)
+                        {
+                            _moveState = MoveState.QueueHomeOffset;
+                            break;
+                        }
+
                         _moveState = MoveState.WaitHomeAcceleration;
                         break;
                     }
 
                 case MoveState.WaitHomeAcceleration:
                     {
-                        if (_sdo609A.WriteStatus == SDOWriteStatus.Pending ||
-                            _sdo609A.WriteStatus == SDOWriteStatus.None)
+                        if (_sdo609A == null)
+                        {
+                            _moveState = MoveState.QueueHomeOffset;
+                            break;
+                        }
+
+                        if (_sdo609A.WriteStatus == SDOWriteStatus.Pending || _sdo609A.WriteStatus == SDOWriteStatus.None)
                         {
                             break;
                         }
@@ -1366,14 +1494,25 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
+                        if (_sdo607C == null)
+                        {
+                            _moveState = MoveState.QueuePdoHomeStart;
+                            break;
+                        }
+
                         _moveState = MoveState.WaitHomeOffset;
                         break;
                     }
 
                 case MoveState.WaitHomeOffset:
                     {
-                        if (_sdo607C.WriteStatus == SDOWriteStatus.Pending ||
-                            _sdo607C.WriteStatus == SDOWriteStatus.None)
+                        if (_sdo607C == null)
+                        {
+                            _moveState = MoveState.QueuePdoHomeStart;
+                            break;
+                        }
+
+                        if (_sdo607C.WriteStatus == SDOWriteStatus.Pending || _sdo607C.WriteStatus == SDOWriteStatus.None)
                         {
                             break;
                         }
@@ -1459,14 +1598,43 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
+                        if (_sdo6060 == null)
+                        {
+                            if (_homeRestoreThenFault)
+                            {
+                                _homeRestoreThenFault = false;
+                                _motion = MotionCommand.None;
+                                _moveState = MoveState.Fault;
+                                break;
+                            }
+
+                            _motion = MotionCommand.None;
+                            _moveState = MoveState.Done;
+                            break;
+                        }
+
                         _moveState = MoveState.WaitModePP;
                         break;
                     }
 
                 case MoveState.WaitModePP:
                     {
-                        if (_sdo6060.WriteStatus == SDOWriteStatus.Pending ||
-                            _sdo6060.WriteStatus == SDOWriteStatus.None)
+                        if (_sdo6060 == null)
+                        {
+                            if (_homeRestoreThenFault)
+                            {
+                                _homeRestoreThenFault = false;
+                                _motion = MotionCommand.None;
+                                _moveState = MoveState.Fault;
+                                break;
+                            }
+
+                            _motion = MotionCommand.None;
+                            _moveState = MoveState.Done;
+                            break;
+                        }
+
+                        if (_sdo6060.WriteStatus == SDOWriteStatus.Pending || _sdo6060.WriteStatus == SDOWriteStatus.None)
                         {
                             break;
                         }
@@ -1540,6 +1708,7 @@ namespace SOEM_FrontEnd.Ethercat
             if (slave == null)
                 return;
 
+            /*
             //Dic으로 구성된 데이터 구조라 RT에서 읽기가 안정적이지 않음.
             _sdo6060 = slave.TryGetSdo(0x6060, 0x00);
             _sdo6098 = slave.TryGetSdo(0x6098, 0x00);
@@ -1554,6 +1723,26 @@ namespace SOEM_FrontEnd.Ethercat
             _sdo6099_02 = slave.TryGetSdo(0x6099, 0x02);
             _sdo609A = slave.TryGetSdo(0x609A, 0x00);
             _sdo607C = slave.TryGetSdo(0x607C, 0x00);
+            */
+
+            //ESI없을때 대비로 메소드 변경.
+            //Dic으로 구성된 데이터 구조라 RT에서 읽기가 안정적이지 않음.
+            // Mode of operation
+            _sdo6060 = slave.GetOrCreateSdo(0x6060, 0x00, "SINT", 8);
+            _sdo6098 = slave.GetOrCreateSdo(0x6098, 0x00, "SINT", 8);
+
+            // Profile velocity / acceleration / deceleration
+            _sdo6081 = slave.GetOrCreateSdo(0x6081, 0x00, "UDINT", 32);
+            _sdo6083 = slave.GetOrCreateSdo(0x6083, 0x00, "UDINT", 32);
+            _sdo6084 = slave.GetOrCreateSdo(0x6084, 0x00, "UDINT", 32);
+
+            //홈 기동용 핫패스 바인딩.
+            // Homing
+            _sdo6099_01 = slave.GetOrCreateSdo(0x6099, 0x01, "UDINT", 32);
+            _sdo6099_02 = slave.GetOrCreateSdo(0x6099, 0x02, "UDINT", 32);
+            _sdo609A = slave.GetOrCreateSdo(0x609A, 0x00, "UDINT", 32);
+            _sdo607C = slave.GetOrCreateSdo(0x607C, 0x00, "DINT", 32);
+
 
         }
 
@@ -1572,12 +1761,13 @@ namespace SOEM_FrontEnd.Ethercat
             if (_sdoWorker == null)
                 return false;
 
-            BinaryPrimitives.WriteUInt32LittleEndian(_u32WriteBuffer.AsSpan(0, 4), value);
-
-            if (point != null)
+            if (point == null)
             {
-                MarkWritePending(point);
+                return false;
             }
+
+            MarkWritePending(point);
+            BinaryPrimitives.WriteUInt32LittleEndian(_u32WriteBuffer.AsSpan(0, 4), value);
 
             _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _u32WriteBuffer);
             return true;
@@ -1593,12 +1783,14 @@ namespace SOEM_FrontEnd.Ethercat
             if (_sdoWorker == null)
                 return false;
 
-            _i8WriteBuffer[0] = unchecked((byte)value);
 
-            if (point != null)
+            if (point == null)
             {
-                MarkWritePending(point);
+                return false;
             }
+
+            MarkWritePending(point);
+            _i8WriteBuffer[0] = unchecked((byte)value);
 
             _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _i8WriteBuffer);
             return true;
@@ -1609,12 +1801,14 @@ namespace SOEM_FrontEnd.Ethercat
             if (_sdoWorker == null)
                 return false;
 
-            BinaryPrimitives.WriteInt32LittleEndian(_i32WriteBuffer.AsSpan(0, 4), value);
 
-            if (point != null)
+            if (point == null)
             {
-                MarkWritePending(point);
+                return false;
             }
+
+            MarkWritePending(point);
+            BinaryPrimitives.WriteInt32LittleEndian(_i32WriteBuffer.AsSpan(0, 4), value);
 
             _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _i32WriteBuffer);
             return true;
@@ -1661,6 +1855,87 @@ namespace SOEM_FrontEnd.Ethercat
                 TEMP_MAX_TORQUE_6072);
         }
 
+        private bool TryWriteProfileVelocityPdo()
+        {
+            return TryWriteRxPdoU32(
+                _off6081profileVelocity,
+                _profileVelocity);
+        }
+
+        private bool TryWriteProfileAccelerationPdo()
+        {
+            return TryWriteRxPdoU32(
+                _off6083profileAcceleration,
+                _profileAcceleration);
+        }
+
+        private bool TryWriteProfileDecelerationPdo()
+        {
+            return TryWriteRxPdoU32(
+                _off6084profileDeceleration,
+                _profileDeceleration);
+        }
+
+        private bool TryWriteRxPdoU32(int byteOffset, uint value)
+        {
+            if (byteOffset < 0)
+            {
+                return false;
+            }
+
+            if ((uint)byteOffset + 4u > (uint)Output.Length)
+            {
+                return false;
+            }
+
+            BinaryPrimitives.WriteUInt32LittleEndian(
+                Output.Slice(byteOffset, 4),
+                value);
+
+            return true;
+        }
+
+        private bool TryWriteRxPdoU32(ushort index, byte subIndex, uint value)
+        {
+            PdoField field;
+
+            if (_rxMapTable.TryGetValue(new OdKey(index, subIndex), out field) == false)
+            {
+                return false;
+            }
+
+            if (field.BitLen != 32)
+            {
+                return false;
+            }
+
+            if (field.BitInByte != 0)
+            {
+                return false;
+            }
+
+            if ((uint)field.ByteOffset + 4u > (uint)Output.Length)
+            {
+                return false;
+            }
+
+            BinaryPrimitives.WriteUInt32LittleEndian(
+                Output.Slice(field.ByteOffset, 4),
+                value);
+
+            return true;
+        }
+
+        private void MarkProfileApplied()
+        {
+            _appliedProfileVelocity = _profileVelocity;
+            _appliedProfileAcceleration = _profileAcceleration;
+            _appliedProfileDeceleration = _profileDeceleration;
+            _profileDirty = false;
+        }
+
+
+
         private void WriteTemporaryMaxMotorSpeedPdo()
         {
             if (_off6080maxMotorSpeed < 0)
@@ -1685,6 +1960,10 @@ namespace SOEM_FrontEnd.Ethercat
                 case 0x6040:
                 case 0x607A:
                 case 0x6060:
+
+                case 0x6081: // Profile Velocity
+                case 0x6083: // Profile Acceleration
+                case 0x6084: // Profile Deceleration
                     return false;
             }
 

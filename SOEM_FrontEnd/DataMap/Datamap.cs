@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using SOEM_FrontEnd.Ethercat.ESI;
@@ -390,6 +391,13 @@ namespace SOEM_FrontEnd.DataMap
 
         }
 
+
+        //ESI없을때...
+        public SDOStore(int slaveNo)
+        {
+            _log = OPLogger.CreateLogger("SOEM_FrontEnd");
+        }
+
         private void AddGroupRow(int slaveno, ushort index, string indexName, string dataType, ushort bitSize, Flags flags)
         {
             var row = new SDOFlatObject
@@ -638,6 +646,77 @@ namespace SOEM_FrontEnd.DataMap
                 return null;
             }
         }
+
+        public SDOPoint AddRuntimePoint(int slaveNo, ushort index, byte subIndex, string dataType, ushort bitSize)
+        {
+            SDOKey key = new SDOKey(slaveNo, index, subIndex);
+
+            lock (_lock)
+            {
+                SDOPoint existingPoint;
+
+                if (_dic.TryGetValue(key, out existingPoint))
+                {
+                    return existingPoint;
+                }
+
+                SDOPoint point = new SDOPoint();
+
+                point.LastRaw = Array.Empty<byte>();
+                point.DataType = dataType ?? "";
+                point.LastUpdateUtc = DateTime.MinValue;
+                point.Seq = 0;
+                point.ReadStatus = SDOReadStatus.None;
+                point.WriteStatus = SDOWriteStatus.None;
+                point.AbortCode = 0;
+                point.Error = null;
+
+                _dic.Add(key, point);
+
+                if (_cachedKeys != null)
+                {
+                    _cachedKeys = null;
+                }
+
+                if (_leafRowByKey.ContainsKey(key) == false)
+                {
+                    SDOFlatObject row = new SDOFlatObject();
+
+                    row.SlaveNo = slaveNo;
+                    row.Index = index;
+                    row.SubIndex = subIndex;
+                    row.HasSubIndex = false;
+
+                    row.IndexName = MakeRuntimeName(index);
+                    row.SubName = "SubIndex " + subIndex.ToString("D2");
+
+                    row.DataType = dataType ?? "";
+                    row.BitSize = bitSize;
+                    row.Flags = new Flags
+                    {
+                        Access = "rw",
+                        Category = "Runtime",
+                        WriteRestrictions = "",
+                        PDOMapping = ""
+                    };
+
+                    row.ReadStatus = SDOReadStatus.None;
+                    row.WriteStatus = SDOWriteStatus.None;
+                    row.LastErrorText = "";
+
+                    Rows.Add(row);
+                    _leafRowByKey.Add(key, row);
+                }
+
+                return point;
+            }
+        }
+
+        private static string MakeRuntimeName(ushort index)
+        {
+            return "Runtime SDO 0x" + index.ToString("X4");
+        }
+
 
         private void ApplyPointToRowOnUIThread(SDOPoint p, SDOFlatObject row, bool isread)
         {
@@ -1072,28 +1151,29 @@ namespace SOEM_FrontEnd.DataMap
 
             SlaveNo = slaveNo;
 
+            _deviceInfo = new DeviceESIInfo();
+            _SlaveInfo = new SlaveInfo(slaveNo);
+
             //_deviceInfo 생성. 생성 전에 미리 ESI를 읽어둬야 함.
-            ESIDevice? dev = ESICatalog.GetDeviceData(SlaveInfo.product, SlaveInfo.vendor, SlaveInfo.revision);
+            ESIDevice dev = ESICatalog.GetDeviceData(SlaveInfo.product, SlaveInfo.vendor, SlaveInfo.revision);
             if (dev == null)
             {
-                if (_deviceInfo == null)
-                {
-                    //Console.WriteLine($"_deviceInfo is Null");
-                    _log.LogInformation($"{slaveNo}_deviceInfo is Null");
-
-                    return;
-                }
                 _deviceInfo.ESIDeviceInfo = null;
 
-                //Console.WriteLine($"{SlaveInfo.name} is ESI Nothing");
-                _log.LogInformation($"{SlaveInfo.name} is ESI Nothing");
+                _log.LogInformation(
+                    "ESI not found. Runtime SDOStore created. Slave={Slave}, Name={Name}, Vendor=0x{Vendor:X8}, Product=0x{Product:X8}, Revision=0x{Revision:X8}",
+                    slaveNo,
+                    SlaveInfo.name ?? "",
+                    SlaveInfo.vendor,
+                    SlaveInfo.product,
+                    SlaveInfo.revision);
+
+                _sdo = new SDOStore(slaveNo);
 
                 return;
             }
-            _deviceInfo = new DeviceESIInfo();
 
             _deviceInfo.ESIDeviceInfo = dev;
-
             _sdo = new SDOStore(dev, SlaveNo);
         }
 
@@ -1102,6 +1182,25 @@ namespace SOEM_FrontEnd.DataMap
         {
             return _sdo.TryGetPoint(new SDOKey(SlaveNo, index, sub));
         }
+
+        public SDOPoint GetOrCreateSdo(ushort index, byte subIndex, string dataType, ushort bitSize)
+        {
+            if (_sdo == null)
+            {
+                return null;
+            }
+
+            SDOPoint point = TryGetSdo(index, subIndex);
+
+            if (point != null)
+            {
+                return point;
+            }
+
+            return _sdo.AddRuntimePoint(SlaveNo, index, subIndex, dataType, bitSize);
+        }
+
+
 
         //프로파일 reading용.
         public T GetProfile<T>() where T : class
@@ -1114,6 +1213,11 @@ namespace SOEM_FrontEnd.DataMap
             profile = BaseProfile as T;
             return profile != null;
         }
+
+
+
+
+
     }
 
 

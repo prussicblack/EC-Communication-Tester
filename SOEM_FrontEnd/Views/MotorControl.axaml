@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:SOEM_FrontEnd.ViewModels"
              x:DataType="vm:MotorControlViewModel"
-             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="520"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
              x:Class="SOEM_FrontEnd.Views.MotorControl">
 
     <!--
@@ -24,23 +24,24 @@
             BorderThickness="1"
             Padding="8">
 
-			<StackPanel Spacing="8">
+		<Grid RowDefinitions="Auto,*" RowSpacing="8">
 
 				<!-- Header (GroupBox.Header 대체) -->
-				<Grid ColumnDefinitions="*,Auto">
-					<TextBlock Grid.Column="0"
-							   Text="{Binding AxisName}"
-							   FontWeight="Bold"
-							   FontSize="13"
-							   VerticalAlignment="Center"/>
+			<Grid Grid.Row="0" ColumnDefinitions="*,Auto">
 
-				</Grid>
+                <TextBlock Grid.Column="0"
+                           Text="{Binding AxisName}"
+                           FontWeight="Bold"
+                           FontSize="13"
+                           VerticalAlignment="Center"/>
+
+            </Grid>
 
 				<!-- Body -->
-				<Grid RowDefinitions="Auto,Auto,Auto"
-					  ColumnDefinitions="230,260,220"
-					  ColumnSpacing="10"
-					  RowSpacing="8">
+				<Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto,*"
+                      ColumnDefinitions="230,260,220,*"
+                      ColumnSpacing="10"
+                      RowSpacing="8">
 
 					<!-- Current Position -->
 					<StackPanel Grid.Row="0" Grid.ColumnSpan="2"
@@ -283,57 +284,114 @@
 					<!-- Motor PDO List -->
 					<Border Grid.Row="3"
 							Grid.Column="0"
-							Grid.ColumnSpan="3"
+							Grid.ColumnSpan="4"
 							Margin="0,8,0,0"
 							BorderBrush="#D0D4DA"
 							BorderThickness="1"
-							Padding="4">
+							Padding="4"
+							HorizontalAlignment="Stretch"
+							VerticalAlignment="Stretch">
 
-						<StackPanel Spacing="4">
-							<TextBlock Text="PDO List"
+						<Grid RowDefinitions="Auto,*"
+							  RowSpacing="4">
+
+							<TextBlock Grid.Row="0"
+									   Text="PDO List"
 									   FontWeight="Bold"
 									   FontSize="12"/>
 
-							<DataGrid ItemsSource="{Binding PdoRows}"
-									  AutoGenerateColumns="False"
-									  IsReadOnly="True"
-									  Height="150"
-									  GridLinesVisibility="All"
-									  HeadersVisibility="Column">
-								<DataGrid.Columns>
-									<DataGridTextColumn Header="Dir"
-														Binding="{Binding Direction}"
-														Width="60"/>
-									<DataGridTextColumn Header="Obj"
-														Binding="{Binding AddressText}"
-														Width="80"/>
-									<DataGridTextColumn Header="Name"
-														Binding="{Binding Name}"
-														Width="150"/>
-									<DataGridTextColumn Header="Bit"
-														Binding="{Binding BitLength}"
-														Width="45"/>
-									<DataGridTextColumn Header="Off"
-														Binding="{Binding ByteOffset}"
-														Width="45"/>
-									<DataGridTextColumn Header="Raw"
-														Binding="{Binding RawHex}"
-														Width="130"/>
-									<DataGridTextColumn Header="Value"
-														Binding="{Binding ValueText}"
-														Width="110"/>
-									<DataGridTextColumn Header="Access"
-														Binding="{Binding AccessText}"
-														Width="80"/>
-								</DataGrid.Columns>
-							</DataGrid>
-						</StackPanel>
+							<ScrollViewer Grid.Row="1"
+										  HorizontalScrollBarVisibility="Auto"
+										  VerticalScrollBarVisibility="Auto">
+
+								<DataGrid ItemsSource="{Binding PdoRows}"
+										  AutoGenerateColumns="False"
+										  IsReadOnly="False"
+										  MinHeight="180"
+										  GridLinesVisibility="All"
+										  HeadersVisibility="Column">
+
+									<DataGrid.Columns>
+										<DataGridTextColumn Header="Dir"
+															Binding="{Binding Direction}"
+															IsReadOnly="True"
+															Width="60"/>
+
+										<DataGridTextColumn Header="Obj"
+															Binding="{Binding AddressText}"
+															IsReadOnly="True"
+															Width="85"/>
+
+										<DataGridTextColumn Header="Name"
+															Binding="{Binding Name}"
+															IsReadOnly="True"
+															Width="180"/>
+
+										<DataGridTextColumn Header="Type"
+															Binding="{Binding DataType}"
+															IsReadOnly="True"
+															Width="70"/>
+
+										<DataGridTextColumn Header="Bit"
+															Binding="{Binding BitLength}"
+															IsReadOnly="True"
+															Width="45"/>
+
+										<DataGridTextColumn Header="Off"
+															Binding="{Binding ByteOffset}"
+															IsReadOnly="True"
+															Width="45"/>
+
+										<DataGridTextColumn Header="Raw"
+															Binding="{Binding RawHex}"
+															IsReadOnly="True"
+															Width="130"/>
+
+										<DataGridTextColumn Header="Value"
+															Binding="{Binding ValueText}"
+															IsReadOnly="True"
+															Width="110"/>
+
+										<DataGridTextColumn Header="Access"
+															Binding="{Binding AccessText}"
+															IsReadOnly="True"
+															Width="80"/>
+
+										<DataGridTemplateColumn Header="Write"
+																Width="110">
+											<DataGridTemplateColumn.CellTemplate>
+												<DataTemplate>
+													<TextBox Text="{Binding WriteValueText, Mode=TwoWay}"
+															 IsEnabled="{Binding CanWrite}"
+															 Watermark=""/>
+												</DataTemplate>
+											</DataGridTemplateColumn.CellTemplate>
+										</DataGridTemplateColumn>
+
+										<DataGridTemplateColumn Header="Set"
+																Width="55">
+											<DataGridTemplateColumn.CellTemplate>
+												<DataTemplate>
+													<Button Content="Set"
+															Command="{Binding SetPDOWriteCommand}"
+															IsEnabled="{Binding CanWrite}"
+															Padding="6,2"/>
+												</DataTemplate>
+											</DataGridTemplateColumn.CellTemplate>
+										</DataGridTemplateColumn>
+
+										<DataGridTextColumn Header="Result"
+															Binding="{Binding WriteResultText}"
+															IsReadOnly="True"
+															Width="90"/>
+									</DataGrid.Columns>
+								</DataGrid>
+							</ScrollViewer>
+						</Grid>
 					</Border>
-					
-					
-					
+
 				</Grid>
-			</StackPanel>
+			</Grid>
 		</Border>
 	
 	

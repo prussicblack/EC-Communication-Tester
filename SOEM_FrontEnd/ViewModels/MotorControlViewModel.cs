@@ -17,6 +17,8 @@ public partial class MotorControlViewModel : ViewModelBase
 
     private IPDOView _pdoView;
 
+    private IPDOParameterWriter _pdoWriter;
+
     private SlaveStore _store;
 
     public ObservableCollection<MotorPDORowViewModel> PdoRows { get; } = new ObservableCollection<MotorPDORowViewModel>();
@@ -293,6 +295,7 @@ public partial class MotorControlViewModel : ViewModelBase
         _motor = motor;
         _store = store;
         _pdoView = motor as IPDOView;
+        _pdoWriter = motor as IPDOParameterWriter;
 
         RebuildPdoRows();
 
@@ -529,6 +532,81 @@ public partial class MotorControlViewModel : ViewModelBase
         RefreshFromMotor();
     }
 
+    private bool ApplyPDOWrite(MotorPDORowViewModel row, string valueText, out string message)
+    {
+        message = "";
+
+        if (row == null)
+        {
+            message = "No row.";
+            return false;
+        }
+
+        if (row.CanWrite == false)
+        {
+            message = "Locked.";
+            return false;
+        }
+
+        if (_pdoWriter == null)
+        {
+            message = "PDO writer not attached.";
+            return false;
+        }
+
+        long value;
+
+        if (TryParseInteger(valueText, out value) == false)
+        {
+            message = "Parse failed.";
+            return false;
+        }
+
+        bool ok = _pdoWriter.TryWritePdoParameter(
+            row.Index,
+            row.SubIndex,
+            value);
+
+        if (ok == false)
+        {
+            message = "Write failed.";
+            return false;
+        }
+
+        message = "OK";
+        return true;
+    }
+
+    private static bool TryParseInteger(string text, out long value)
+    {
+        value = 0;
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        string s = text.Trim();
+
+        if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        {
+            return long.TryParse(
+                s.Substring(2),
+                System.Globalization.NumberStyles.HexNumber,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out value);
+        }
+
+        return long.TryParse(
+            s,
+            System.Globalization.NumberStyles.Integer,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out value);
+    }
+
+
+
+
     private void RebuildPdoRows()
     {
         PdoRows.Clear();
@@ -545,7 +623,7 @@ public partial class MotorControlViewModel : ViewModelBase
             {
                 SDOFlatObject sdoRow = FindSdoRow(rxRows[i].Index, rxRows[i].SubIndex);
 
-                PdoRows.Add( new MotorPDORowViewModel(rxRows[i], true, sdoRow));
+                PdoRows.Add( new MotorPDORowViewModel(rxRows[i], true, sdoRow, ApplyPDOWrite));
             }
         }
 
@@ -556,7 +634,7 @@ public partial class MotorControlViewModel : ViewModelBase
             {
                 SDOFlatObject sdoRow = FindSdoRow(txRows[i].Index, txRows[i].SubIndex);
 
-                PdoRows.Add(new MotorPDORowViewModel(txRows[i], false, sdoRow));
+                PdoRows.Add(new MotorPDORowViewModel(txRows[i], false, sdoRow, ApplyPDOWrite));
             }
         }
 
