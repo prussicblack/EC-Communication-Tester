@@ -958,12 +958,12 @@ namespace SOEM_FrontEnd.Ethercat
                             break;
                         }
 
-
-                        if (_sdo6081 == null || _sdo6083 == null || _sdo6084 == null)
-                        {
-                            _moveState = MoveState.Fault;
-                            break;
-                        }
+                        // ESI 없는 경우 direct SDO write fallback 허용.
+                        //if (_sdo6081 == null || _sdo6083 == null || _sdo6084 == null)
+                        //{
+                        //    _moveState = MoveState.Fault;
+                        //    break;
+                        //}
 
                         if (_profileDirty)
                         {
@@ -1572,12 +1572,13 @@ namespace SOEM_FrontEnd.Ethercat
             if (_sdoWorker == null)
                 return false;
 
-            if (point == null)
-                return false;
-
-            MarkWritePending(point);
-
             BinaryPrimitives.WriteUInt32LittleEndian(_u32WriteBuffer.AsSpan(0, 4), value);
+
+            if (point != null)
+            {
+                MarkWritePending(point);
+            }
+
             _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _u32WriteBuffer);
             return true;
         }
@@ -1592,12 +1593,13 @@ namespace SOEM_FrontEnd.Ethercat
             if (_sdoWorker == null)
                 return false;
 
-            if (point == null)
-                return false;
-
-            MarkWritePending(point);
-
             _i8WriteBuffer[0] = unchecked((byte)value);
+
+            if (point != null)
+            {
+                MarkWritePending(point);
+            }
+
             _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _i8WriteBuffer);
             return true;
         }
@@ -1607,12 +1609,13 @@ namespace SOEM_FrontEnd.Ethercat
             if (_sdoWorker == null)
                 return false;
 
-            if (point == null)
-                return false;
-
-            MarkWritePending(point);
-
             BinaryPrimitives.WriteInt32LittleEndian(_i32WriteBuffer.AsSpan(0, 4), value);
+
+            if (point != null)
+            {
+                MarkWritePending(point);
+            }
+
             _sdoWorker.EnqueueWrite(_SlaveNo, index, subIndex, _i32WriteBuffer);
             return true;
         }

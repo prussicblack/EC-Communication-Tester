@@ -498,6 +498,8 @@ namespace SOEM_FrontEnd.Automation
                             //Tx 0x1C13 -> 0x1A00, 0x1A01... -> 0x6041(State Word)
                             //bool is402 = DriveProfile402Check(i, out List<uint> txAllMapList, out List<uint> rxAllMapList);
 
+                            //ESI없으면 normalIO로 이동.
+
                             List<uint> rxAllMapList;
                             List<uint> txAllMapList;
 
