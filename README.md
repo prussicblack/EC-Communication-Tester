@@ -154,4 +154,6 @@ Before operating real hardware:
 
 백호프 EK1100 + EL1809 + EL2809 + EL3164, 
 
+파나소닉 MINAS A6BE, A6BL
+
 모벤시스 독립형 IO모듈 일부.
