@@ -568,7 +568,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 MotorControlVm = new MotorControlViewModel();
             }
 
-            MotorControlVm.Attach(motor);
+            MotorControlVm.Attach(motor, store);
 
             ValueControlVm = null;
             IoOutputVm = null;

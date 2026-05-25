@@ -1,13 +1,25 @@
-﻿using CommunityToolkit.Mvvm.Input;
+﻿using Avalonia.Controls;
+using CommunityToolkit.Mvvm.Input;
+using SOEM_FrontEnd.DataMap;
 using SOEM_FrontEnd.Ethercat;
 using SOEM_FrontEnd.Ethercat.EthercatProfile.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
+
 
 namespace SOEM_FrontEnd.ViewModels;
 
 public partial class MotorControlViewModel : ViewModelBase
 {
     private IMotorCommands _motor; // backend profile 
+
+    private IPDOView _pdoView;
+
+    private SlaveStore _store;
+
+    public ObservableCollection<MotorPDORowViewModel> PdoRows { get; } = new ObservableCollection<MotorPDORowViewModel>();
 
     private string _axisName = "Axis";
     public string AxisName
@@ -209,6 +221,52 @@ public partial class MotorControlViewModel : ViewModelBase
         CmdStartRepeat = new RelayCommand(() => { /* 할거...*/ });
         CmdStopRepeat = new RelayCommand(() => { /* 할거...*/ });
 
+
+        //Design Time용 Preview 표시.
+        if (Design.IsDesignMode)
+        {
+            PdoRows.Add(MotorPDORowViewModel.CreateDesignRow(
+                "RxPDO",
+                "0x6040:00",
+                "Controlword",
+                16,
+                0,
+                "0F 00",
+                "0x000F",
+                "Locked"));
+
+            PdoRows.Add(MotorPDORowViewModel.CreateDesignRow(
+                "RxPDO",
+                "0x607A:00",
+                "Target position",
+                32,
+                2,
+                "18 FC FF FF",
+                "-1000",
+                "Locked"));
+
+            PdoRows.Add(MotorPDORowViewModel.CreateDesignRow(
+                "TxPDO",
+                "0x6041:00",
+                "Statusword",
+                16,
+                2,
+                "37 17",
+                "0x1737",
+                "ReadOnly"));
+
+            PdoRows.Add(MotorPDORowViewModel.CreateDesignRow(
+                "TxPDO",
+                "0x6064:00",
+                "Actual position",
+                32,
+                5,
+                "46 62 00 00",
+                "25158",
+                "ReadOnly"));
+        }
+
+
     }
 
     public void UiTick()
@@ -225,12 +283,18 @@ public partial class MotorControlViewModel : ViewModelBase
         org = _motor.IsHomeSensor;
         nlim = _motor.IsNLimSensor;
         plim = _motor.IsPLimSensor;
+
+        RefreshPdoRows();
     }
 
 
-    public void Attach(IMotorCommands motor)
+    public void Attach(IMotorCommands motor, SlaveStore store)
     {
         _motor = motor;
+        _store = store;
+        _pdoView = motor as IPDOView;
+
+        RebuildPdoRows();
 
         // 초기 표기값 동기화
         if (_motor != null)
@@ -463,5 +527,100 @@ public partial class MotorControlViewModel : ViewModelBase
 
         _motor.MoveABS(pos);
         RefreshFromMotor();
+    }
+
+    private void RebuildPdoRows()
+    {
+        PdoRows.Clear();
+
+        if (_pdoView == null)
+        {
+            return;
+        }
+
+        IReadOnlyList<PdoMapRow> rxRows = _pdoView.RxPdoMapRows;
+        if (rxRows != null)
+        {
+            for (int i = 0; i < rxRows.Count; i++)
+            {
+                SDOFlatObject sdoRow = FindSdoRow(rxRows[i].Index, rxRows[i].SubIndex);
+
+                PdoRows.Add( new MotorPDORowViewModel(rxRows[i], true, sdoRow));
+            }
+        }
+
+        IReadOnlyList<PdoMapRow> txRows = _pdoView.TxPdoMapRows;
+        if (txRows != null)
+        {
+            for (int i = 0; i < txRows.Count; i++)
+            {
+                SDOFlatObject sdoRow = FindSdoRow(txRows[i].Index, txRows[i].SubIndex);
+
+                PdoRows.Add(new MotorPDORowViewModel(txRows[i], false, sdoRow));
+            }
+        }
+
+        RefreshPdoRows();
+    }
+
+    private SDOFlatObject FindSdoRow(ushort index, byte subIndex)
+    {
+        if (_store == null)
+        {
+            return null;
+        }
+
+        if (_store.SdoStore == null)
+        {
+            return null;
+        }
+
+        IReadOnlyList<SDOFlatObject> rows =
+            _store.SdoStore.Rows;
+
+        if (rows == null)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < rows.Count; i++)
+        {
+            SDOFlatObject row = rows[i];
+
+            if (row.Index == index &&
+                row.SubIndex == subIndex)
+            {
+                return row;
+            }
+        }
+
+        return null;
+    }
+
+
+
+    private void RefreshPdoRows()
+    {
+        if (_pdoView == null)
+        {
+            return;
+        }
+
+        ReadOnlyMemory<byte> rxSnapshot = _pdoView.OutputSnapshot;
+        ReadOnlyMemory<byte> txSnapshot = _pdoView.InputSnapshot;
+
+        for (int i = 0; i < PdoRows.Count; i++)
+        {
+            MotorPDORowViewModel row = PdoRows[i];
+
+            if (row.Direction == "RxPDO")
+            {
+                row.Update(rxSnapshot);
+            }
+            else
+            {
+                row.Update(txSnapshot);
+            }
+        }
     }
 }

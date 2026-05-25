@@ -71,7 +71,7 @@ namespace SOEM_FrontEnd.Ethercat
 
         //max Torque가 PDO맵에 있는경우 문제가 발생...
         private int _off6072maxTorque = -1; // Rx: Max torque
-        private const ushort TEMP_MAX_TORQUE_6072 = 0x1388; // 5000
+        private const ushort TEMP_MAX_TORQUE_6072 = 0x5DC; // 1500 (150%)
 
         //max Speed도 PDO맵에 있는경우 문제가 되네...?
         private int _off6080maxMotorSpeed = -1; // Rx: Max motor speed, UDINT
@@ -1673,6 +1673,103 @@ namespace SOEM_FrontEnd.Ethercat
             BinaryPrimitives.WriteUInt32LittleEndian(
                 Output.Slice(_off6080maxMotorSpeed, 4),
                 TEMP_MAX_SPEED_6080);
+        }
+
+        private bool IsWritableRxObject(ushort index)
+        {
+            switch (index)
+            {
+                case 0x6040:
+                case 0x607A:
+                case 0x6060:
+                    return false;
+            }
+
+            return true;
+        }
+
+        private PdoMapRow FindRxRow(ushort index, byte subIndex)
+        {
+            IReadOnlyList<PdoMapRow> rows = RxPdoMapRows;
+
+            if (rows == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < rows.Count; i++)
+            {
+                PdoMapRow row = rows[i];
+
+                if (row.Index == index &&
+                    row.SubIndex == subIndex)
+                {
+                    return row;
+                }
+            }
+
+            return null;
+        }
+
+        public bool TryWritePdoParameter(ushort index, byte subIndex, long value)
+        {
+            if (IsWritableRxObject(index) == false)
+            {
+                return false;
+            }
+
+            PdoMapRow row = FindRxRow(index, subIndex);
+
+            if (row == null)
+            {
+                return false;
+            }
+
+            if (row.BitInByte != 0)
+            {
+                return false;
+            }
+
+            Span<byte> span = Output;
+
+            int byteLength = (row.BitLength + 7) / 8;
+
+            if ((uint)row.ByteOffset + (uint)byteLength > (uint)span.Length)
+            {
+                return false;
+            }
+
+            Span<byte> target = span.Slice(row.ByteOffset, byteLength);
+
+            switch (row.BitLength)
+            {
+                case 8:
+                    {
+                        target[0] = unchecked((byte)value);
+                        return true;
+                    }
+
+                case 16:
+                    {
+                        BinaryPrimitives.WriteUInt16LittleEndian(
+                            target,
+                            unchecked((ushort)value));
+
+                        return true;
+                    }
+
+                case 32:
+                    {
+                        BinaryPrimitives.WriteUInt32LittleEndian(
+                            target,
+                            unchecked((uint)value));
+
+                        return true;
+                    }
+
+                default:
+                    return false;
+            }
         }
 
 

@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:SOEM_FrontEnd.ViewModels"
              x:DataType="vm:MotorControlViewModel"
-             mc:Ignorable="d" d:DesignWidth="750" d:DesignHeight="330"
+             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="520"
              x:Class="SOEM_FrontEnd.Views.MotorControl">
 
     <!--
@@ -39,7 +39,8 @@
 				<!-- Body -->
 				<Grid RowDefinitions="Auto,Auto,Auto"
 					  ColumnDefinitions="230,260,220"
-					  ColumnSpacing="10">
+					  ColumnSpacing="10"
+					  RowSpacing="8">
 
 					<!-- Current Position -->
 					<StackPanel Grid.Row="0" Grid.ColumnSpan="2"
@@ -278,10 +279,63 @@
 								HorizontalContentAlignment="Center"
 								VerticalContentAlignment="Center"/>
 					</StackPanel>
+
+					<!-- Motor PDO List -->
+					<Border Grid.Row="3"
+							Grid.Column="0"
+							Grid.ColumnSpan="3"
+							Margin="0,8,0,0"
+							BorderBrush="#D0D4DA"
+							BorderThickness="1"
+							Padding="4">
+
+						<StackPanel Spacing="4">
+							<TextBlock Text="PDO List"
+									   FontWeight="Bold"
+									   FontSize="12"/>
+
+							<DataGrid ItemsSource="{Binding PdoRows}"
+									  AutoGenerateColumns="False"
+									  IsReadOnly="True"
+									  Height="150"
+									  GridLinesVisibility="All"
+									  HeadersVisibility="Column">
+								<DataGrid.Columns>
+									<DataGridTextColumn Header="Dir"
+														Binding="{Binding Direction}"
+														Width="60"/>
+									<DataGridTextColumn Header="Obj"
+														Binding="{Binding AddressText}"
+														Width="80"/>
+									<DataGridTextColumn Header="Name"
+														Binding="{Binding Name}"
+														Width="150"/>
+									<DataGridTextColumn Header="Bit"
+														Binding="{Binding BitLength}"
+														Width="45"/>
+									<DataGridTextColumn Header="Off"
+														Binding="{Binding ByteOffset}"
+														Width="45"/>
+									<DataGridTextColumn Header="Raw"
+														Binding="{Binding RawHex}"
+														Width="130"/>
+									<DataGridTextColumn Header="Value"
+														Binding="{Binding ValueText}"
+														Width="110"/>
+									<DataGridTextColumn Header="Access"
+														Binding="{Binding AccessText}"
+														Width="80"/>
+								</DataGrid.Columns>
+							</DataGrid>
+						</StackPanel>
+					</Border>
+					
 					
 					
 				</Grid>
 			</StackPanel>
 		</Border>
+	
+	
 
 </UserControl>
