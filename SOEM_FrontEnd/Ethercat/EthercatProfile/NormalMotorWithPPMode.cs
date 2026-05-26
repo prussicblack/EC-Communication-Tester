@@ -131,7 +131,7 @@ namespace SOEM_FrontEnd.Ethercat
         private bool _isError;
         private bool _isTargetReached;
         private bool _isSetPointAck;
-        private ushort _statusWordCache;
+        //private ushort _statusWordCache;
 
         private MotionCommand _motion = MotionCommand.None;
 
@@ -925,7 +925,7 @@ namespace SOEM_FrontEnd.Ethercat
 
         private void ProcessMoveAbsStateMachine(ref ushort cw, bool swSetPointAck, bool swTargetReached, bool swFault, bool swOperationEnabled, ushort sw)
         {
-            uint readValue;
+            //uint readValue;
 
             if (swFault && _moveState != MoveState.Idle)
             {

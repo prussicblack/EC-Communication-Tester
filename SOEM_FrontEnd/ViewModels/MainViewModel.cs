@@ -996,19 +996,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             //벤더 ID체크.
             if (HexEquals(expected.VendorId, actual.vendor) == false)
             {
-                _log.LogWarning(expected.SlaveNo, "VendorId", expected.VendorId, actual.vendor);
+                //_log.LogWarning(expected.SlaveNo, "VendorId", expected.VendorId, actual.vendor);
+                _log.LogWarning("MiniENI slave fingerprint mismatch. Slave={Slave}, Field={Field}, Expected={Expected}, Actual=0x{Actual:X8}", 
+                    expected.SlaveNo, "VendorId", expected.VendorId, actual.vendor);
                 return;
             }
             //product Code 체크.
             if (HexEquals(expected.ProductCode, actual.product) == false)
             {
-                _log.LogWarning(expected.SlaveNo, "ProductCode", expected.ProductCode, actual.product);
+                _log.LogWarning("MiniENI slave fingerprint mismatch. Slave={Slave}, Field={Field}, Expected={Expected}, Actual=0x{Actual:X8}", 
+                    expected.SlaveNo, "ProductCode", expected.ProductCode, actual.product);
                 return;
             }
             //리비전넘버 체크.
             if (HexEquals(expected.RevisionNo, actual.revision) == false)
             {
-                _log.LogWarning(expected.SlaveNo, "RevisionNo", expected.RevisionNo, actual.revision);
+                _log.LogWarning("MiniENI slave fingerprint mismatch. Slave={Slave}, Field={Field}, Expected={Expected}, Actual=0x{Actual:X8}",
+                    expected.SlaveNo, "RevisionNo", expected.RevisionNo,  actual.revision);
                 return;
             }
         }

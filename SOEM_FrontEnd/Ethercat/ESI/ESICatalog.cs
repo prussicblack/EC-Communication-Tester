@@ -20,7 +20,7 @@ namespace SOEM_FrontEnd.Ethercat.ESI
         // 폴더 아래 모든 .xml 파일을 EsiFile로 읽기
         private static readonly object _lock = new object();
 
-        private static bool _initialized;
+        //private static bool _initialized;
 
         private static List<ESIDevice> _ESIDevice = new List<ESIDevice>();
 

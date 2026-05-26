@@ -207,14 +207,6 @@ namespace SOEM_FrontEnd.ViewModels
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null)
-                handler(this, new PropertyChangedEventArgs(propertyName));
-        }
 
         public sealed class BitItem : INotifyPropertyChanged
         {
