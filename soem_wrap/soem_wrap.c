@@ -24,14 +24,14 @@ static ecx_contextt g_ctx;
 static int g_inited = 0;
 static int g_iomap_size_bytes = 0; // ecx_config_map_group() return (total IOmap/PDO bytes)
 
-// IOmap Å©±â´Â ÇÊ¿ä ½Ã ´Ã¸±°Í.
+// IOmap Å©ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½ ï¿½ï¿½ ï¿½Ã¸ï¿½ï¿½ï¿½.
 static uint8_t IOmap[8192];
 
 EXP int CALL soem_open(const char *ifname)
 {
    memset(&g_ctx, 0, sizeof(g_ctx));
 
-   // v2.0: ecx_init(context, ifname) ¸¸ »ç¿ë
+   // v2.0: ecx_init(context, ifname) ï¿½ï¿½ ï¿½ï¿½ï¿½
    if (ecx_init(&g_ctx, (char *)ifname) > 0)
    {
       g_inited = 1;
@@ -56,7 +56,7 @@ EXP int CALL soem_config_init(int use_map)
 
    int ret = ecx_config_init(&g_ctx);
 
-   // v2.0: ecx_config_init(context) ¡ç ÀÎÀÚ 1°³
+   // v2.0: ecx_config_init(context) ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 1ï¿½ï¿½
    if (ret <= 0)
       return -1;
 
@@ -78,7 +78,7 @@ EXP int CALL soem_config_init_only()
       return -2;
 
    int ret = ecx_config_init(&g_ctx);
-   // v2.0: ecx_config_init(context) ¡ç ÀÎÀÚ 1°³
+   // v2.0: ecx_config_init(context) ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 1ï¿½ï¿½
    if (ret <= 0)
       return -1;
 
@@ -96,7 +96,7 @@ EXP int CALL soem_config_map_only(void)
 
    g_iomap_size_bytes = iomap;
 
-   return iomap; // ¸Ê Å©±â ¹ÙÀÌÆ® ¼ö ¸®ÅÏ
+   return iomap; // ï¿½ï¿½ Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 }
 
 // --------- PDO/IO size queries ----------
@@ -164,11 +164,11 @@ EXP unsigned short CALL soem_slave_al_status(int i)
 typedef struct soem_slave_info_t
 {
    uint16 alias;              // Station Alias
-   uint16 configadr;          // Station Address (³í¸® ÁÖ¼Ò)
+   uint16 configadr;          // Station Address (ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¼ï¿½)
    uint32 vendor;             // eep_man
    uint32 product;            // eep_id
    uint32 revision;           // revision
-   char name[EC_MAXNAME + 1]; // ½½·¹ÀÌºê ÀÌ¸§(ESI)
+   char name[EC_MAXNAME + 1]; // ï¿½ï¿½ï¿½ï¿½ï¿½Ìºï¿½ ï¿½Ì¸ï¿½(ESI)
 } soem_slave_info_t;
 
 EXP int CALL soem_get_slave_info(int idx, soem_slave_info_t *outInfo)
@@ -184,12 +184,62 @@ EXP int CALL soem_get_slave_info(int idx, soem_slave_info_t *outInfo)
    outInfo->product = s->eep_id;
    outInfo->revision = s->eep_rev;
 
-   // ÀÌ¸§ º¹»ç
+   // ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½
    // strncpy(outInfo->name, s->name, EC_MAXNAME);
    strncpy_s(outInfo->name, EC_MAXNAME + 1, s->name, _TRUNCATE);
    outInfo->name[EC_MAXNAME] = '\0';
 
    return 1;
+}
+
+#pragma pack(push, 1)
+typedef struct soem_slave_status_t
+{
+   uint16_t state;
+   uint16_t alstatus;
+   int32_t obytes;
+   int32_t ibytes;
+   int32_t pdelay;
+   uint8_t hasdc;
+   uint8_t parentport;
+   uint8_t activeports;
+   uint8_t blocklrw;
+   uint8_t coe;
+   uint8_t foe;
+   uint8_t eoe;
+   uint8_t soe;
+   uint16_t ebuscurrent;
+} soem_slave_status_t;
+#pragma pack(pop)
+
+EXP int CALL soem_get_slave_status(int idx, soem_slave_status_t *outStatus)
+{
+   if (!outStatus) return 0;
+   if (idx < 1 || idx > g_ctx.slavecount) return 0;
+
+   ec_slavet *s = &g_ctx.slavelist[idx];
+
+   outStatus->state = s->state;
+   outStatus->alstatus = s->ALstatuscode;
+   outStatus->obytes = (int32_t)s->Obytes;
+   outStatus->ibytes = (int32_t)s->Ibytes;
+   outStatus->pdelay = (int32_t)s->pdelay;
+   outStatus->hasdc = (uint8_t)(s->hasdc ? 1 : 0);
+   outStatus->parentport = (uint8_t)s->parentport;
+   outStatus->activeports = (uint8_t)s->activeports;
+   outStatus->blocklrw = (uint8_t)(s->blockLRW ? 1 : 0);
+   outStatus->coe = s->CoEdetails;
+   outStatus->foe = s->FoEdetails;
+   outStatus->eoe = s->EoEdetails;
+   outStatus->soe = s->SoEdetails;
+   outStatus->ebuscurrent = (uint16_t)s->Ebuscurrent;
+
+   return 1;
+}
+
+EXP const char *CALL soem_al_status_to_string(uint16_t status)
+{
+   return ec_ALstatuscode2string(status);
 }
 
 // --------- CoE SDO ----------
@@ -199,6 +249,7 @@ EXP int CALL soem_sdo_read(uint16_t slave, uint16_t index, uint8_t subindex, voi
    int wkc = ecx_SDOread(&g_ctx, slave, index, subindex, FALSE, &len, buf, EC_TIMEOUTRXM);
    if (wkc <= 0)
       return -1;
+
    *inout_len = (uint32_t)len;
    return 0;
 }
@@ -206,20 +257,45 @@ EXP int CALL soem_sdo_read(uint16_t slave, uint16_t index, uint8_t subindex, voi
 EXP int CALL soem_sdo_write(uint16_t slave, uint16_t index, uint8_t subindex, const void *data, uint32_t len)
 {
    int wkc = ecx_SDOwrite(&g_ctx, slave, index, subindex, FALSE, (int)len, (void *)data, EC_TIMEOUTRXM);
-   return (wkc > 0) ? 0 : -1;
+   if (wkc > 0)
+      return 0;
+
+   return -1;
 }
 
-// --------- PDO ÁÖ±â ----------
+// --------- PDO ï¿½Ö±ï¿½ ----------
 EXP int CALL soem_send_processdata(void)
 {
-   return ecx_send_processdata(&g_ctx);
+   int rc = ecx_send_processdata(&g_ctx);
+   if (rc <= 0)
+   {
+      if (ecx_iserror(&g_ctx))
+      {
+         ec_errort err;
+         if (ecx_poperror(&g_ctx, &err) > 0)
+            return -((int)err.ErrorCode);
+      }
+      return rc;
+   }
+   return rc;
 }
 EXP int CALL soem_receive_processdata(int timeout_us)
 {
-   return ecx_receive_processdata(&g_ctx, timeout_us);
+   int rc = ecx_receive_processdata(&g_ctx, timeout_us);
+   if (rc <= 0)
+   {
+      if (ecx_iserror(&g_ctx))
+      {
+         ec_errort err;
+         if (ecx_poperror(&g_ctx, &err) > 0)
+            return -((int)err.ErrorCode);
+      }
+      return rc;
+   }
+   return rc;
 }
 
-// PDO Á÷Á¢ Á¢±Ù À¯Æ¿
+// PDO ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ¿
 EXP int CALL soem_write_u16(uint16_t s, int off, uint16_t v)
 {
    if (s == 0 || s > g_ctx.slavecount) return -2;
@@ -263,7 +339,7 @@ EXP int CALL soem_read_s32(uint16_t s, int off, int32_t *v)
    return 0;
 }
 
-//ÀÔ·Â PDO¿¡¼­ 1¹ÙÀÌÆ® ÀÐ±â
+//ï¿½Ô·ï¿½ PDOï¿½ï¿½ï¿½ï¿½ 1ï¿½ï¿½ï¿½ï¿½Æ® ï¿½Ð±ï¿½
 EXP int CALL soem_read_u8(uint16_t s, int off, uint8_t *v)
 {
    if (!v) return -1;
@@ -276,7 +352,7 @@ EXP int CALL soem_read_u8(uint16_t s, int off, uint8_t *v)
    return 0;
 }
 
-//Ãâ·Â PDO¿¡ 1¹ÙÀÌÆ® ¾²±â
+//ï¿½ï¿½ï¿½ PDOï¿½ï¿½ 1ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½
 EXP int CALL soem_write_u8(uint16_t s, int off, uint8_t v)
 {
    if (s == 0 || s > g_ctx.slavecount) return -2;
@@ -288,7 +364,7 @@ EXP int CALL soem_write_u8(uint16_t s, int off, uint8_t v)
    return 0;
 }
 
-//ÀüÃ¼ byte ¹è¿­·Î ÀÐ¾î¿À±â.
+//ï¿½ï¿½Ã¼ byte ï¿½è¿­ï¿½ï¿½ ï¿½Ð¾ï¿½ï¿½ï¿½ï¿½.
 EXP int CALL soem_read_bytes(uint16_t s, int off, uint8_t *buf, int len)
 {
    if (!buf) return -1;
@@ -303,9 +379,9 @@ EXP int CALL soem_read_bytes(uint16_t s, int off, uint8_t *buf, int len)
    return 0;
 }
 
-//ÀüÃ¼ byte¹è¿­·Î output ¾²±â
+//ï¿½ï¿½Ã¼ byteï¿½è¿­ï¿½ï¿½ output ï¿½ï¿½ï¿½ï¿½
 
-//³ªÁß¿¡ ·¡ÆÛÂÊ ¿¡·¯ÄÚµå Á¤¸®ÇÊ¿ä.
+//ï¿½ï¿½ï¿½ß¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ê¿ï¿½.
 EXP int CALL soem_write_bytes(uint16_t s, int off, const uint8_t *buf, int len)
 {
    if (!buf) return -1;
@@ -321,10 +397,14 @@ EXP int CALL soem_write_bytes(uint16_t s, int off, const uint8_t *buf, int len)
 }
 
 
-// Ethercat Slave Á¶È¸.
+// Ethercat Slave ï¿½ï¿½È¸.
 EXP void CALL soem_readstate(void)
 {
-   // 2.x: ÄÁÅØ½ºÆ® ±â¹Ý
+   // Guard: avoid calling into SOEM when not initialized (prevents access violations)
+   if (!g_inited)
+      return;
+
+   // 2.x: read state
    ecx_readstate(&g_ctx);
 }
 
@@ -342,7 +422,7 @@ EXP const char *CALL soem_slave_name(int i)
    return g_ctx.slavelist[i].name;
 }
 
-// ESI(EEPROM) ½Äº°
+// ESI(EEPROM) ï¿½Äºï¿½
 EXP unsigned int CALL soem_slave_vendor_id(int i)
 {
    if (i < 1 || i > g_ctx.slavecount)
@@ -362,38 +442,38 @@ EXP unsigned int CALL soem_slave_revision(int i)
    return g_ctx.slavelist[i].eep_rev;
 }
 
-// --------- ¾Ë¶÷°ü·Ã Á¶È¸±â´É ----------
+// --------- ï¿½Ë¶ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¸ï¿½ï¿½ï¿½ ----------
 // ---- SOEM error info wrapper (for C#) ----
 
 typedef struct soem_error_info_t
 {
-   int32_t error_code; // ec_errort.ErrorCode (SDO abort, AL status µî)
-   uint16_t slave;     // ¿¡·¯ ½½·¹ÀÌºê ¹øÈ£
+   int32_t error_code; // ec_errort.ErrorCode (SDO abort, AL status ï¿½ï¿½)
+   uint16_t slave;     // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ìºï¿½ ï¿½ï¿½È£
    uint16_t index;     // CoE Index
    uint8_t subindex;   // CoE SubIndex
-   uint8_t _pad;       // 1¹ÙÀÌÆ® ÆÐµùÀ» ¸í½Ã(Á¤·Ä ¾ÈÁ¤)
-   uint16_t etype;     // ¾Æ·¡ 3)¿¡¼­ ¼³¸í (ÀÖÀ¸¸é ÈÎ¾À ÁÁÀ½)
+   uint8_t _pad;       // 1ï¿½ï¿½ï¿½ï¿½Æ® ï¿½Ðµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+   uint16_t etype;     // ï¿½Æ·ï¿½ 3)ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Î¾ï¿½ ï¿½ï¿½ï¿½ï¿½)
 } soem_error_info_t;
 
-// ¿¡·¯ ½ºÅÃ¿¡¼­ ÇÏ³ª pop (ÀÖÀ¸¸é 1, ¾øÀ¸¸é 0, ½ÇÆÐ -1)
+// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ ï¿½Ï³ï¿½ pop (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 1, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0, ï¿½ï¿½ï¿½ï¿½ -1)
 EXP int CALL soem_get_last_error_info(soem_error_info_t *info)
 {
    if (!g_inited || !info)
       return -1;
 
    if (!ecx_iserror(&g_ctx))
-      return 0; // ¿¡·¯ ¾øÀ½
+      return 0; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
    ec_errort err;
    if (ecx_poperror(&g_ctx, &err) <= 0)
-      return 0; // ´õ ÀÌ»ó ¿¡·¯ ¾øÀ½
+      return 0; // ï¿½ï¿½ ï¿½Ì»ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
    info->error_code = err.ErrorCode;
    info->slave = (uint16_t)err.Slave;
    info->index = (uint16_t)err.Index;
    info->subindex = (uint8_t)err.SubIdx;
    info->_pad = 0;
-   info->etype = (uint16_t)err.Etype; // ¡Ú Ãß°¡
+   info->etype = (uint16_t)err.Etype; // ï¿½ï¿½ ï¿½ß°ï¿½
    return 1;
 }
 
@@ -416,7 +496,7 @@ EXP int CALL soem_elist2string(char *outBuf, int outBufLen)
    return (int)strlen(outBuf);
 }
 
-//Mailbox HandlerÃß°¡.
+//Mailbox Handlerï¿½ß°ï¿½.
 EXP int CALL soem_enable_mbx_cyclic_for_coe(void)
 {
    if (!g_inited) return -2;
@@ -431,7 +511,7 @@ EXP int CALL soem_enable_mbx_cyclic_for_coe(void)
          added++;
       }
    }
-   return added; // µî·ÏÇÑ slave ¼ö
+   return added; // ï¿½ï¿½ï¿½ï¿½ï¿½ slave ï¿½ï¿½
 }
 
 EXP int CALL soem_mbxhandler(int group, int limit)
