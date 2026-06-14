@@ -158,10 +158,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         get
         {
-            if (Datamap.Instance.IsInit() == true)
-                return Datamap.Instance.GetSlave(_SelectedSlave);
+            if (Datamap.Instance.IsInit() == false)
+            {
+                return null;
+            }
 
-            return null;
+            return Datamap.Instance.GetSlave(_SelectedSlave);
         }
     }
 
@@ -209,6 +211,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
         }
     }
+
+    //개별 Slave간 VM별도 생성.
+    private readonly Dictionary<int, MotorControlViewModel> _motorControlVmBySlave = new Dictionary<int, MotorControlViewModel>();
+
 
     public bool HasMotorControl => MotorControlVm != null;
     public bool HasNoMotorControl => MotorControlVm == null;
@@ -592,16 +598,21 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         if (motor != null)
         {
-            if (MotorControlVm == null)
+            MotorControlViewModel vm;
+
+            if (_motorControlVmBySlave.TryGetValue(SelectedSlave, out vm) == false)
             {
-                MotorControlVm = new MotorControlViewModel();
+                vm = new MotorControlViewModel();
+                _motorControlVmBySlave.Add(SelectedSlave, vm);
             }
 
+            MotorControlVm = vm;
             MotorControlVm.Attach(motor, store);
 
             ValueControlVm = null;
             IoOutputVm = null;
             IoInputVm = null;
+
             return;
         }
 
@@ -1725,6 +1736,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void HandleNIC()
     {
+        SelectedSlave = 0;
+
+        _motorControlVmBySlave.Clear();
+
+        MotorControlVm = null;
+        ValueControlVm = null;
+        IoOutputVm = null;
+        IoInputVm = null;
+        _selectedPdoView = null;
+        PdoHexDumpVm.Attach(null);
+
+        RxPdoMapRows.Clear();
+        TxPdoMapRows.Clear();
+
+        if (SdoWorker != null)
+        {
+            SdoWorker.Dispose();
+            SdoWorker = null;
+        }
 
         string ifname = NICSelect.Substring(NICSelect.LastIndexOf(" - ") + (" - ".Length));
 
@@ -1762,6 +1792,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
 
         Datamap.Instance.Init(SlaveInfoData);
+
+        SelectedSlave = 0;
+        OnPropertyChanged(nameof(SelectedSlaveData));
 
         SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance);
         SdoWorker.Start();
@@ -1838,6 +1871,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         Datamap.Instance.Init(testInfoList);
 
+        _motorControlVmBySlave.Clear();
+        MotorControlVm = null;
+        ValueControlVm = null;
+        IoOutputVm = null;
+        IoInputVm = null;
+        _selectedPdoView = null;
+        PdoHexDumpVm.Attach(null);
+
+        RxPdoMapRows.Clear();
+        TxPdoMapRows.Clear();
 
         //SdoWorker = new SDOSubWorker(ECClient, Datamap.Instance);
         //SdoWorker.Start();

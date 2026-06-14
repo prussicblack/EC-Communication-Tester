@@ -1290,13 +1290,24 @@ namespace SOEM_FrontEnd.DataMap
         {
             lock (_lock)
             {
-                if (!_initialized) 
+                if (!_initialized)
                 {
-                    throw new InvalidOperationException("Not initialized."); //냅둬야되나?
+                    return null;
+                }
 
-                    //Console.WriteLine("Not initialized.");
+                if (_slaves == null)
+                {
+                    return null;
+                }
 
-                    //_log.LogInformation("Not initialized.");
+                if (slaveNo < 0)
+                {
+                    return null;
+                }
+
+                if (slaveNo >= _slaves.Length)
+                {
+                    return null;
                 }
 
                 return _slaves[slaveNo];
