@@ -192,7 +192,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     public bool IsMasterSelected => SelectedSlave == 0;
-    public bool IsSlaveSelected => SelectedSlave != 0;
+    public bool IsSlaveSelected => SelectedSlave > 0;
 
 
     // Control 탭: SelectedSlaveData.BaseProfile이 IMotorCommands이면 MotorControl을 표시
@@ -1385,7 +1385,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (row == null)
             return;
 
-        // 선택된 row에 SlaveNo/Index/SubIndex가 이미 들어있음
+        if (row.SlaveNo <= 0)
+            return;
+
         SdoWorker.EnqueueRead(row.SlaveNo, row.Index, row.SubIndex);
     }
 
@@ -1397,6 +1399,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         var row = SelectedSDO;
         if (row == null)
+            return;
+
+        if (row.SlaveNo <= 0)
             return;
 
         string err;
@@ -1805,6 +1810,35 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         //성공시 랜카드 Nic 저장해서 ENI구성.
 
+    }
+
+    private void UpdateRuntimeSlaveStatus()
+    {
+        if (!ECClient.IsOpen)
+            return;
+
+        if (!ECClient.RefreshSlaveStates())
+            return;
+
+        int slaveCount = ECClient.SlaveCount;
+
+        for (int slaveNo = 1; slaveNo <= slaveCount; slaveNo++)
+        {
+            if (Datamap.Instance.GetSlave(slaveNo) == null)
+                continue;
+
+            if (ECClient.TryGetSlaveStatus(slaveNo, out SoemSlaveStatus status))
+            {
+                string alStatusText = ECClient.GetAlStatusText(status.AlStatus);
+                Datamap.Instance.UpdateSlaveStatus(slaveNo, status, alStatusText);
+            }
+            else
+            {
+                _log.LogInformation($"Could not read runtime status for slave {slaveNo}.");
+            }
+        }
+
+        OnPropertyChanged(nameof(SelectedSlaveData));
     }
 
 

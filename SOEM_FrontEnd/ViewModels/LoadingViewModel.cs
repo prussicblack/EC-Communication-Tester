@@ -74,11 +74,5 @@ namespace SOEM_FrontEnd.ViewModels
 
         }
 
-        //public event PropertyChangedEventHandler? PropertyChanged;
-        //private void OnPropertyChanged([CallerMemberName] string name = null)
-        //{
-        //    var h = PropertyChanged;
-        //    if (h != null) h(this, new PropertyChangedEventArgs(name));
-        //}
     }
 }

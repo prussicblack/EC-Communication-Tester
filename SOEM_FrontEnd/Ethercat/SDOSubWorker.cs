@@ -403,16 +403,25 @@ namespace SOEM_FrontEnd.Ethercat
 
         private bool ExecuteWriteMap(SDOKey key, byte[] data)
         {
-            //예: soem_sdo_write(slave, index, sub, buf, len) 같은 wrapper
+            if (key.SlaveNo <= 0)
+            {
+                _log.LogWarning("SDO write skipped due to invalid slave number: {SlaveNo}", key.SlaveNo);
+                return false;
+            }
+
+            var slave = _dataMap.GetSlave(key.SlaveNo);
+            if (slave == null)
+            {
+                _log.LogWarning("SDO write skipped because slave is missing: {SlaveNo}", key.SlaveNo);
+                return false;
+            }
+
             int rc = SOEMNative.soem_sdo_write((ushort)key.SlaveNo, key.Index, key.SubIndex, data, (uint)data.Length);
 
             if (rc == 0)
             {
                 //즉시 UI에 "쓴 값" 반영(빠른 피드백)
-                _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, data, false);
-
-                //write 성공 후 실제 반영값 확인을 위해 read를 추가로 enqueue --> 미적용.
-                //EnqueueReadInternal(key, data.Length, null);
+                slave.SdoStore.UpdateOk(key, data, false);
 
                 return true;
             }
@@ -428,6 +437,19 @@ namespace SOEM_FrontEnd.Ethercat
         /// </summary>
         private bool ExecuteReadMap(SDOKey key, int maxLen)
         {
+            if (key.SlaveNo <= 0)
+            {
+                _log.LogWarning("SDO read skipped due to invalid slave number: {SlaveNo}", key.SlaveNo);
+                return false;
+            }
+
+            var slave = _dataMap.GetSlave(key.SlaveNo);
+            if (slave == null)
+            {
+                _log.LogWarning("SDO read skipped because slave is missing: {SlaveNo}", key.SlaveNo);
+                return false;
+            }
+
             byte[] buf = new byte[maxLen];
             uint len = (uint)maxLen;
 
@@ -449,12 +471,12 @@ namespace SOEM_FrontEnd.Ethercat
                     //
                     //_store.UpdateOk(key, trimmed);
 
-                    _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, trimmed, true);
+                    slave.SdoStore.UpdateOk(key, trimmed, true);
                 }
                 else
                 {
                     //_store.UpdateOk(key, buf);
-                    _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateOk(key, buf, true);
+                    slave.SdoStore.UpdateOk(key, buf, true);
 
                 }
 
@@ -501,16 +523,27 @@ namespace SOEM_FrontEnd.Ethercat
 
         private void SafeUpdateError(SDOKey key, string error, bool isRead)
         {
+            var slave = _dataMap.GetSlave(key.SlaveNo);
+            if (slave == null)
+            {
+                _log.LogWarning("SafeUpdateError skipped because slave is missing: {SlaveNo}", key.SlaveNo);
+                return;
+            }
 
-            //_store.UpdateError(key, error, abortCode: 0);
-            _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateError(key, error, abortCode: 0, isRead);
-
+            slave.SdoStore.UpdateError(key, error, abortCode: 0, isRead);
         }
 
         private void SafePendingUpdateError(SDOKey key, string error)
         {
-            _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateError(key, error, abortCode: 0, true);
-            _dataMap.GetSlave(key.SlaveNo).SdoStore.UpdateError(key, error, abortCode: 0, false);
+            var slave = _dataMap.GetSlave(key.SlaveNo);
+            if (slave == null)
+            {
+                _log.LogWarning("SafePendingUpdateError skipped because slave is missing: {SlaveNo}", key.SlaveNo);
+                return;
+            }
+
+            slave.SdoStore.UpdateError(key, error, abortCode: 0, true);
+            slave.SdoStore.UpdateError(key, error, abortCode: 0, false);
         }
 
 

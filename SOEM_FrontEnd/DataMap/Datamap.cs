@@ -27,33 +27,109 @@ namespace SOEM_FrontEnd.DataMap
 
 
     //SlaveInfo 저장용 클래스.
-    public sealed class SlaveInfo
+    public sealed class SlaveInfo : INotifyPropertyChanged
     {
         //추가필요.
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public int SlaveNo { get; private set; }
-        public string Name { get; set; }
+
+        private string _name;
+        public string Name
+        {
+            get => _name;
+            set => SetProperty(ref _name, value);
+        }
 
         public uint VendorId { get; set; }
         public uint ProductCode { get; set; }
         public uint RevisionNo { get; set; }
         public uint SerialNo { get; set; }
 
-        public string StateText { get; set; }       // "OP" 등
-        public ushort AlStatusCode { get; set; }
-        public string AlStatusText { get; set; }
+        private string _stateText;
+        public string StateText
+        {
+            get => _stateText;
+            set => SetProperty(ref _stateText, value);
+        }
 
-        public byte CoEDetails { get; set; }
-        public byte FoEDetails { get; set; }
-        public byte EoEDetails { get; set; }
-        public byte SoEDetails { get; set; }
-        public bool BlockLRW { get; set; }
+        private ushort _alStatusCode;
+        public ushort AlStatusCode
+        {
+            get => _alStatusCode;
+            set => SetProperty(ref _alStatusCode, value);
+        }
 
-        public int IBytes { get; set; }
-        public int OBytes { get; set; }
+        private string _alStatusText;
+        public string AlStatusText
+        {
+            get => _alStatusText;
+            set => SetProperty(ref _alStatusText, value);
+        }
 
-        public ushort EbusCurrentmA { get; set; }
-        public DateTime LastUpdatedUtc { get; set; }
+        private byte _coeDetails;
+        public byte CoEDetails
+        {
+            get => _coeDetails;
+            set => SetProperty(ref _coeDetails, value);
+        }
+
+        private byte _foeDetails;
+        public byte FoEDetails
+        {
+            get => _foeDetails;
+            set => SetProperty(ref _foeDetails, value);
+        }
+
+        private byte _eoeDetails;
+        public byte EoEDetails
+        {
+            get => _eoeDetails;
+            set => SetProperty(ref _eoeDetails, value);
+        }
+
+        private byte _soeDetails;
+        public byte SoEDetails
+        {
+            get => _soeDetails;
+            set => SetProperty(ref _soeDetails, value);
+        }
+
+        private bool _blockLRW;
+        public bool BlockLRW
+        {
+            get => _blockLRW;
+            set => SetProperty(ref _blockLRW, value);
+        }
+
+        private int _iBytes;
+        public int IBytes
+        {
+            get => _iBytes;
+            set => SetProperty(ref _iBytes, value);
+        }
+
+        private int _oBytes;
+        public int OBytes
+        {
+            get => _oBytes;
+            set => SetProperty(ref _oBytes, value);
+        }
+
+        private ushort _ebusCurrentmA;
+        public ushort EbusCurrentmA
+        {
+            get => _ebusCurrentmA;
+            set => SetProperty(ref _ebusCurrentmA, value);
+        }
+
+        private DateTime _lastUpdatedUtc;
+        public DateTime LastUpdatedUtc
+        {
+            get => _lastUpdatedUtc;
+            set => SetProperty(ref _lastUpdatedUtc, value);
+        }
 
         public SlaveInfo(int slaveNo)
         {
@@ -67,7 +143,50 @@ namespace SOEM_FrontEnd.DataMap
 
         public string GetSlaveInfo()
         {
-            return "Pending implementation";
+            return $"Slave {SlaveNo}: {Name} / State={StateText} / AL=0x{AlStatusCode:X4} {AlStatusText} / I={IBytes} bytes / O={OBytes} bytes / COE=0x{CoEDetails:X2} FOE=0x{FoEDetails:X2} EOE=0x{EoEDetails:X2} SOE=0x{SoEDetails:X2} / EBus={EbusCurrentmA}mA";
+        }
+
+        private void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+                return false;
+
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
+        public void UpdateStatus(SoemSlaveStatus status, string alStatusText)
+        {
+            StateText = GetStateText(status.State);
+            AlStatusCode = status.AlStatus;
+            AlStatusText = alStatusText ?? string.Empty;
+            OBytes = status.OBytes;
+            IBytes = status.IBytes;
+            CoEDetails = status.CoEDetails;
+            FoEDetails = status.FoEDetails;
+            EoEDetails = status.EoEDetails;
+            SoEDetails = status.SoEDetails;
+            BlockLRW = status.BlockLRW != 0;
+            EbusCurrentmA = status.EbusCurrentmA;
+            LastUpdatedUtc = DateTime.UtcNow;
+        }
+
+        public static string GetStateText(ushort state)
+        {
+            return state switch
+            {
+                0x0001 => "INIT",
+                0x0002 => "PRE-OP",
+                0x0004 => "SAFE-OP",
+                0x0008 => "OP",
+                _ => $"0x{state:X4}",
+            };
         }
 
     }
@@ -1054,7 +1173,7 @@ namespace SOEM_FrontEnd.DataMap
     public sealed class DeviceESIInfo : INotifyPropertyChanged
     {
         private ESIDevice _ESIDeviceInfo;
-        public ESIDevice? ESIDeviceInfo
+        public ESIDevice ESIDeviceInfo
         {
             get
             {
@@ -1070,7 +1189,7 @@ namespace SOEM_FrontEnd.DataMap
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
 
         private void OnPropertyChanged([CallerMemberName] string name = null)
         {
@@ -1126,6 +1245,14 @@ namespace SOEM_FrontEnd.DataMap
 
         public DeviceMode DeviceMode;
 
+        public SlaveInfo SlaveInfo
+        {
+            get
+            {
+                return _SlaveInfo;
+            }
+        }
+
         public SDOStore SdoStore
         {
             get
@@ -1152,7 +1279,14 @@ namespace SOEM_FrontEnd.DataMap
             SlaveNo = slaveNo;
 
             _deviceInfo = new DeviceESIInfo();
-            _SlaveInfo = new SlaveInfo(slaveNo);
+            _SlaveInfo = new SlaveInfo(slaveNo)
+            {
+                Name = SlaveInfo.name ?? string.Empty,
+                VendorId = SlaveInfo.vendor,
+                ProductCode = SlaveInfo.product,
+                RevisionNo = SlaveInfo.revision,
+                SerialNo = 0
+            };
 
             //_deviceInfo 생성. 생성 전에 미리 ESI를 읽어둬야 함.
             ESIDevice dev = ESICatalog.GetDeviceData(SlaveInfo.product, SlaveInfo.vendor, SlaveInfo.revision);
@@ -1288,6 +1422,9 @@ namespace SOEM_FrontEnd.DataMap
 
         public SlaveStore GetSlave(int slaveNo)
         {
+            if(slaveNo <= 0)
+                return null;
+
             lock (_lock)
             {
                 if (!_initialized)
@@ -1312,6 +1449,16 @@ namespace SOEM_FrontEnd.DataMap
 
                 return _slaves[slaveNo];
             }
+        }
+
+        public bool UpdateSlaveStatus(int slaveNo, SoemSlaveStatus status, string alStatusText)
+        {
+            var slave = GetSlave(slaveNo);
+            if (slave == null || slave.SlaveInfo == null)
+                return false;
+
+            slave.SlaveInfo.UpdateStatus(status, alStatusText);
+            return true;
         }
 
     }

@@ -20,10 +20,29 @@ namespace SOEM_FrontEnd.Model
         public ushort configadr;   // Station Address
         public uint vendor;        // eep_man
         public uint product;       // eep_id
-        public uint revision;   // 리비전
+        public uint revision;      // 리비전
 
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]  // EC_MAXNAME 기본값 64
         public string name;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct SoemSlaveStatus
+    {
+        public ushort State;
+        public ushort AlStatus;
+        public int OBytes;
+        public int IBytes;
+        public int PDelay;
+        public byte HasDc;
+        public byte ParentPort;
+        public byte ActivePorts;
+        public byte BlockLRW;
+        public byte CoEDetails;
+        public byte FoEDetails;
+        public byte EoEDetails;
+        public byte SoEDetails;
+        public ushort EbusCurrentmA;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -108,19 +127,36 @@ namespace SOEM_FrontEnd.Model
         public static extern int soem_get_slave_info(int idx, out SoemSlaveInfo info);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ushort soem_slave_state(int idx);
-
-        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ushort soem_slave_al_status(int idx);
+        public static extern int soem_get_slave_status(int idx, out SoemSlaveStatus status);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void soem_readstate();
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ushort soem_slave_state(int i);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ushort soem_slave_al_status(int i);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        internal static extern IntPtr soem_slave_name(int i);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        internal static extern IntPtr soem_al_status_to_string(ushort code);
 
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int soem_get_last_error_info(out SoemErrorInfo info);
 
         [DllImport("soem_wrap.dll", CallingConvention = CallingConvention.Cdecl,CharSet = CharSet.Ansi)]
         internal static extern int soem_elist2string(StringBuilder outBuf, int outBufLen);
+
+        public static string GetAlStatusText(ushort status)
+        {
+            IntPtr ptr = soem_al_status_to_string(status);
+            if (ptr == IntPtr.Zero)
+                return string.Empty;
+            return Marshal.PtrToStringAnsi(ptr) ?? string.Empty;
+        }
         
         //Mailbox Handler추가.
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
@@ -153,24 +189,21 @@ namespace SOEM_FrontEnd.Model
 
         public void Open(string ifname, int opTimeoutMs = 2000)
         {
-            int rc = SOEMNative.soem_open(ifname);
-            if (rc != 0)
+            int rcOpen = SOEMNative.soem_open(ifname);
+            if (rcOpen != 0)
             {
-                //Console.WriteLine("SOEM init failed (ecx_init).");
                 _log.LogInformation("SOEM init failed (ecx_init).");
-
-                //throw new InvalidOperationException("SOEM init failed (ecx_init).");
+                IsOpen = false;
+                return;
             }
 
-            rc = SOEMNative.soem_config_init(1);
-            if (rc < 0)
+            int rcConfig = SOEMNative.soem_config_init(1);
+            if (rcConfig < 0)
             {
-                SOEMNative.soem_close(); 
-                //throw new InvalidOperationException("config_init failed.");
-                //Console.WriteLine("config_init failed.");
+                SOEMNative.soem_close();
                 _log.LogInformation("config_init failed.");
-
-
+                IsOpen = false;
+                return;
             }
 
             //이거 거니깐 SDO못읽어내는 문제가 있네..
@@ -193,14 +226,48 @@ namespace SOEM_FrontEnd.Model
             int rc = SOEMNative.soem_get_slave_info(index, out info);
             if (rc != 1)
             {
-                //Console.WriteLine($"Failed to get slave info for index {index}.");
-
                 _log.LogInformation($"Failed to get slave info for index {index}.");
-
-                //throw new InvalidOperationException($"Failed to get slave info for index {index}.");
             }
 
             return rc;
+        }
+
+        public bool RefreshSlaveStates()
+        {
+            if (!IsOpen)
+                return false;
+
+            SOEMNative.soem_readstate();
+            return true;
+        }
+
+        public bool TryGetSlaveStatus(int index, out SoemSlaveStatus status)
+        {
+            status = default;
+            if (!IsOpen || index < 1 || index > SlaveCount)
+                return false;
+
+            int rc = SOEMNative.soem_get_slave_status(index, out status);
+            return rc == 1;
+        }
+
+        public string GetSlaveStateText(ushort state)
+        {
+            return state switch
+            {
+                EC_STATE_INIT => "INIT",
+                EC_STATE_PRE_OP => "PRE-OP",
+                EC_STATE_SAFE_OP => "SAFE-OP",
+                EC_STATE_OPERATIONAL => "OP",
+                _ => $"0x{state:X4}",
+            };
+        }
+
+        public string GetAlStatusText(ushort alStatus)
+        {
+            if (alStatus == 0)
+                return "";
+            return SOEMNative.GetAlStatusText(alStatus);
         }
 
         public uint MakeMapWord(ushort index, byte subIndex, byte bitLen)
