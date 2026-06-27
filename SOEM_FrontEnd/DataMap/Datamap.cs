@@ -47,6 +47,9 @@ namespace SOEM_FrontEnd.DataMap
         public uint RevisionNo { get; set; }
         public uint SerialNo { get; set; }
 
+        public ushort Alias { get; set; }
+        public ushort ConfigAddress { get; set; }
+
         private string _stateText;
         public string StateText
         {
@@ -131,6 +134,24 @@ namespace SOEM_FrontEnd.DataMap
             set => SetProperty(ref _lastUpdatedUtc, value);
         }
 
+        //SlaveInfo Text표기용.
+        private string _displayText;
+        public string DisplayText
+        {
+            get
+            {
+                return _displayText;
+            }
+            private set
+            {
+                if (_displayText == value)
+                    return;
+
+                _displayText = value;
+                OnPropertyChanged(nameof(DisplayText));
+            }
+        }
+
         public SlaveInfo(int slaveNo)
         {
             SlaveNo = slaveNo;
@@ -143,7 +164,16 @@ namespace SOEM_FrontEnd.DataMap
 
         public string GetSlaveInfo()
         {
-            return $"Slave {SlaveNo}: {Name} / State={StateText} / AL=0x{AlStatusCode:X4} {AlStatusText} / I={IBytes} bytes / O={OBytes} bytes / COE=0x{CoEDetails:X2} FOE=0x{FoEDetails:X2} EOE=0x{EoEDetails:X2} SOE=0x{SoEDetails:X2} / EBus={EbusCurrentmA}mA";
+            return
+                $"Slave {SlaveNo}: {Name}\n" +
+                $"Alias={Alias}, StationAddress=0x{ConfigAddress:X4}\n" +
+                $"Vendor=0x{VendorId:X8}, Product=0x{ProductCode:X8}, Revision=0x{RevisionNo:X8}\n" +
+                $"State={StateText}\n" +
+                $"AL=0x{AlStatusCode:X4} {AlStatusText}\n" +
+                $"I={IBytes} bytes, O={OBytes} bytes\n" +
+                $"CoE=0x{CoEDetails:X2}, FoE=0x{FoEDetails:X2}, EoE=0x{EoEDetails:X2}, SoE=0x{SoEDetails:X2}\n" +
+                $"BlockLRW={BlockLRW}, EBus={EbusCurrentmA} mA\n" +
+                $"LastUpdated={LastUpdatedUtc:HH:mm:ss}";
         }
 
         private void OnPropertyChanged(string propertyName)
@@ -175,6 +205,8 @@ namespace SOEM_FrontEnd.DataMap
             BlockLRW = status.BlockLRW != 0;
             EbusCurrentmA = status.EbusCurrentmA;
             LastUpdatedUtc = DateTime.UtcNow;
+
+            DisplayText = GetSlaveInfo();
         }
 
         public static string GetStateText(ushort state)
@@ -1282,10 +1314,16 @@ namespace SOEM_FrontEnd.DataMap
             _SlaveInfo = new SlaveInfo(slaveNo)
             {
                 Name = SlaveInfo.name ?? string.Empty,
+                
+                Alias = SlaveInfo.alias,
+                ConfigAddress = SlaveInfo.configadr,
+
                 VendorId = SlaveInfo.vendor,
                 ProductCode = SlaveInfo.product,
                 RevisionNo = SlaveInfo.revision,
                 SerialNo = 0
+
+
             };
 
             //_deviceInfo 생성. 생성 전에 미리 ESI를 읽어둬야 함.

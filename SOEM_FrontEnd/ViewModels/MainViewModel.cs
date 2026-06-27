@@ -934,6 +934,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             //StateMachine.PollPdoStats();
             UpdatePdoStatsUi();
+            UpdateRuntimeSlaveStatus();
         };
         _uiTimerLow.Start();
 
