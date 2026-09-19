@@ -152,9 +152,6 @@ namespace SOEM_FrontEnd.Ethercat
 
         #region Fields - Jog
 
-        //정확한 정지용으로.
-        private bool _reqAnchorActualPosition;
-
         //Jog용으로..
         private volatile bool _jogActive;
         private volatile int _jogDirection;   // +1 / -1
@@ -295,7 +292,6 @@ namespace SOEM_FrontEnd.Ethercat
             _jogActive = false;
             _jogDirection = 0;
 
-            _reqAnchorActualPosition = isJogStop;
             _reqStop = true;
 
             return true;
@@ -310,7 +306,7 @@ namespace SOEM_FrontEnd.Ethercat
                 return false;
 
             //stepPulse = speedPulsePerSec * (loopPeriodSec * leadLoopCount) 주의 발행주기가 8루프보단 길어야 되서 10으로 처리. 10/1000 은 10ms위치에 목적point발행.
-            _jogStepPulse = (int)(_profileVelocity * 100 / 1000);
+            _jogStepPulse = (int)(_profileVelocity * 500 / 1000);
 
             if (_jogStepPulse < 1)
                 _jogStepPulse = 1;
@@ -332,7 +328,7 @@ namespace SOEM_FrontEnd.Ethercat
             if (_isServoOn == false || _isError == true)
                 return false;
 
-            _jogStepPulse = (int)(_profileVelocity * 100 / 1000);
+            _jogStepPulse = (int)(_profileVelocity * 500 / 1000);
 
             if (_jogStepPulse < 1)
                 _jogStepPulse = 1;
@@ -711,80 +707,28 @@ namespace SOEM_FrontEnd.Ethercat
             {
                 _reqStop = false;
 
-                bool reqAnchorActualPosition = _reqAnchorActualPosition;
-                _reqAnchorActualPosition = false;
-
                 _reqMove = false;
                 _jogActive = false;
                 _jogDirection = 0;
 
+                // 진행 중이던 PP handshake 해제
                 cw = ClearCW(cw, ControlWordBit.NewSetPoint);
                 cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
                 cw = ClearCW(cw, ControlWordBit.Relative);
 
-                if (reqAnchorActualPosition)
+                // 현재 이동은 Halt로 감속 정지
+                _haltActive = true;
+                cw = SetCW(cw, ControlWordBit.Halt);
+
+                if (_motion == MotionCommand.Home)
                 {
-                    // Jog 중 Stop은 일반 Halt가 아니라 현재 위치 anchor stop으로 처리한다.
-                    // 이유:
-                    // PP Relative Jog 중 Halt만 걸면 드라이브 내부에 이전 relative target이 남아서,
-                    // 다음 Jog 방향 전환 시 이전 방향이 잠깐 재개될 수 있음.
-
-                    bool anchorOk =
-                        _off6064ap >= 0 &&
-                        (uint)_off6064ap + 4u <= (uint)Input.Length &&
-                        _off607Atp >= 0 &&
-                        (uint)_off607Atp + 4u <= (uint)Output.Length;
-
-                    if (anchorOk)
-                    {
-                        int actualPosition = BinaryPrimitives.ReadInt32LittleEndian(
-                            Input.Slice(_off6064ap, 4));
-
-                        BinaryPrimitives.WriteInt32LittleEndian(
-                            Output.Slice(_off607Atp, 4),
-                            actualPosition);
-
-                        _moveTarget = actualPosition;
-                        _IsAbsMove = true;
-
-                        // 현재 위치를 새 Absolute target으로 즉시 latch.
-                        // 상태머신 없이 1 cycle NewSetPoint pulse를 만든다.
-                        _haltActive = false;
-
-                        cw = ClearCW(cw, ControlWordBit.Halt);
-                        cw = ClearCW(cw, ControlWordBit.Relative);
-                        cw = SetCW(cw, ControlWordBit.ChangeSetImmediately);
-                        cw = SetCW(cw, ControlWordBit.NewSetPoint);
-                    }
-                    else
-                    {
-                        // 현재 위치 anchor가 불가능하면 일반 Halt로 fallback.
-                        _haltActive = true;
-                        cw = SetCW(cw, ControlWordBit.Halt);
-                    }
-
-                    _motion = MotionCommand.None;
-                    _moveState = MoveState.Idle;
+                    _homeRestoreThenFault = false;
+                    _moveState = MoveState.QueueModePP;
                 }
                 else
                 {
-                    // 일반 Stop은 Halt 처리.
-                    _haltActive = true;
-                    cw = SetCW(cw, ControlWordBit.Halt);
-
-                    if (_moveState != MoveState.Idle)
-                    {
-                        if (_motion == MotionCommand.Home)
-                        {
-                            _homeRestoreThenFault = false;
-                            _moveState = MoveState.QueueModePP;
-                        }
-                        else
-                        {
-                            _motion = MotionCommand.None;
-                            _moveState = MoveState.Idle;
-                        }
-                    }
+                    _motion = MotionCommand.None;
+                    _moveState = MoveState.Idle;
                 }
             }
 
@@ -1223,69 +1167,65 @@ namespace SOEM_FrontEnd.Ethercat
                     }
 
                 case MoveState.WaitSetPointAckClear:
+                {
+                    if (_IsAbsMove == true)
                     {
+                        cw = ClearCW(cw, ControlWordBit.Relative);
+                    }
+                    else
+                    {
+                        cw = SetCW(cw, ControlWordBit.Relative);
+                    }
 
-                        if (_IsAbsMove == true)
-                        {
-                            cw = ClearCW(cw, ControlWordBit.Relative);
-                        }
-                        else
-                        {
-                            cw = SetCW(cw, ControlWordBit.Relative);
-                        }
+                    if (_jogActive)
+                    {
+                        cw = SetCW(cw, ControlWordBit.ChangeSetImmediately);
+                    }
+                    else
+                    {
+                        cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
+                    }
 
-                        if (_jogActive)
-                        {
-                            cw = SetCW(cw, ControlWordBit.ChangeSetImmediately);
-                        }
-                        else
-                        {
-                            cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
-                        }
+                    // 한 cycle 동안 NewSetPoint를 0으로 내려서
+                    // 다음 0 -> 1 edge를 만들 준비
+                    cw = ClearCW(cw, ControlWordBit.NewSetPoint);
 
-                        cw = ClearCW(cw, ControlWordBit.NewSetPoint);
+                    if (_jogActive)
+                    {
+                        int direction = _jogDirection;
 
-                        if (!swSetPointAck)
+                        if (direction != 0)
                         {
-                            if (_jogActive)
+                            _IsAbsMove = false;
+
+                            if (direction > 0)
                             {
-                                int direction = _jogDirection;
-
-                                if (direction != 0)
-                                {
-                                    _IsAbsMove = false;
-
-                                    if (direction > 0)
-                                    {
-                                        _moveTarget = _jogStepPulse;
-                                    }
-                                    else
-                                    {
-                                        _moveTarget = -_jogStepPulse;
-                                    }
-
-                                    if (_profileDirty)
-                                    {
-                                        _moveState = MoveState.QueueWrite6081;
-                                    }
-                                    else
-                                    {
-                                        _moveState = MoveState.QueuePdoStart;
-                                    }
-                                }
-                                else
-                                {
-                                    _moveState = MoveState.Done;
-                                }
+                                _moveTarget = _jogStepPulse;
                             }
                             else
                             {
-                                _moveState = MoveState.WaitTargetReached;
+                                _moveTarget = -_jogStepPulse;
                             }
+
+                            _moveState = MoveState.QueuePdoStart;
+                        }
+                        else
+                        {
+                            _moveState = MoveState.Done;
                         }
 
                         break;
                     }
+
+                    // 일반 ABS/INC 이동만 기존 Ack Clear를 기다림
+                    if (!swSetPointAck)
+                    {
+                        _moveState = MoveState.WaitTargetReached;
+                    }
+
+                    break;
+
+                }
 
                 case MoveState.WaitTargetReached:
                     {
