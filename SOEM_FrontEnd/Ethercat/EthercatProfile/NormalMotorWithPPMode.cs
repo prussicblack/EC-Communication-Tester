@@ -310,7 +310,7 @@ namespace SOEM_FrontEnd.Ethercat
                 return false;
 
             //stepPulse = speedPulsePerSec * (loopPeriodSec * leadLoopCount) 주의 발행주기가 8루프보단 길어야 되서 10으로 처리. 10/1000 은 10ms위치에 목적point발행.
-            _jogStepPulse = (int)(_profileVelocity * 10 / 1000);
+            _jogStepPulse = (int)(_profileVelocity * 100 / 1000);
 
             if (_jogStepPulse < 1)
                 _jogStepPulse = 1;
@@ -332,7 +332,7 @@ namespace SOEM_FrontEnd.Ethercat
             if (_isServoOn == false || _isError == true)
                 return false;
 
-            _jogStepPulse = (int)(_profileVelocity * 10 / 1000);
+            _jogStepPulse = (int)(_profileVelocity * 100 / 1000);
 
             if (_jogStepPulse < 1)
                 _jogStepPulse = 1;
@@ -1202,6 +1202,16 @@ namespace SOEM_FrontEnd.Ethercat
                         {
                             cw = SetCW(cw, ControlWordBit.Relative);
                         }
+
+                        if (_jogActive)
+                        {
+                            cw = SetCW(cw, ControlWordBit.ChangeSetImmediately);
+                        }
+                        else
+                        {
+                            cw = ClearCW(cw, ControlWordBit.ChangeSetImmediately);
+                        }
+
                         cw = SetCW(cw, ControlWordBit.NewSetPoint);
 
                         if (swSetPointAck)
@@ -1239,7 +1249,34 @@ namespace SOEM_FrontEnd.Ethercat
                         {
                             if (_jogActive)
                             {
-                                _moveState = MoveState.Done;
+                                int direction = _jogDirection;
+
+                                if (direction != 0)
+                                {
+                                    _IsAbsMove = false;
+
+                                    if (direction > 0)
+                                    {
+                                        _moveTarget = _jogStepPulse;
+                                    }
+                                    else
+                                    {
+                                        _moveTarget = -_jogStepPulse;
+                                    }
+
+                                    if (_profileDirty)
+                                    {
+                                        _moveState = MoveState.QueueWrite6081;
+                                    }
+                                    else
+                                    {
+                                        _moveState = MoveState.QueuePdoStart;
+                                    }
+                                }
+                                else
+                                {
+                                    _moveState = MoveState.Done;
+                                }
                             }
                             else
                             {
